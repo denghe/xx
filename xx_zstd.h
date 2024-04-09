@@ -2,7 +2,7 @@
 #include <xx_data.h>
 #include <zstd.h>
 
-namespace {
+namespace xx {
 
     // .exe + 50k
     inline void ZstdDecompress(std::string_view const& src, Data& dst) {

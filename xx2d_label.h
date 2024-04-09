@@ -4,7 +4,7 @@
 namespace xx {
 
 	struct Label : Node {
-		Listi32<TinyFrame const*, int32_t> fs;
+		Listi32<TinyFrame const*> fs;
 		RGBA8 color;
 
 		void Init(int z_, XY const& position_, XY const& scale_, XY const& anchor_, RGBA8 color_, std::u32string_view const& txt_) {

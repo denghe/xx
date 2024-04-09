@@ -30,10 +30,10 @@ namespace xx {
         bool showFps{ true };
 
         // current scene
-        Shared<Scene> scene;
+        Shared<SceneBase> scene;
 
         // scene utils
-        template<std::derived_from<Scene> T>
+        template<std::derived_from<SceneBase> T>
         Task<> AsyncSwitchTo() {
             auto newScene = MakeShared<T>();
             if constexpr (Has_AsyncInit<T>) {

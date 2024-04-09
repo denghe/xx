@@ -3,10 +3,10 @@
 
 namespace xx {
 
-	struct Scene {
+	struct SceneBase {
 		xx::Tasks tasks;
 		virtual void Init() {};			// enter: gLooper.scene == old
-		virtual ~Scene() {}				//  exit: gLooper.scene == new
+		virtual ~SceneBase() {}				//  exit: gLooper.scene == new
 		virtual void BeforeUpdate() {};
 		virtual void Update() {};
 		virtual void Draw() {};
@@ -14,12 +14,12 @@ namespace xx {
 
 #ifdef ENABLE_ENGINE_IMGUI
 
-	struct ImGuiScene : Scene {
+	struct ImGuiSceneBase : SceneBase {
 		virtual void ImGuiUpdate() = 0;
 		virtual void Init() override {
 			EngineBase1::Instance().imguiUpdate = [this] { this->ImGuiUpdate(); };
 		}
-		virtual ~ImGuiScene() override {
+		virtual ~ImGuiSceneBase() override {
 			EngineBase1::Instance().imguiUpdate = {};
 		}
 	};

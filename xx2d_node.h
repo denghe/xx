@@ -4,7 +4,7 @@
 namespace xx {
 
 	struct Node {
-		List<Shared<Node>, int32_t> children;
+		Listi32<Shared<Node>> children;
 		Weak<Node> parent;										// fill by MakeChildren
 		Weak<Node> scissor;										// fill by scroll view MakeContent
 
@@ -122,7 +122,7 @@ namespace xx {
 	};
 
 	template<bool skipScissorContent = true>
-	inline void FillZNodes(List<ZNode>& zns, Node* n) {
+	inline void FillZNodes(Listi32<ZNode>& zns, Node* n) {
 		assert(n);
 		if constexpr (skipScissorContent) {
 			if (n->scissor && n->scissor == n->parent) return;
@@ -135,7 +135,7 @@ namespace xx {
 		}
 	}
 
-	inline void OrderByZDrawAndClear(List<ZNode>& zns) {
+	inline void OrderByZDrawAndClear(Listi32<ZNode>& zns) {
 		std::sort(zns.buf, zns.buf + zns.len, ZNode::LessThanComparer);	// draw small z first
 		for (auto& zn : zns) {
 			zn->Draw();
@@ -143,19 +143,17 @@ namespace xx {
 		zns.Clear();
 	}
 
-	namespace xx {
-		template<typename T>
-		struct StringFuncs<T, std::enable_if_t<std::is_base_of_v<Node, T>>> {
-			static inline void Append(std::string& s, Node const& in) {
-				::xx::Append(s, "{ trans = ", in.trans
-					, ", position = ", in.position
-					, ", scale = ", in.scale
-					, ", anchor = ", in.anchor
-					, ", size = ", in.size
-					, " }"
-				);
-			}
-		};
-	}
+	template<typename T>
+	struct StringFuncs<T, std::enable_if_t<std::is_base_of_v<Node, T>>> {
+		static inline void Append(std::string& s, Node const& in) {
+			::xx::Append(s, "{ trans = ", in.trans
+				, ", position = ", in.position
+				, ", scale = ", in.scale
+				, ", anchor = ", in.anchor
+				, ", size = ", in.size
+				, " }"
+			);
+		}
+	};
 
 }

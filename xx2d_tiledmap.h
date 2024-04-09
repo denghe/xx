@@ -349,7 +349,7 @@ namespace xx::TMX {
 			return image;
 		}
 
-		Ref<::Anim> anim;
+		Ref<Anim> anim;
 		Ref<::xx::Frame> frame;
 		Ref<::xx::Frame> const& GetFrame() const {
 			if (anim) return anim->GetCurrentAnimFrame().frame;
@@ -397,9 +397,9 @@ namespace xx::TMX {
 
 		/****************************************************/
 		// ext
-		std::vector<Ref<Image>> images;												// all textures here
+		std::vector<Ref<Image>> images;													// all textures here
 		std::vector<GidInfo> gidInfos;													// all gid info here. index == gid
-		std::vector<::Anim*> anims;														// point to all gid info's anim for easy update anims
+		std::vector<Anim*> anims;														// point to all gid info's anim for easy update anims
 		std::vector<Layer*> flatLayers;													// extract layers tree here for easy search by name
 
 		void FillExts();																// fill above containers

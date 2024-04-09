@@ -32,10 +32,8 @@ namespace xx {
 		int32_t count{};
 	};
 
-	namespace xx {
-		template<>
-		struct IsPod<AudioItem, void> : std::true_type {};
-	}
+	template<>
+	struct IsPod<AudioItem, void> : std::true_type {};
 
 	struct AudioItemWithDecoder {
 		AudioItem item;

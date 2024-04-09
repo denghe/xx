@@ -153,10 +153,8 @@ namespace xx {
 
     };
 
-    namespace xx {
-        // mem moveable tag
-        template<>
-        struct IsPod<Quad, void> : std::true_type {};
-    }
+    // mem moveable tag
+    template<>
+    struct IsPod<Quad, void> : std::true_type {};
 
 }

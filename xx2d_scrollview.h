@@ -68,7 +68,7 @@ namespace xx {
 			return false;
 		}
 
-		List<ZNode> tmpZNodes;
+		Listi32<ZNode> tmpZNodes;
 		virtual void Draw() override {
 			DirectDrawTo(worldMinXY, worldSize, [&] {
 				FillZNodes<false>(tmpZNodes, children[0]);

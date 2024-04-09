@@ -276,22 +276,24 @@ namespace xx {
         inline static std::unique_ptr<BitmapDC> instance;
     };
 
-    inline void init_gCanvas(int charSize, int width, int height, const char* font) {
-        if (!BitmapDC::instance) {
-            BitmapDC::instance = std::make_unique<BitmapDC>();
-            BitmapDC::instance->Init(glfwGetWin32Window(EngineBase1::Instance().wnd));
-        }
-    }
+}
 
-    inline std::pair<float, float> upload_unicode_char_to_texture(int charSize, char const* buf) {
-        int w{}, h{};
-        auto d = BitmapDC::instance->getTextureDataForText(buf, { "Arial", 24 }, TextAlign::LEFT, w, h);
-        if (w > 0) {
-            GLTexParameteri();
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, d.buf);
-        }
-        CheckGLError();
-        return { (float)w, (float)h };
+inline void init_gCanvas(int charSize, int width, int height, const char* font) {
+    using namespace xx;
+    if (!BitmapDC::instance) {
+        BitmapDC::instance = std::make_unique<BitmapDC>();
+        BitmapDC::instance->Init(glfwGetWin32Window(EngineBase1::Instance().wnd));
     }
+}
 
+inline std::pair<float, float> upload_unicode_char_to_texture(int charSize, char const* buf) {
+    using namespace xx;
+    int w{}, h{};
+    auto d = BitmapDC::instance->getTextureDataForText(buf, { "Arial", 24 }, TextAlign::LEFT, w, h);
+    if (w > 0) {
+        GLTexParameteri();
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, d.buf);
+    }
+    CheckGLError();
+    return { (float)w, (float)h };
 }

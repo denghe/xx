@@ -38,14 +38,12 @@ namespace xx {
     constexpr static RGBA8 RGBA8_White{ 255,255,255,255 };
     constexpr static RGBA8 RGBA8_Black{ 0,0,0,255 };
 
-    namespace xx {
-        template<typename T>
-        struct StringFuncs<T, std::enable_if_t<std::is_base_of_v<RGBA8, T>>> {
-            static inline void Append(std::string& s, RGBA8 const& in) {
-                ::xx::Append(s, in.r, ", ", in.g, ", ", in.b, ", ", in.a);
-            }
-        };
-    }
+    template<typename T>
+    struct StringFuncs<T, std::enable_if_t<std::is_base_of_v<RGBA8, T>>> {
+        static inline void Append(std::string& s, RGBA8 const& in) {
+            ::xx::Append(s, in.r, ", ", in.g, ", ", in.b, ", ", in.a);
+        }
+    };
 
     // 4 floats color
     struct RGBA {
@@ -97,14 +95,12 @@ namespace xx {
         uint64_t data;
     };
 
-    namespace xx {
-        template<typename T>
-        struct StringFuncs<T, std::enable_if_t<std::is_same_v<UVRect, std::decay_t<T>>>> {
-            static inline void Append(std::string& s, UVRect const& in) {
-                ::xx::Append(s, in.x, ", ", in.y, ", ", in.w, ", ", in.h);
-            }
-        };
-    }
+    template<typename T>
+    struct StringFuncs<T, std::enable_if_t<std::is_same_v<UVRect, std::decay_t<T>>>> {
+        static inline void Append(std::string& s, UVRect const& in) {
+            ::xx::Append(s, in.x, ", ", in.y, ", ", in.w, ", ", in.h);
+        }
+    };
 
 
     /*******************************************************************************************************************************************/
@@ -236,14 +232,12 @@ namespace xx {
 
     };
 
-    namespace xx {
-        template<typename T>
-        struct StringFuncs<T, std::enable_if_t<std::is_base_of_v<AffineTransform, T>>> {
-            static inline void Append(std::string& s, AffineTransform const& in) {
-                ::xx::Append(s, in.a, ", ", in.b, ", ", in.c, ", ", in.d, ", ", in.tx, ", ", in.ty);
-            }
-        };
-    }
+    template<typename T>
+    struct StringFuncs<T, std::enable_if_t<std::is_base_of_v<AffineTransform, T>>> {
+        static inline void Append(std::string& s, AffineTransform const& in) {
+            ::xx::Append(s, in.a, ", ", in.b, ", ", in.c, ", ", in.d, ", ", in.tx, ", ", in.ty);
+        }
+    };
 
 
     // without rotation support
@@ -302,14 +296,12 @@ namespace xx {
         }
     };
 
-    namespace xx {
-        template<typename T>
-        struct StringFuncs<T, std::enable_if_t<std::is_base_of_v<SimpleAffineTransform, T>>> {
-            static inline void Append(std::string& s, SimpleAffineTransform const& in) {
-                ::xx::Append(s, in.a, ", ", in.d, ", ", in.tx, ", ", in.ty);
-            }
-        };
-    }
+    template<typename T>
+    struct StringFuncs<T, std::enable_if_t<std::is_base_of_v<SimpleAffineTransform, T>>> {
+        static inline void Append(std::string& s, SimpleAffineTransform const& in) {
+            ::xx::Append(s, in.a, ", ", in.d, ", ", in.tx, ", ", in.ty);
+        }
+    };
 
 
     /*******************************************************************************************************************************************/

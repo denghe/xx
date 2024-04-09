@@ -26,7 +26,7 @@ namespace xx {
 
 		struct Text : ItemBase {
 			RGBA8 color;
-			Listi32<TinyFrame const*, int32_t> chars;
+			Listi32<TinyFrame const*> chars;
 			XY scale;
 			Text(VAligns align, RGBA8 color, XY const& scale) {
 				this->type = ItemTypes::Text;
@@ -102,8 +102,8 @@ namespace xx {
 			}
 		};
 
-		Listi32<Item, int32_t> items;
-		Listi32<Picture*, int32_t> pics;				// for batch draw
+		Listi32<Item> items;
+		Listi32<Picture*> pics;				// for batch draw
 		float width{}, y{}, lineX{}, lineHeight{};
 		int32_t lineItemsCount{};
 		HAligns halign{};	// when line end, horizontal align current line
