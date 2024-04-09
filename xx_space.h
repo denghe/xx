@@ -262,8 +262,8 @@ namespace xx {
 		XX_FORCE_INLINE int32_t PosToCIdx(XYf const& p) {
 			assert(p.x >= 0 && p.x < cellSize * numCols);
 			assert(p.y >= 0 && p.y < cellSize * numRows);
-			auto c = int32_t(p.x) / cellSize;
-			auto r = int32_t(p.y) / cellSize;
+			auto c = int32_t(p.x / cellSize);
+			auto r = int32_t(p.y / cellSize);
 			return r * numCols + c;
 		}
 
@@ -271,7 +271,7 @@ namespace xx {
 		XX_FORCE_INLINE XYi PosToCrIdx(XYf const& p) {
 			assert(p.x >= 0 && p.x < cellSize * numCols);
 			assert(p.y >= 0 && p.y < cellSize * numRows);
-			return { int32_t(p.x) / cellSize, int32_t(p.y) / cellSize };
+			return { p.x / cellSize, p.y / cellSize };
 		}
 
 		// return cell's index
