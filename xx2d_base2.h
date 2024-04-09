@@ -45,7 +45,7 @@ namespace xx {
             co_return;
         }
 
-        template<std::derived_from<Scene> T>
+        template<std::derived_from<SceneBase> T>
         void DelaySwitchTo() {
             tasks.Add(AsyncSwitchTo<T>());
         }

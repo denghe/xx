@@ -1,6 +1,6 @@
 ﻿#pragma once
 #ifdef __EMSCRIPTEN__
-#include <xx2d_engine.h>
+#include <xx2d_engine_web.h>
 #else
 #include <xx2d_engine_desktop.h>
 #endif
