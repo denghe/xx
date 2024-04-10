@@ -800,19 +800,19 @@ namespace xx::TMX {
 			std::string_view name(c.name());
 			if (name == "properties"sv) continue;
 			if (name == "layer"sv) {
-				auto&& L = MakeShared<Layer_Tile>();
+				auto&& L = MakeRef<Layer_Tile>();
 				TryFillLayer(*L, c);
 				pL.layers.emplace_back(std::move(L));
 			} else if (name == "imagelayer"sv) {
-				auto&& L = MakeShared<Layer_Image>();
+				auto&& L = MakeRef<Layer_Image>();
 				TryFillLayer(*L, c);
 				pL.layers.emplace_back(std::move(L));
 			} else if (name == "objectgroup"sv) {
-				auto&& L = MakeShared<Layer_Object>();
+				auto&& L = MakeRef<Layer_Object>();
 				TryFillLayer(*L, c);
 				pL.layers.emplace_back(std::move(L));
 			} else if (name == "group"sv) {
-				auto&& L = MakeShared<Layer_Group>();
+				auto&& L = MakeRef<Layer_Group>();
 				TryFillLayer(*L, c);
 				pL.layers.emplace_back(std::move(L));
 			} else {
@@ -877,23 +877,23 @@ namespace xx::TMX {
 		for (auto&& c : cMap.children()) {
 			std::string_view name(c.name());
 			if (name == "tileset"sv) {
-				auto&& ts = MakeShared<Tileset>();
+				auto&& ts = MakeRef<Tileset>();
 				TryFillTileset(*ts, c);
 				map.tilesets.emplace_back(std::move(ts));
 			} else if (name == "layer"sv) {
-				auto&& L = MakeShared<Layer_Tile>();
+				auto&& L = MakeRef<Layer_Tile>();
 				TryFillLayer(*L, c);
 				map.layers.emplace_back(std::move(L));
 			} else if (name == "imagelayer"sv) {
-				auto&& L = MakeShared<Layer_Image>();
+				auto&& L = MakeRef<Layer_Image>();
 				TryFillLayer(*L, c);
 				map.layers.emplace_back(std::move(L));
 			} else if (name == "objectgroup"sv) {
-				auto&& L = MakeShared<Layer_Object>();
+				auto&& L = MakeRef<Layer_Object>();
 				TryFillLayer(*L, c);
 				map.layers.emplace_back(std::move(L));
 			} else if (name == "group"sv) {
-				auto&& L = MakeShared<Layer_Group>();
+				auto&& L = MakeRef<Layer_Group>();
 				TryFillLayer(*L, c);
 				map.layers.emplace_back(std::move(L));
 			} else {
