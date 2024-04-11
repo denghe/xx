@@ -2,7 +2,6 @@
 #include <xx2d_base3.h>
 #ifdef WIN32
 #include <mmsystem.h>
-#pragma comment( lib, "Winmm.lib" )
 #endif
 
 namespace xx {

@@ -97,9 +97,9 @@ namespace xx {
         return (size_t)r;
 #else
         if constexpr (sizeof(T) < 8) {
-            return int(31 - __builtin_clz(n));
+            return 31 - __builtin_clz(n);
         } else {
-            return int(63 - __builtin_clzl(n));
+            return 63 - __builtin_clzll(n);
         }
 #endif
     }
@@ -107,7 +107,8 @@ namespace xx {
     // 返回一个刚好大于 n 的 2^x 对齐数
     template<typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
     XX_FORCE_INLINE T Round2n(T n) {
-        auto rtv = T(1) << Calc2n(n);
+        auto shift = Calc2n(n);
+        auto rtv = T(1) << shift;
         if (rtv == n) return n;
         else return rtv << 1;
     }

@@ -162,7 +162,7 @@ namespace xx {
         // resume once
         int32_t operator()() {
             tasks.ForeachLink([&](xx::Task<>& o)->ForeachResult {
-                return o.Resume() ? ForeachResult::RemoveAndContinue : ForeachResult::Continue;
+                return o() ? ForeachResult::RemoveAndContinue : ForeachResult::Continue;
             });
             return tasks.Count();
         }
@@ -265,15 +265,15 @@ namespace xx {
         int32_t operator()() {
             tasks.ForeachLink([&](std::pair<Cond, Task<>>& o)->ForeachResult {
                 if constexpr(IsOptional_v<Cond>) {
-                    if (o.first.has_value()) return (!o.first.value() || o.second.Resume()) ? ForeachResult::RemoveAndContinue : ForeachResult::Continue;
-                    else return o.second.Resume() ? ForeachResult::RemoveAndContinue : ForeachResult::Continue;
+                    if (o.first.has_value()) return (!o.first.value() || o.second()) ? ForeachResult::RemoveAndContinue : ForeachResult::Continue;
+                    else return o.second() ? ForeachResult::RemoveAndContinue : ForeachResult::Continue;
                 } else if constexpr (std::is_invocable_v<Cond>) {
                     if (o.first()) {
-                        return o.second.Resume() ? ForeachResult::RemoveAndContinue : ForeachResult::Continue;
+                        return o.second() ? ForeachResult::RemoveAndContinue : ForeachResult::Continue;
                     } else return ForeachResult::RemoveAndContinue;
                 } else {
                     if (o.first) {
-                        return o.second.Resume() ? ForeachResult::RemoveAndContinue : ForeachResult::Continue;
+                        return o.second() ? ForeachResult::RemoveAndContinue : ForeachResult::Continue;
                     } else ForeachResult::RemoveAndContinue;
                 }
             });
@@ -336,7 +336,7 @@ namespace xx {
             }
             if (!tasks.Empty()) {
                 for (int i = tasks.len - 1; i >= 0; --i) {
-                    if (auto& t = tasks[i]; t.Resume()) {
+                    if (auto& t = tasks[i]; t()) {
                         tasks.SwapRemoveAt(i);
                     } else {
                         auto& y = t.coro.promise().y;
@@ -359,7 +359,7 @@ namespace xx {
     protected:
         XX_FORCE_INLINE ptrdiff_t Resume(int i, Tuple& tuple) {
             auto& task = std::get<3>(tuple);
-            if (task.Resume()) {
+            if (task()) {
                 eventTasks.SwapRemoveAt(i);  // done
             } else {
                 auto& y = task.coro.promise().y;
