@@ -21,6 +21,18 @@ namespace xx {
             return btnStates[n];
         }
 
+        bool PressedMBLeft() const {
+            return btnStates[0];
+        }
+
+        bool PressedMBRight() const {
+#ifdef __EMSCRIPTEN__
+            return btnStates[2];
+#else
+            return btnStates[1];
+#endif
+        }
+
         //MouseEvents event{};
         //void* eventHandler{};
         //void ClearEvent() { event = MouseEvents::Unknown; }

@@ -14,6 +14,9 @@ namespace xx {
         static constexpr float width_2 = width / 2;
         static constexpr float height_2 = height / 2;
 
+        static constexpr float w_h = width / height;
+        static constexpr float h_w = height / width;
+
         static constexpr XY wh{ width, height };
         static constexpr XY wh_2{ width_2, height_2 };
 

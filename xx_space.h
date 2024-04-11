@@ -16,7 +16,7 @@ namespace xx {
 		Listi32<XYi> idxs;
 
 		void Init(int32_t crCount, int32_t cSize) {
-			auto step = (float)cSize / 2;
+			auto step = (float)cSize * 0.5f;
 			lens.Emplace(0, 0.f);
 			XYi lastIdx{};
 			idxs.Add(lastIdx);
@@ -62,6 +62,7 @@ namespace xx {
 		using ST::TryGet;
 
 		int32_t numRows{}, numCols{}, cellSize{};
+		float _1_cellSize{};	// = 1 / cellSize
 		XYi max{};
 	protected:
 		int32_t cellsLen{};
@@ -74,6 +75,7 @@ namespace xx {
 			numRows = numRows_;
 			numCols = numCols_;
 			cellSize = cellSize_;
+			_1_cellSize = 1.f / cellSize_;
 			max.x = cellSize_ * numCols_;
 			max.y = cellSize_ * numRows_;
 
@@ -262,8 +264,8 @@ namespace xx {
 		XX_FORCE_INLINE int32_t PosToCIdx(XYf const& p) {
 			assert(p.x >= 0 && p.x < cellSize * numCols);
 			assert(p.y >= 0 && p.y < cellSize * numRows);
-			auto c = int32_t(p.x / cellSize);
-			auto r = int32_t(p.y / cellSize);
+			auto c = int32_t(p.x * _1_cellSize);
+			auto r = int32_t(p.y * _1_cellSize);
 			return r * numCols + c;
 		}
 
@@ -271,7 +273,7 @@ namespace xx {
 		XX_FORCE_INLINE XYi PosToCrIdx(XYf const& p) {
 			assert(p.x >= 0 && p.x < cellSize * numCols);
 			assert(p.y >= 0 && p.y < cellSize * numRows);
-			return { p.x / cellSize, p.y / cellSize };
+			return { p.x * _1_cellSize, p.y * _1_cellSize };
 		}
 
 		// return cell's index
@@ -289,7 +291,7 @@ namespace xx {
 
 		// cell's index to cell center pos
 		XX_FORCE_INLINE XYf CIdxToCenterPos(int32_t cidx) {
-			return CIdxToPos(cidx) + float(cellSize) / 2;
+			return CIdxToPos(cidx) + float(cellSize) * 0.5f;
 		}
 
 		XX_FORCE_INLINE XYf CrIdxToPos(int32_t colIdx, int32_t rowIdx) {
