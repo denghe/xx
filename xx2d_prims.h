@@ -24,6 +24,7 @@ namespace xx {
     constexpr static RGB8 RGB8_Blue{ 0,0,255 };
     constexpr static RGB8 RGB8_White{ 255,255,255 };
     constexpr static RGB8 RGB8_Black{ 0,0,0 };
+    constexpr static RGB8 RGB8_Yellow{ 255,255,0 };
 
     // 4 bytes color
     struct RGBA8 {
@@ -37,6 +38,7 @@ namespace xx {
     constexpr static RGBA8 RGBA8_Blue{ 0,0,255,255 };
     constexpr static RGBA8 RGBA8_White{ 255,255,255,255 };
     constexpr static RGBA8 RGBA8_Black{ 0,0,0,255 };
+    constexpr static RGBA8 RGBA8_Yellow{ 255,255,0,255 };
 
     template<typename T>
     struct StringFuncs<T, std::enable_if_t<std::is_base_of_v<RGBA8, T>>> {
@@ -510,32 +512,30 @@ namespace xx {
             return false;
         }
 
-
-        inline bool MoveCircleIfIntersectsBox2(XY bPos, float bHalfWidth, float bHalfHeight
-            , XY& cPos, float cr) {
-
-            float bminx = bPos.x - bHalfWidth;
-            float bmaxx = bPos.x + bHalfWidth;
-            float bminy = bPos.y - bHalfHeight;
-            float bmaxy = bPos.y + bHalfHeight;
-
+        inline bool MoveCircleIfIntersectsBox2(FromTo<XY> aabb, XY& cPos, float cr) {
             // find rect nearest point
             XY np;
-            np.x = std::max(bminx, std::min(cPos.x, bmaxx));
-            np.y = std::max(bminy, std::min(cPos.y, bmaxy));
+            np.x = std::max(aabb.from.x, std::min(cPos.x, aabb.to.x));
+            np.y = std::max(aabb.from.y, std::min(cPos.y, aabb.to.y));
 
             // calc
             auto d = np - cPos;
             auto mag = std::sqrt(d.x * d.x + d.y * d.y);
             auto overlap = cr - mag;
 
-            if (!std::isnan(overlap) && overlap > 0) {
+            if (overlap > 0 && mag != 0.f) {
                 auto mag_1 = 1 / mag;
                 auto p = d * mag_1 * overlap;
                 cPos -= p;
+
                 return true;
             }
             return false;
+        }
+
+        inline bool MoveCircleIfIntersectsBox2(XY bPos, float bHalfWidth, float bHalfHeight, XY& cPos, float cr) {
+            XY siz{ bHalfWidth, bHalfHeight };
+            return MoveCircleIfIntersectsBox2({ {bPos - siz}, {bPos + siz} }, cPos, cr);
         }
 
         // xy.from: min xy . to: max xy.
