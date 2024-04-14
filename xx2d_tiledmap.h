@@ -409,7 +409,7 @@ namespace xx::TMX {
 
 		void FillFlatLayers(std::vector<Ref<Layer>>& ls);
 
-		GidInfo const* GetGidInfo(Layer* L, uint32_t rowIdx, uint32_t colIdx) const;	// for Layer_Tile gidInfos[rowIdx * map.w + colIdx]
+		GidInfo* GetGidInfo(Layer* L, uint32_t rowIdx, uint32_t colIdx) const;	// for Layer_Tile gidInfos[rowIdx * map.w + colIdx]
 	
 		/****************************************************/
 	};
@@ -466,7 +466,7 @@ namespace xx::TMX {
 		return nullptr;
 	}
 
-	inline XX_FORCE_INLINE GidInfo const* Map::GetGidInfo(Layer* L, uint32_t rowIdx, uint32_t colIdx) const {
+	inline XX_FORCE_INLINE GidInfo* Map::GetGidInfo(Layer* L, uint32_t rowIdx, uint32_t colIdx) const {
 		assert(L);
 		assert(L->type == LayerTypes::TileLayer);
 		assert(rowIdx < height);
@@ -474,7 +474,7 @@ namespace xx::TMX {
 		assert(!infinite);	// if (infinite) todo
 		auto gid = ((Layer_Tile&)*L).gids[rowIdx * width + colIdx];
 		if (!gid) return nullptr;
-		return &gidInfos[gid];
+		return (GidInfo*)&gidInfos[gid];
 	}
 
 	// need fill images GLTexture first if needed

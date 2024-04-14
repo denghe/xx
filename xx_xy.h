@@ -71,6 +71,10 @@ namespace xx {
             return x == T{} && y == T{};
         }
 
+        constexpr bool IsOutOfEdge(HasField_XY auto const& edge) const {
+            return x < 0 || y < 0 || x >= edge.x || y >= edge.y;
+        }
+
         template<typename R = T>
         constexpr auto FlipY() const -> X_Y<R> {
             return { R(x), R(-y) };

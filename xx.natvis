@@ -13,6 +13,7 @@
 		<DisplayString Condition="pointer == 0">null</DisplayString>
 		<DisplayString Condition="pointer != 0">{*pointer}</DisplayString>
 		<Expand>
+			<Item Condition="pointer != 0" Name="[header]">(HeaderType*)pointer - 1</Item>
 			<Item Condition="pointer != 0" Name="[pointer]">pointer</Item>
 		</Expand>
 	</Type>
@@ -21,6 +22,7 @@
 		<DisplayString Condition="h == 0 || (*h).sharedCount == 0">null</DisplayString>
 		<DisplayString Condition="h != 0 &amp;&amp; (*h).sharedCount != 0">{($T1*)(h+1)}</DisplayString>
 		<Expand>
+			<Item Condition="h != 0" Name="[header]">h</Item>
 			<Item Condition="h != 0 &amp;&amp; (*h).sharedCount != 0" Name="[pointer]">($T1*)(h+1)</Item>
 		</Expand>
 	</Type>
@@ -29,6 +31,7 @@
 		<DisplayString Condition="pointer == 0">null</DisplayString>
 		<DisplayString Condition="pointer != 0">{*pointer}</DisplayString>
 		<Expand>
+			<Item Condition="pointer != 0" Name="[header]">(HeaderType*)pointer - 1</Item>
 			<Item Condition="pointer != 0" Name="[pointer]">pointer</Item>
 		</Expand>
 	</Type>
