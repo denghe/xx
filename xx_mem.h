@@ -86,28 +86,22 @@ namespace xx {
     // 返回首个出现 1 的 bit 的下标
     template<typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
     XX_FORCE_INLINE size_t Calc2n(T n) {
-        assert(n);
-#ifdef _MSC_VER
-        unsigned long r = 0;
-        if constexpr (sizeof(T) < 8) {
-            _BitScanReverse(&r, n);
-        } else {
-            _BitScanReverse64(&r, n);
-        }
-        return (size_t)r;
-#else
-        if constexpr (sizeof(T) < 8) {
-            return int(31 - __builtin_clz(n));
-        } else {
-            return int(63 - __builtin_clzl(n));
-        }
-#endif
+//#ifdef _MSC_VER
+        return (sizeof(size_t) * 8 - 1) - std::countl_zero(n);
+//#else
+//        if constexpr (sizeof(T) < 8) {
+//            return 31 - __builtin_clz(n);
+//        } else {
+//            return 63 - __builtin_clzll(n);
+//        }
+//#endif
     }
 
     // 返回一个刚好大于 n 的 2^x 对齐数
     template<typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
     XX_FORCE_INLINE T Round2n(T n) {
-        auto rtv = T(1) << Calc2n(n);
+        auto shift = Calc2n(n);
+        auto rtv = T(1) << shift;
         if (rtv == n) return n;
         else return rtv << 1;
     }

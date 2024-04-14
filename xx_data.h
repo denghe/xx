@@ -458,10 +458,6 @@ namespace xx {
                 //delete[](buf - bufHeaderReserveLen);
                 free(buf - bufHeaderReserveLen);
             }
-            else {
-                // let virtual memory -> physics
-                for(size_t i = 0; i < newCap; i += 4096) (newBuf - bufHeaderReserveLen)[i] = 0;
-            }
             buf = newBuf;
             cap = siz - bufHeaderReserveLen;
         }
@@ -739,7 +735,7 @@ namespace xx {
         // 整数变长写( 1字节除外 ), double 看情况, float 拷贝内存, 容器先变长写长度
         template<bool needReserve = true>
         static inline void Write(Data& dw, T const& in) {
-            auto tn = TypeName<T>();
+            auto tn = typeid(T).name();
             assert(false);
         }
         // 返回非 0 表示操作失败

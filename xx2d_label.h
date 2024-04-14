@@ -39,7 +39,7 @@ namespace xx {
 
 		virtual void Draw() override {
 			auto& shader = EngineBase1::Instance().ShaderBegin(EngineBase1::Instance().shaderQuadInstance);
-			auto basePos = trans.Offset();
+			auto basePos = trans().Offset();
 			for (auto& f : fs) {
 				auto& q = *shader.Draw(f->tex->GetValue(), 1);
 				q.anchor = { 0.f, 0.f };
@@ -47,9 +47,9 @@ namespace xx {
 				q.colorplus = 1;
 				q.pos = basePos;
 				q.radians = {};
-				q.scale = { trans.a, trans.d };
+				q.scale = { trans().a, trans().d };
 				q.texRect.data = f->texRect.data;
-				basePos.x += f->texRect.w * trans.a;
+				basePos.x += f->texRect.w * trans().a;
 			}
 		}
 	};

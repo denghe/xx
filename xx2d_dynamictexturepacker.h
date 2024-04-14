@@ -36,7 +36,7 @@ namespace xx {
 
             FrameBuffer fb(true);
             for (auto& bin : bins) {
-                XYi wh{ Round2n(bin.size.w), Round2n(bin.size.h) };
+                XYi wh{ Round2n((size_t)bin.size.w), Round2n((size_t)bin.size.h) };
                 auto t = FrameBuffer::MakeTexture(wh);
                 XY basePos{ -wh.x / 2.f, wh.y / 2.f };
                 Quad q;

@@ -8,12 +8,10 @@ namespace xx {
 		Weak<Node> parent;										// fill by MakeChildren
 		Weak<Node> scissor;										// fill by scroll view MakeContent
 
-		union {
-			SimpleAffineTransform trans{};
-			struct {
-				XY worldScale, worldMinXY;
-			};
-		};
+        XX_FORCE_INLINE SimpleAffineTransform& trans(){ return (SimpleAffineTransform&)worldScale; }
+        XY worldScale, worldMinXY;
+        XX_FORCE_INLINE SimpleAffineTransform const& trans() const { return (SimpleAffineTransform&)worldScale; }
+
 		XY position{}, scale{ 1, 1 }, anchor{ 0.5, 0.5 }, size{};
 		XY worldMaxXY{}, worldSize{};								// boundingBox. world coordinate. fill by FillTrans()
 		float alpha{ 1 };
@@ -24,13 +22,13 @@ namespace xx {
 		// for init
 		XX_FORCE_INLINE void FillTrans() {
 			if (parent) {
-				trans = SimpleAffineTransform::MakePosScaleAnchorSize(position, scale, anchor * size).MakeConcat(parent->trans);
+				trans() = SimpleAffineTransform::MakePosScaleAnchorSize(position, scale, anchor * size).MakeConcat(parent->trans());
 			} else {
-				trans.PosScaleAnchorSize(position, scale, anchor * size);
+				trans().PosScaleAnchorSize(position, scale, anchor * size);
 			}
 
-			worldMaxXY = trans(size);
-			worldSize = worldMaxXY - trans.Offset();
+			worldMaxXY = trans()(size);
+			worldSize = worldMaxXY - trans().Offset();
 
 			TransUpdate();
 		}
@@ -146,7 +144,7 @@ namespace xx {
 	template<typename T>
 	struct StringFuncs<T, std::enable_if_t<std::is_base_of_v<Node, T>>> {
 		static inline void Append(std::string& s, Node const& in) {
-			::xx::Append(s, "{ trans = ", in.trans
+			::xx::Append(s, "{ trans = ", in.trans()
 				, ", position = ", in.position
 				, ", scale = ", in.scale
 				, ", anchor = ", in.anchor

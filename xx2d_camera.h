@@ -121,11 +121,12 @@ namespace xx {
 
 
 		*/
+		template<int32_t rowFromOffset = 1, int32_t rowToOffset = 2, int32_t colFromOffset = 1, int32_t colToOffset = 2>
 		void FillRowColIdxRange(int32_t physNumRows, int32_t physNumCols, int32_t physCellSize, int32_t& rowFrom, int32_t& rowTo, int32_t& colFrom, int32_t& colTo) {
 			int32_t halfNumRows = int32_t(gEngine->windowSize.y / scale) / physCellSize / 2;
 			int32_t posRowIndex = (int32_t)original.y / physCellSize;
-			rowFrom = posRowIndex - halfNumRows - 1;
-			rowTo = posRowIndex + halfNumRows + 2;
+			rowFrom = posRowIndex - halfNumRows - rowFromOffset;
+			rowTo = posRowIndex + halfNumRows + rowToOffset;
 			if (rowFrom < 0) {
 				rowFrom = 0;
 			}
@@ -135,8 +136,8 @@ namespace xx {
 
 			int32_t halfNumCols = int32_t(gEngine->windowSize.x / scale) / physCellSize / 2;
 			int32_t posColIndex = (int32_t)original.x / physCellSize;
-			colFrom = posColIndex - halfNumCols - 1;
-			colTo = posColIndex + halfNumCols + 2;
+			colFrom = posColIndex - halfNumCols - colFromOffset;
+			colTo = posColIndex + halfNumCols + colToOffset;
 			if (colFrom < 0) {
 				colFrom = 0;
 			}

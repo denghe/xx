@@ -56,8 +56,8 @@ namespace xx {
 			uint16_t th3 = r.h - (center.y + center.h);
 
 			// actual
-			XY siz{ size.x * trans.a, size.y * trans.d };
-			XY ts{ texScale.x * trans.a, texScale.y * trans.d };
+			XY siz{ size.x * trans().a, size.y * trans().d };
+			XY ts{ texScale.x * trans().a, texScale.y * trans().d };
 
 			float sx = float(siz.x - tw1 * ts.x - tw3 * ts.x) / tw2;
 			float sy = float(siz.y - th1 * ts.y - th3 * ts.y) / th2;
@@ -76,7 +76,7 @@ namespace xx {
 			float py2 = siz.y - (th1 * ts.y);
 			float py3 = siz.y - (siz.y - th3 * ts.y);
 
-			auto& basePos = trans.Offset();
+			auto& basePos = trans().Offset();
 
 			RGBA8 c = { color.r, color.g, color.b, (uint8_t)(color.a * alpha) };
 

@@ -18,7 +18,7 @@ namespace xx {
 	template<typename T>
 	struct SpaceABNode : BlockLinkVI {
 		using CellType = SpaceABCell<T>;
-		xx::FromTo<XYi> crIdx;
+		FromTo<XYi> crIdx;
 		TinyList<CellType> cs;
 		uint32_t flag;
 		T value;
@@ -85,7 +85,7 @@ namespace xx {
 			assert(ab.from.y >= 0 && ab.to.y < max.y);
 
 			// calc covered cells( max value )
-			xx::FromTo<XYi> crIdx{ ab.from / cellSize, ab.to / cellSize };
+			FromTo<XYi> crIdx{ ab.from / cellSize, ab.to / cellSize };
 			o.crIdx = crIdx;
 			auto numReserve = (crIdx.to.x - crIdx.from.x + 2) * (crIdx.to.y - crIdx.from.y + 2);
 
@@ -160,7 +160,7 @@ namespace xx {
 
 			// calc covered cells
 			auto& ab = v.aabb;
-			xx::FromTo<XYi> crIdx{ ab.from / cellSize, ab.to / cellSize };
+			FromTo<XYi> crIdx{ ab.from / cellSize, ab.to / cellSize };
 			if (memcmp(&crIdx, &o.crIdx, sizeof(crIdx)) == 0) return;	// no change
 			o.crIdx = crIdx;
 
@@ -198,6 +198,17 @@ namespace xx {
 			}
 		}
 
+		template<typename F>
+		void ForeachCell(XYi crIdx, F&& func) {
+			if (crIdx.x < 0 || crIdx.x >= numCols || crIdx.y < 0 || crIdx.y >= numRows) return;
+			auto c = cells[crIdx.y * numCols + crIdx.x];
+			while (c) {
+				auto next = c->next;
+				func(c->self->value);
+				c = next;
+			}
+		}
+
 		// todo: check func return value ?
 		template<typename F>
 		void ForeachPoint(XY const& p, F&& func) {
@@ -222,10 +233,19 @@ namespace xx {
 			results.Clear();
 		}
 
+		// return true: success( aabb in area )
+		XX_FORCE_INLINE bool TryFixAABB(FromTo<XY>& aabb) {
+			if (aabb.from.x < 0) aabb.from.x = 0;
+			if (aabb.from.y < 0) aabb.from.y = 0;
+			if (aabb.to.x >= max.x) aabb.to.x = max.x - std::numeric_limits<float>::epsilon();
+			if (aabb.to.y >= max.y) aabb.to.y = max.y - std::numeric_limits<float>::epsilon();
+			return aabb.from.x < aabb.to.x && aabb.from.y < aabb.to.y;
+		}
+
 		// fill items to results. need ClearResults()
 		// auto guard = xx::MakeSimpleScopeGuard([&] { sg.ClearResults(); });
 		template<bool enableLimit = false, bool enableExcept = false>
-		void ForeachAABB(xx::FromTo<XY> const& ab, int32_t* limit = nullptr, T* except = nullptr) {
+		void ForeachAABB(FromTo<XY> const& ab, int32_t* limit = nullptr, T* except = nullptr) {
 			assert(ab.from.x < ab.to.x);
 			assert(ab.from.y < ab.to.y);
 			assert(ab.from.x >= 0 && ab.from.y >= 0);
@@ -239,7 +259,7 @@ namespace xx {
 			}
 
 			// calc covered cells
-			xx::FromTo<XYi> crIdx{ ab.from / cellSize, ab.to / cellSize };
+			FromTo<XYi> crIdx{ ab.from / cellSize, ab.to / cellSize };
 
 			if (crIdx.from.x == crIdx.to.x || crIdx.from.y == crIdx.to.y) {
 				// 1-2 row, 1-2 col: do full rect check
@@ -459,69 +479,3 @@ namespace xx {
 	};
 
 }
-
-/*
-some examples
-
-
-struct Foo {
-	xx::FromTo<XY> aabb;
-
-	void Init(XY const& pos, XY const& size) {
-		auto s2 = size / 2;
-		aabb.from = pos - s2;
-		aabb.to = pos + s2;
-	}
-
-	void MoveBy(XY const& offset) {
-		aabb.from += offset;
-		aabb.to += offset;
-	}
-};
-
-
-
-	xx::SpaceABGrid<Foo> sg;
-	sg.Init(10, 10, 10);
-
-	XY pos{ 5,5 }, siz{ 9, 9 };
-	auto& f = sg.EmplaceInit(pos, siz);
-	auto& o = xx::SpaceABNode<Foo>::From(f);
-	xx::CoutN("from ", o.crIdx.from, " to ", o.crIdx.to);
-
-	sg.ForeachPoint({ 6,6 }, [](Foo& f) {
-		xx::CoutN("found f from ", f.aabb.from, " to ", f.aabb.to);
-		});
-
-	xx::SpaceABWeak<Foo> w(f);
-	xx::CoutN("w exists? ", !!w);
-
-	f.MoveBy({7,7});
-	sg.Update(f);
-	xx::CoutN("from ", o.crIdx.from, " to ", o.crIdx.to);
-
-	sg.ForeachPoint({ 13,13 }, [](Foo& f) {
-		xx::CoutN("found f from ", f.aabb.from, " to ", f.aabb.to);
-		});
-
-	auto& f2 = sg.EmplaceInit(pos, siz);
-	xx::CoutN("add f2");
-
-
-	sg.ForeachPoint({ 8,8 }, [](Foo& f) {
-		xx::CoutN("found f from ", f.aabb.from, " to ", f.aabb.to);
-		});
-
-
-	sg.ForeachAABB({ {0,0},{99,99} });
-	if (!sg.results.Empty()) {
-		for (auto& p : sg.results) {
-			xx::CoutN("found f from ", p->aabb.from, " to ", p->aabb.to);
-		}
-	}
-	sg.ClearResults();
-
-	sg.Remove(f);
-	xx::CoutN("w exists? ", !!w);
-
-*/

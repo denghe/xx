@@ -3,7 +3,7 @@
 
 namespace xx {
 
-    // sprite
+    // 2d rect picture draw class. for shaderQuadInstance
     struct Quad : QuadInstanceData {
         Ref<Frame> frame;
         GLuint texId{};   // cache: == *frame->tex
@@ -123,7 +123,8 @@ namespace xx {
         }
         XX_FORCE_INLINE Quad& Draw() const {
             assert(texId);
-            EngineBase1::Instance().ShaderBegin(EngineBase1::Instance().shaderQuadInstance).Draw(texId, *this);
+            auto& eg = EngineBase1::Instance();
+            eg.ShaderBegin(eg.shaderQuadInstance).Draw(texId, *this);
             return (Quad&)*this;
         }
 
@@ -139,7 +140,8 @@ namespace xx {
         q.color = {255, 255, 255, 255};
         */
         inline XX_FORCE_INLINE static QuadInstanceData& DrawOnce(Ref<Frame> const& f) {
-            auto& r = *EngineBase1::Instance().ShaderBegin(EngineBase1::Instance().shaderQuadInstance).Draw(f->tex->GetValue(), 1);
+            auto& eg = EngineBase1::Instance();
+            auto& r = *eg.ShaderBegin(eg.shaderQuadInstance).Draw(f->tex->GetValue(), 1);
             if (f->textureRotated) {
                 r.texRect.x = f->textureRect.x;
                 r.texRect.y = f->textureRect.y;
@@ -151,6 +153,24 @@ namespace xx {
             return r;
         }
 
+        inline XX_FORCE_INLINE static QuadInstanceData* DrawMore(Ref<Frame> const& f, int32_t count) {
+            assert(count > 0);
+            auto& eg = EngineBase1::Instance();
+            auto r = eg.ShaderBegin(eg.shaderQuadInstance).Draw(f->tex->GetValue(), count);
+            if (f->textureRotated) {
+                for (int32_t i = 0; i < count; ++i) {
+                    r[i].texRect.x = f->textureRect.x;
+                    r[i].texRect.y = f->textureRect.y;
+                    r[i].texRect.w = f->textureRect.h;
+                    r[i].texRect.h = f->textureRect.w;
+                }
+            } else {
+                for (int32_t i = 0; i < count; ++i) {
+                    r[i].texRect.data = f->textureRect.data;
+                }
+            }
+            return r;
+        }
     };
 
     // mem moveable tag
