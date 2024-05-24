@@ -309,17 +309,16 @@ namespace xx {
 				} else {
 					auto r = func(o.value);
 					switch (r) {
-					case ForeachResult::Continue: goto LabContinue;
+					case ForeachResult::Continue: break;
 					case ForeachResult::RemoveAndContinue:
 						Free(o);
-						goto LabContinue;
+						break;
 					case ForeachResult::Break: return;
 					case ForeachResult::RemoveAndBreak:
 						Free(o);
 						return;
 					}
 				}
-			LabContinue:
 				if constexpr (fromHead) {
 					idx = o.next;
 				} else {
