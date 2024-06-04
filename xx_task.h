@@ -114,10 +114,12 @@ namespace xx {
                 if constexpr(runOnce) return;
             }
         }
+
         operator bool() const { return /*!coro ||*/ coro.done(); }
         bool Resume() { Run<true>(); return coro.done(); }
         bool operator()() { Run<true>();return coro.done(); }
         void RunAll() { Run<true>(); }
+        bool HasValue() const { return coro; }
     };
 
     template<typename R>
