@@ -223,7 +223,7 @@ namespace xx {
 			}
 			if constexpr (freeBuf) {
 				for (auto& o : this->blocks) {
-					::free(o);
+					AlignedFree<Block>(o);
 				}
 				this->blocks.Clear(true);
 				this->cap = 0;
@@ -424,7 +424,7 @@ namespace xx {
 		XX_FORCE_INLINE void Reserve() {
 			auto len = this->blocks.len;
 			this->cap += 64;
-			auto b = (Block*)this->blocks.Emplace(malloc(sizeof(Block)));
+			auto b = (Block*)this->blocks.Emplace(AlignedAlloc<Block>());
 			if constexpr (!isDoubleLink) {
 				b->flags = 0;
 			}

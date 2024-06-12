@@ -34,6 +34,33 @@ namespace xx {
 
 
     /************************************************************************************/
+    // aligned alloc free
+
+    template<typename T>
+    XX_INLINE T* AlignedAlloc(size_t siz = sizeof(T)) {
+        if constexpr (alignof(T) <= 8) return (T*)malloc(siz);
+        else {
+#ifdef _MSC_VER
+            return (T*)_aligned_malloc(siz, alignof(T));
+#else
+            return (T*)aligned_malloc(alignof(T), siz);
+#endif
+        }
+    }
+
+    template<typename T>
+    XX_INLINE void AlignedFree(void* p) {
+#ifdef _MSC_VER
+        if constexpr (alignof(T) <= 8) free(p);
+        else {
+            _aligned_free(p);
+        }
+#else
+        free(p);
+#endif
+    }
+
+    /************************************************************************************/
     // helpers
 
     template<typename T>

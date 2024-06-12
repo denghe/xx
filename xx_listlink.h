@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "xx_typetraits.h"
+#include "xx_mem.h"
 
 namespace xx {
 
@@ -42,18 +43,18 @@ namespace xx {
 			assert(newCap > 0);
 			if (newCap <= cap) return;
 			cap = newCap;
+			auto newBuf = AlignedAlloc<Node>(newCap * sizeof(Node));
 			if constexpr (IsPod_v<T>) {
-				buf = (Node*)realloc(buf, sizeof(Node) * newCap);
+				memcpy(newBuf, buf, len * sizeof(Node));
 			} else {
-				auto newBuf = (Node*)::malloc(newCap * sizeof(Node));
 				for (SizeType i = 0; i < len; ++i) {
 					newBuf[i].next = buf[i].next;
 					new (&newBuf[i].value) T((T&&)buf[i].value);
 					buf[i].value.~T();
 				}
-				::free(buf);
-				buf = newBuf;
 			}
+			AlignedFree<Node>(buf);
+			buf = newBuf;
 		}
 
 		void Ensure(SizeType space) noexcept {
@@ -140,7 +141,7 @@ namespace xx {
 				}
 			}
 			if constexpr (freeBuf) {
-				::free(buf);
+				AlignedFree<Node>(buf);
 				buf = {};
 				cap = 0;
 			}

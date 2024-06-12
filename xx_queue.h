@@ -66,7 +66,7 @@ namespace xx
 			capacity = 8;
 		}
 		auto bufByteLen = Round2n(capacity * sizeof(T));
-		buf = (T*)malloc((size_t)bufByteLen);
+		buf = AlignedAlloc<T>((size_t)bufByteLen);
 		assert(buf);
 		cap = size_t(bufByteLen / sizeof(T));
 	}
@@ -84,7 +84,7 @@ namespace xx
 	Queue<T>::~Queue() noexcept {
 		assert(buf);
 		Clear();
-		free(buf);
+		AlignedFree<T>(buf);
 		buf = nullptr;
 	}
 
@@ -228,7 +228,7 @@ namespace xx
 		if (capacity <= cap) return;
 
 		auto newBufByteLen = Round2n(capacity * sizeof(T));
-		auto newBuf = (T*)malloc((size_t)newBufByteLen);
+		auto newBuf = AlignedAlloc<T>((size_t)newBufByteLen);
 		assert(newBuf);
 		auto newBufLen = size_t(newBufByteLen / sizeof(T));
 
@@ -279,7 +279,7 @@ namespace xx
 		head = 0;
 		tail = dataLen;
 
-		free(buf);
+		AlignedFree<T>(buf);
 		buf = newBuf;
 		cap = newBufLen;
 	}

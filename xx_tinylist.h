@@ -1,5 +1,6 @@
-#pragma once
+﻿#pragma once
 #include "xx_typetraits.h"
+#include "xx_mem.h"
 #pragma warning(disable: 4200)
 
 namespace xx {
@@ -63,7 +64,7 @@ namespace xx {
 			assert(cap_ > 0);
 			if (core && cap_ <= core->cap) return {};
 			if (!core) {
-				core = (Core*)malloc(sizeof(Core) + sizeof(T) * cap_);
+				core = AlignedAlloc<Core>(sizeof(Core) + sizeof(T) * cap_);
 				core->len = 0;
 				core->cap = cap_;
 				return {};
@@ -73,7 +74,7 @@ namespace xx {
 				newCap *= 2;
 			} while (newCap < cap_);
 
-			auto newCore = (Core*)malloc(sizeof(Core) + sizeof(T) * newCap);
+			auto newCore = AlignedAlloc<Core>(sizeof(Core) + sizeof(T) * newCap);
 			newCore->len = core->len;
 			newCore->cap = core->cap;
 			return newCore;
@@ -91,7 +92,7 @@ namespace xx {
 					std::destroy_at(&buf[i]);
 				}
 			}
-			::free(core);
+			AlignedFree<Core>(core);
 			core = newCore;
 		}
 
@@ -161,7 +162,7 @@ namespace xx {
 				core->len = 0;
 			}
 			if (freeBuf) {
-				::free(core);
+				AlignedFree<Core>(core);
 				core = {};
 			}
 		}

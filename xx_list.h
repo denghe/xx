@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 #include "xx_typetraits.h"
 #include "xx_string.h"
+#include "xx_mem.h"
 
 namespace xx {
 
@@ -62,14 +63,14 @@ namespace xx {
 			assert(cap_ > 0);
 			if (cap_ <= cap) return {};
 			if (!cap) {
-				buf = (T*)::malloc(cap_ * sizeof(T));
+				buf = AlignedAlloc<T>(cap_ * sizeof(T));
 				cap = cap_;
 				return {};
 			}
 			do {
 				cap *= 2;
 			} while (cap < cap_);
-			return (T*)::malloc(cap * sizeof(T));
+			return AlignedAlloc<T>(cap * sizeof(T));
 		}
 		void ReserveEnd(T* newBuf) noexcept {
 			if constexpr (IsPod_v<T>) {
@@ -81,7 +82,7 @@ namespace xx {
 					buf[i].~T();
 				}
 			}
-			::free(buf);
+			AlignedFree<T>(buf);
 			buf = newBuf;
 		}
 
@@ -152,7 +153,7 @@ namespace xx {
 				len = 0;
 			}
 			if (freeBuf) {
-				::free(buf);
+				AlignedFree<T>(buf);
 				buf = {};
 				cap = 0;
 			}

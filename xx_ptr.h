@@ -1,7 +1,9 @@
 ﻿#pragma once
 #include "xx_typetraits.h"
+#include "xx_mem.h"
 
 // 类似 std::shared_ptr / weak_ptr，非线程安全，Weak 提供了无损 sharedCount 检测功能以方便直接搞事情
+// Shared, Weak 暂不支持 aligned of > 8 的类型
 
 namespace xx {
 
@@ -39,6 +41,7 @@ namespace xx {
 
     template<typename T>
     struct Shared {
+        static_assert(alignof(T) <= sizeof(void*));
         typedef void(*Deleter)(void*);
         using HeaderType = PtrHeader_t<T>;
         using ElementType = T;
@@ -670,12 +673,15 @@ namespace xx {
 
     /************************************************************************************/
     // tiny version Shared ( no weak )
+    // support align > 8
 
     template<typename T>
     struct Ref {
         typedef void(*Deleter)(void*);
         struct HeaderType {
-            size_t sharedCount, placeHolder;
+            size_t sharedCount;
+            Deleter deleter;
+            T data;
         };
 
         using ElementType = T;
@@ -722,9 +728,13 @@ namespace xx {
             return GetHeader()->sharedCount;
         }
 
+        XX_INLINE static HeaderType* GetHeader(void* p) {
+            return container_of(p, HeaderType, data);
+        }
+
         // unsafe
         XX_INLINE HeaderType* GetHeader() const noexcept {
-            return ((HeaderType*)pointer - 1);
+            return GetHeader(pointer);
         }
 
         // unsafe
@@ -738,9 +748,9 @@ namespace xx {
                 auto h = GetHeader();
                 assert(h->sharedCount);
                 if (h->sharedCount == 1) {
-                    ((Deleter&)h->placeHolder)(pointer);
+                    h->deleter(pointer);
                     pointer = nullptr;
-                    free(h);
+                    AlignedFree<HeaderType>(h);
                 } else {
                     --h->sharedCount;
                     pointer = nullptr;
@@ -754,7 +764,7 @@ namespace xx {
             Reset();
             if (ptr) {
                 pointer = ptr;
-                ++((HeaderType*)ptr - 1)->sharedCount;
+                ++GetHeader(ptr)->sharedCount;
             }
         }
 
@@ -768,14 +778,14 @@ namespace xx {
         XX_INLINE Ref(U* ptr) {
             pointer = ptr;
             if (ptr) {
-                ++((HeaderType*)ptr - 1)->sharedCount;
+                ++GetHeader(ptr)->sharedCount;
             }
         }
 
         XX_INLINE Ref(T* ptr) {
             pointer = ptr;
             if (ptr) {
-                ++((HeaderType*)ptr - 1)->sharedCount;
+                ++GetHeader(ptr)->sharedCount;
             }
         }
 
@@ -814,13 +824,13 @@ namespace xx {
         template<std::derived_from<T> U = T, typename...Args>
         Ref<U>& Emplace(Args &&...args) {
             Reset();
-            auto h = (HeaderType*)malloc(sizeof(HeaderType) + sizeof(U));
+            auto h = AlignedAlloc<HeaderType>();
             h->sharedCount = 1;
-            (Deleter&)h->placeHolder = [](void* o) { ((U*)o)->~U(); };
-            pointer = (T*)new(h + 1) U(std::forward<Args>(args)...);
-            return (Ref<U>&) * this;
+            h->deleter = [](void* o) { ((U*)o)->~U(); };
+            pointer = &h->data;
+            new (&h->data) U(std::forward<Args>(args)...);
+            return (Ref<U>&)*this;
         }
-
     };
 
 
