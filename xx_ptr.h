@@ -3,7 +3,8 @@
 #include "xx_mem.h"
 
 // 类似 std::shared_ptr / weak_ptr，非线程安全，Weak 提供了无损 sharedCount 检测功能以方便直接搞事情
-// Shared, Weak 暂不支持 aligned of > 8 的类型
+// Shared, Weak 不支持 align > 8 的类型  Ref 支持( 基类 派生类 align 需一致 )
+// todo: 基类 派生类 alignof 需一致 的前提下改造 Shared Weak 令其也支持 align > 8
 
 namespace xx {
 
@@ -823,6 +824,8 @@ namespace xx {
 
         template<std::derived_from<T> U = T, typename...Args>
         Ref<U>& Emplace(Args &&...args) {
+            using UHT = Ref<U>::HeaderType;
+            static_assert(alignof(UHT) == alignof(HeaderType));
             Reset();
             auto h = AlignedAlloc<HeaderType>();
             h->sharedCount = 1;
