@@ -38,7 +38,7 @@ namespace xx {
 
     template<typename T>
     XX_INLINE T* AlignedAlloc(size_t siz = sizeof(T)) {
-        if constexpr (alignof(T) <= 8) return (T*)malloc(siz);
+        if constexpr (alignof(T) <= sizeof(void*)) return (T*)malloc(siz);
         else {
 #ifdef _MSC_VER
             return (T*)_aligned_malloc(siz, alignof(T));
@@ -51,7 +51,7 @@ namespace xx {
     template<typename T>
     XX_INLINE void AlignedFree(void* p) {
 #ifdef _MSC_VER
-        if constexpr (alignof(T) <= 8) free(p);
+        if constexpr (alignof(T) <= sizeof(void*)) free(p);
         else {
             _aligned_free(p);
         }

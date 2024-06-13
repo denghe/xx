@@ -2,243 +2,197 @@
 #include "xx_typetraits.h"
 #include "xx_mem.h"
 
-// 类似 std::shared_ptr / weak_ptr，非线程安全，Weak 提供了无损 sharedCount 检测功能以方便直接搞事情
-// Shared, Weak 不支持 align > 8 的类型  Ref 支持( 基类 派生类 align 需一致 )
-// todo: 基类 派生类 alignof 需一致 的前提下改造 Shared Weak 令其也支持 align > 8
+// std::shared_ptr / weak_ptr likely but thin, no atomic( fast 4 times ), a little unsafe for easy use
 
 namespace xx {
 
-    /************************************************************************************/
-    // Make 时会在内存块头部附加
+    /***********************************************************************************************/
+
+    typedef void(*PtrDeleter)(void*);
 
     struct PtrHeaderBase {
-        uint32_t sharedCount;           // 强引用计数
-        uint32_t weakCount;             // 弱引用计数
-        uint32_t placeHolder[2];        // 对于无虚析构的类型来讲，这里用来存 deleter
+        uint32_t sharedCount;
+        uint32_t weakCount;
 
-        // 创建时会调用这个函数来初始化。派生类需要提供自己的初始化函数 并调用基类的 这个函数
-        template<typename T>
-        inline static void Init(PtrHeaderBase& p) {
-            p.sharedCount = 1;
-            p.weakCount = 0;
+        XX_INLINE void Init() {
+            sharedCount = 1;
+            weakCount = 0;
         }
     };
 
-    // header 路由 适配模板
+    struct PtrHeaderBaseEx : PtrHeaderBase {
+        PtrDeleter deleter{};
+    };
+
+    template<typename T>
+    struct PtrHeader : PtrHeaderBase {
+        T data;
+    };
+
+    template<typename T>
+    struct PtrHeaderEx : PtrHeaderBaseEx {
+        T data;
+    };
+
+    template<typename HT>
+    XX_INLINE HT* GetPtrHeader(void* p) {
+        return container_of(p, HT, data);
+    }
+
     template<typename T, typename ENABLED = void>
     struct PtrHeaderSwitcher {
-        using type = PtrHeaderBase;
+        using type = std::conditional_t<std::has_virtual_destructor_v<T>, PtrHeader<T>, PtrHeaderEx<T>>;
     };
 
     template<typename T, typename ENABLED = void>
     using PtrHeader_t = typename PtrHeaderSwitcher<T>::type;
 
-
-    /************************************************************************************/
-    // std::shared_ptr like
+    template<typename T, typename U>
+    constexpr bool PtrAlignOK = alignof(U) <= sizeof(void*) && alignof(T) <= sizeof(void*) || alignof(U) == alignof(T);
 
     template<typename T>
     struct Weak;
 
-    template<typename T>
-    struct Shared {
-        static_assert(alignof(T) <= sizeof(void*));
-        typedef void(*Deleter)(void*);
+    /***********************************************************************************************/
+
+    template<typename T, bool weakSupport>
+    struct Shared_ {
         using HeaderType = PtrHeader_t<T>;
         using ElementType = T;
-        T *pointer = nullptr;
+        template<typename U>
+        using S = Shared_<U, weakSupport>;
+        T* pointer{};
 
-        XX_INLINE operator T *const &() const noexcept {
+        operator bool() const {
+            return pointer != nullptr;
+        }
+
+        bool Empty() const {
+            return pointer == nullptr;
+        }
+
+        bool HasValue() const {
+            return pointer != nullptr;
+        }
+
+        operator T *const &() const {
             return pointer;
         }
 
-        XX_INLINE operator T *&() noexcept {
+        operator T *&() {
             return pointer;
         }
 
-        XX_INLINE T *const &operator->() const noexcept {
+        T *const &operator->() const {
             return pointer;
         }
 
-        XX_INLINE T const &Value() const noexcept {
+        T const &Value() const {
             return *pointer;
         }
 
-        XX_INLINE T &Value() noexcept {
+        T &Value() {
             return *pointer;
         }
 
         template<typename ...Args>
-        XX_INLINE decltype(auto) operator()(Args&&...args) {
+        decltype(auto) operator()(Args&&...args) {
             return (*pointer)(std::forward<Args>(args)...);
         }
 
-        XX_INLINE auto& operator[](size_t idx) {
-            return pointer->operator[](idx);
-        }
-        XX_INLINE auto const& operator[](size_t idx) const {
+        auto& operator[](size_t idx) {
             return pointer->operator[](idx);
         }
 
-        [[maybe_unused]] [[nodiscard]] XX_INLINE operator bool() const noexcept {
-            return pointer != nullptr;
+        auto const& operator[](size_t idx) const {
+            return pointer->operator[](idx);
         }
 
-        [[maybe_unused]] [[nodiscard]] XX_INLINE bool Empty() const noexcept {
-            return pointer == nullptr;
-        }
+        Shared_() = default;
 
-        [[maybe_unused]] [[nodiscard]] XX_INLINE bool HasValue() const noexcept {
-            return pointer != nullptr;
-        }
-
-        [[maybe_unused]] [[nodiscard]] XX_INLINE uint32_t GetSharedCount() const noexcept {
-            if (!pointer) return 0;
-            return GetHeader()->sharedCount;
-        }
-
-        [[maybe_unused]] [[nodiscard]] XX_INLINE uint32_t GetWeakCount() const noexcept {
-            if (!pointer) return 0;
-            return GetHeader()->weakCount;
-        }
-
-        // for ObjPtrHeader only
-        [[maybe_unused]] [[nodiscard]] XX_INLINE uint32_t GetTypeId() const noexcept {
-            if (!pointer) return 0;
-            assert(GetHeader()->typeId());
-            return GetHeader()->typeId();
-        }
-
-        // unsafe
-        [[maybe_unused]] [[nodiscard]] XX_INLINE HeaderType *GetHeader() const noexcept {
-            return ((HeaderType *) pointer - 1);
-        }
-
-        void Reset() {
-            if (pointer) {
-                auto h = GetHeader();
-                assert(h->sharedCount);
-                // 不能在这里 -1, 这将导致成员 weak 指向自己时触发 free
-                if (h->sharedCount == 1) {
-                    if constexpr (!std::has_virtual_destructor_v<T>) {
-                        ((Deleter&)h->placeHolder)(pointer);
-                    }
-                    else {
-                        pointer->~T();
-                    }
-                    pointer = nullptr;
-                    if (h->weakCount == 0) {
-                        free(h);
-                    } else {
-                        h->sharedCount = 0;
-                    }
-                } else {
-                    --h->sharedCount;
-                    pointer = nullptr;
-                }
-            }
-        }
-
-        template<typename U>
-        void Reset(U* ptr) {
-            static_assert(std::is_same_v<T, U> || std::is_base_of_v<T, U>);
-            if (pointer == ptr) return;
-            Reset();
+        template<std::derived_from<T> U>
+        Shared_(U* ptr) : pointer(ptr) {
+            static_assert(PtrAlignOK<T, U>);
             if (ptr) {
-                pointer = ptr;
-                ++((HeaderType *) ptr - 1)->sharedCount;
+                ++GetPtrHeader<HeaderType>(ptr)->sharedCount;
             }
         }
 
-        XX_INLINE ~Shared() {
-            Reset();
-        }
-
-        Shared() = default;
-
-        template<typename U>
-        XX_INLINE Shared(U* ptr) {
-            static_assert(std::is_base_of_v<T, U>);
-            pointer = ptr;
+        Shared_(T* ptr) : pointer(ptr) {
             if (ptr) {
-                ++((HeaderType *) ptr - 1)->sharedCount;
+                ++GetPtrHeader<HeaderType>(ptr)->sharedCount;
             }
         }
 
-        XX_INLINE Shared(T* ptr) {
-            pointer = ptr;
-            if (ptr) {
-                ++((HeaderType *) ptr - 1)->sharedCount;
-            }
+        template<std::derived_from<T> U>
+        Shared_(S<U> const& o) : Shared_(o.pointer) {
+            static_assert(PtrAlignOK<T, U>);
         }
 
-        template<typename U>
-        XX_INLINE Shared(Shared<U> const& o) : Shared(o.pointer) {}
+        Shared_(Shared_ const& o) : Shared_(o.pointer) {}
 
-        XX_INLINE Shared(Shared const& o) : Shared(o.pointer) {}
-
-        template<typename U>
-        XX_INLINE Shared(Shared<U>&& o) noexcept {
-            static_assert(std::is_base_of_v<T, U>);
+        template<std::derived_from<T> U>
+        Shared_(S<U>&& o) {
+            static_assert(PtrAlignOK<T, U>);
             pointer = o.pointer;
-            o.pointer = nullptr;
+            o.pointer = {};
         }
 
-        XX_INLINE Shared(Shared&& o) noexcept {
+        Shared_(Shared_&& o) {
             pointer = o.pointer;
-            o.pointer = nullptr;
+            o.pointer = {};
         }
 
-        template<typename U>
-        XX_INLINE Shared &operator=(U* ptr) {
-            static_assert(std::is_base_of_v<T, U>);
+        template<std::derived_from<T> U>
+        Shared_ &operator=(U* ptr) {
+            static_assert(PtrAlignOK<T, U>);
             Reset(ptr);
             return *this;
         }
 
-        XX_INLINE Shared &operator=(T* ptr) {
+        Shared_ &operator=(T* ptr) {
             Reset(ptr);
             return *this;
         }
 
-        template<typename U>
-        XX_INLINE Shared &operator=(Shared<U> const& o) {
-            static_assert(std::is_base_of_v<T, U>);
+        template<std::derived_from<T> U>
+        Shared_ &operator=(S<U> const& o) {
+            static_assert(PtrAlignOK<T, U>);
             Reset(o.pointer);
             return *this;
         }
 
-        XX_INLINE Shared &operator=(Shared const& o) {
+        Shared_ &operator=(Shared_ const& o) {
             Reset(o.pointer);
             return *this;
         }
 
-        template<typename U>
-        XX_INLINE Shared &operator=(Shared<U> &&o) {
-            static_assert(std::is_base_of_v<T, U>);
+        template<std::derived_from<T> U>
+        Shared_ &operator=(S<U> &&o) {
+            static_assert(PtrAlignOK<T, U>);
             Reset();
-            std::swap(pointer, (*(Shared *) &o).pointer);
+            std::swap(pointer, (*(Shared_ *) &o).pointer);
             return *this;
         }
 
-        XX_INLINE Shared &operator=(Shared &&o) {
+        Shared_ &operator=(Shared_ &&o) {
             std::swap(pointer, o.pointer);
             return *this;
         }
 
         template<typename U>
-        XX_INLINE bool operator==(Shared<U> const& o) const noexcept {
+        bool operator==(S<U> const& o) const {
             return pointer == o.pointer;
         }
 
         template<typename U>
-        XX_INLINE bool operator!=(Shared<U> const& o) const noexcept {
+        bool operator!=(S<U> const& o) const {
             return pointer != o.pointer;
         }
 
-        // 有条件的话尽量使用 ObjManager 的 As, 避免发生 dynamic_cast
-        template<typename U>
-        XX_INLINE Shared<U> As() const noexcept {
+        template<std::derived_from<T> U>
+        S<U> As() const {
+            static_assert(PtrAlignOK<T, U>);
             if constexpr (std::is_same_v<U, T>) {
                 return *this;
             } else if constexpr (std::is_base_of_v<U, T>) {
@@ -248,38 +202,93 @@ namespace xx {
             }
         }
 
-        // unsafe: 直接硬转返回. 使用前通常会根据 typeId 进行合法性检测
-        template<typename U>
-        XX_INLINE Shared<U> &Cast() const noexcept {
-            return *(Shared<U> *) this;
+        // unsafe
+        template<std::derived_from<T> U>
+        S<U> &Cast() const {
+            static_assert(PtrAlignOK<T, U>);
+            return *(S<U> *) this;
         }
 
-        struct Weak<T> ToWeak() const noexcept;
+        // unsafe
+        XX_INLINE HeaderType* GetHeader() const {
+            return (HeaderType*)GetPtrHeader<HeaderType>(pointer);
+        }
 
-        // 填充式 make
-        template<typename U = T, typename...Args>
-        Shared<U>& Emplace(Args &&...args) {
-            Reset();
-            auto h = (HeaderType*)malloc(sizeof(HeaderType) + sizeof(U));
-            HeaderType::template Init<U>(*h);
-            if constexpr (!std::has_virtual_destructor_v<U>) {
-                (Deleter&)h->placeHolder = [](void* o) { ((U*)o)->~U(); };
+        uint32_t GetSharedCount() const {
+            if (!pointer) return 0;
+            return GetHeader()->sharedCount;
+        }
+
+        uint32_t GetWeakCount() const {
+            if (!pointer) return 0;
+            return GetHeader()->weakCount;
+        }
+
+        void Reset() {
+            if (pointer) {
+                auto h = GetHeader();
+                assert(h->sharedCount);
+                // think about field weak point to self
+                if (h->sharedCount == 1) {
+                    if constexpr (!std::has_virtual_destructor_v<T>) {
+                        h->deleter(pointer);
+                    } else {
+                        std::destroy_at(pointer);
+                    }
+                    pointer = {};
+                    if constexpr (weakSupport) {
+                        if (h->weakCount == 0) {
+                            AlignedFree<HeaderType>(h);
+                        } else {
+                            h->sharedCount = 0;
+                        }
+                    } else {
+                        AlignedFree<HeaderType>(h);
+                    }
+                } else {
+                    --h->sharedCount;
+                    pointer = {};
+                }
             }
-            pointer = (T*)new(h + 1) U(std::forward<Args>(args)...);
-            return (Shared<U>&) * this;
         }
 
-        // singleton convert to std::shared_ptr ( usually for thread safe )
-        std::shared_ptr<T> ToSharedPtr() noexcept {
-            assert(GetSharedCount() == 1 && GetWeakCount() == 0);
-            auto bak = pointer;
-            pointer = nullptr;
-            return std::shared_ptr<T>(bak, [](T *p) {
-                p->~T();
-                free((HeaderType *) p - 1);
-            });
+        template<std::derived_from<T> U>
+        void Reset(U* ptr) {
+            static_assert(PtrAlignOK<T, U>);
+            if (pointer == ptr) return;
+            Reset();
+            if (ptr) {
+                pointer = ptr;
+                ++GetPtrHeader<HeaderType>(ptr)->sharedCount;
+            }
         }
+
+        ~Shared_() {
+            Reset();
+        }
+
+        template<std::derived_from<T> U = T, typename...Args>
+        S<U>& Emplace(Args &&...args) {
+            static_assert(PtrAlignOK<T, U>);
+            Reset();
+            auto h = AlignedAlloc<typename S<U>::HeaderType>();
+            h->Init();
+            pointer = (T*)&h->data;
+            if constexpr (!std::has_virtual_destructor_v<U>) {
+                h->deleter = [](void* o) { std::destroy_at((U*)o); };
+            }
+            std::construct_at(&h->data, std::forward<Args>(args)...);
+            return (S<U>&)*this;
+        }
+
+        struct Weak<T> ToWeak() const requires(weakSupport);
     };
+
+    template<typename T>
+    using Shared = Shared_<T, true>;
+
+    template<typename T>
+    using Ref = Shared_<T, false>;
 
     /************************************************************************************/
     // std::weak_ptr like
@@ -288,277 +297,207 @@ namespace xx {
     struct Weak {
         using HeaderType = PtrHeader_t<T>;
         using ElementType = T;
-        HeaderType *h = nullptr;
+        HeaderType* h{};
 
-        [[maybe_unused]] [[nodiscard]] XX_INLINE uint32_t GetSharedCount() const noexcept {
+        uint32_t GetSharedCount() const {
             if (!h) return 0;
             return h->sharedCount;
         }
 
-        [[maybe_unused]] [[nodiscard]] XX_INLINE uint32_t GetWeakCount() const noexcept {
+        uint32_t GetWeakCount() const {
             if (!h) return 0;
             return h->weakCount;
         }
 
-        // for ObjPtrHeader only
-        [[maybe_unused]] [[nodiscard]] XX_INLINE uint32_t GetTypeId() const noexcept {
-            if (!h) return 0;
-            return h->typeId;
-        }
-
-        [[maybe_unused]] [[nodiscard]] XX_INLINE operator bool() const noexcept {
+        operator bool() const {
             return h && h->sharedCount;
         }
 
-        // unsafe: 直接计算出指针
-        [[maybe_unused]] [[nodiscard]] XX_INLINE T *pointer() const {
-            return (T *) (h + 1);
+        // unsafe
+        T *pointer() const {
+            return &h->data;
         }
-        [[maybe_unused]] [[nodiscard]] XX_INLINE T *GetPointer() const {
+
+        // unsafe
+        T *GetPointer() const {
             return pointer();
         }
 
         // unsafe
-        [[maybe_unused]] XX_INLINE void SetH(void* h_) {
+        void SetH(void* h_) {
             h = (HeaderType*)h_;
         }
 
-        // unsafe
         template<typename ...Args>
-        XX_INLINE decltype(auto) operator()(Args&&...args) {
+        decltype(auto) operator()(Args&&...args) {
             return (*pointer())(std::forward<Args>(args)...);
         }
 
-
-        XX_INLINE void Reset() {
+        void Reset() {
             if (h) {
                 if (h->weakCount == 1 && h->sharedCount == 0) {
-                    free(h);
+                    AlignedFree<HeaderType>(h);
                 } else {
                     --h->weakCount;
                 }
-                h = nullptr;
+                h = {};
             }
         }
 
-        template<typename U>
-        XX_INLINE void Reset(Shared<U> const& s) {
-            static_assert(std::is_same_v<T, U> || std::is_base_of_v<T, U>);
+        template<std::derived_from<T> U>
+        void Reset(Shared<U> const& s) {
+            static_assert(PtrAlignOK<T, U>);
             Reset();
             if (s.pointer) {
-                h = ((HeaderType *) s.pointer - 1);
+                h = s.GetHeader();
                 ++h->weakCount;
             }
         }
 
-        [[maybe_unused]] [[nodiscard]] XX_INLINE Shared<T> Lock() const {
+        Shared<T> Lock() const {
             if (h && h->sharedCount) {
-                auto p = h + 1;
-                return *(Shared<T> *) &p;
+                auto p = &h->data;
+                return (Shared<T>&)p;
             }
             return {};
         }
 
-        // unsafe 系列: 要安全使用，每次都 if 真 再调用这些函数 1 次。一次 if 多次调用的情景除非很有把握在期间 Shared 不会析构，否则还是 Lock()
-        [[maybe_unused]] [[nodiscard]] XX_INLINE ElementType *operator->() const noexcept {
-            return (ElementType *) (h + 1);
+        // unsafe: need ensure "alive"
+        ElementType *operator->() const {
+            return &h->data;
         }
 
-        [[maybe_unused]] [[nodiscard]] XX_INLINE ElementType const &Value() const noexcept {
-            return *(ElementType *) (h + 1);
+        // unsafe: need ensure "alive"
+        ElementType const &Value() const {
+            return h->data;
         }
 
-        [[maybe_unused]] [[nodiscard]] XX_INLINE ElementType &Value() noexcept {
-            return *(ElementType *) (h + 1);
+        // unsafe: need ensure "alive"
+        ElementType &Value() {
+            return h->data;
         }
 
-        XX_INLINE operator ElementType *() const noexcept {
-            return (ElementType *) (h + 1);
+        // unsafe: need ensure "alive"
+        operator ElementType *() const {
+            return &h->data;
         }
 
-        template<typename U>
-        XX_INLINE Weak &operator=(Shared<U> const &o) {
-            static_assert(std::is_same_v<T, U> || std::is_base_of_v<T, U>);
+        template<std::derived_from<T> U>
+        Weak &operator=(Shared<U> const &o) {
             Reset(o);
             return *this;
         }
 
-        template<typename U>
-        XX_INLINE Weak(Shared<U> const &o) {
-            static_assert(std::is_same_v<T, U> || std::is_base_of_v<T, U>);
+        template<std::derived_from<T> U>
+        Weak(Shared<U> const &o) {
             Reset(o);
         }
 
-        XX_INLINE ~Weak() {
+        ~Weak() {
             Reset();
         }
 
         Weak() = default;
 
-        XX_INLINE Weak(Weak const &o) {
-            if ((h = o.h)) {
+        Weak(Weak const &o) : h(o.h) {
+            if (o.h) {
                 ++o.h->weakCount;
             }
         }
 
-        template<typename U>
-        XX_INLINE Weak(Weak<U> const &o) {
-            static_assert(std::is_base_of_v<T, U>);
-            if ((h = o.h)) {
+        template<std::derived_from<T> U>
+        Weak(Weak<U> const &o) : h(o.h) {
+            static_assert(PtrAlignOK<T, U>);
+            if (o.h) {
                 ++o.h->weakCount;
             }
         }
 
-        XX_INLINE Weak(Weak &&o) noexcept {
-            h = o.h;
-            o.h = nullptr;
+        Weak(Weak &&o) : h(o.h) {
+            o.h = {};
         }
 
-        template<typename U>
-        XX_INLINE Weak(Weak<U> &&o) noexcept {
-            static_assert(std::is_base_of_v<T, U>);
-            h = o.h;
-            o.h = nullptr;
+        template<std::derived_from<T> U>
+        Weak(Weak<U> &&o) : h(o.h) {
+            static_assert(PtrAlignOK<T, U>);
+            o.h = {};
         }
 
-        XX_INLINE Weak &operator=(Weak const &o) {
+        Weak &operator=(Weak const &o) {
             if (&o != this) {
                 Reset(o.Lock());
             }
             return *this;
         }
 
-        template<typename U>
-        XX_INLINE Weak &operator=(Weak<U> const &o) {
-            static_assert(std::is_base_of_v<T, U>);
+        template<std::derived_from<T> U>
+        Weak &operator=(Weak<U> const &o) {
             if ((void *) &o != (void *) this) {
                 Reset(((Weak *) (&o))->Lock());
             }
             return *this;
         }
 
-        XX_INLINE Weak &operator=(Weak &&o) noexcept {
+        Weak &operator=(Weak &&o) {
             std::swap(h, o.h);
             return *this;
         }
-        // operator=(Weak&& o) 没有模板实现，因为不确定交换 h 之后的类型是否匹配
 
-        template<typename U>
-        XX_INLINE bool operator==(Weak<U> const &o) const noexcept {
+        template<std::derived_from<T> U>
+        bool operator==(Weak<U> const &o) const {
             return h == o.h;
         }
 
-        template<typename U>
-        XX_INLINE bool operator!=(Weak<U> const &o) const noexcept {
+        template<std::derived_from<T> U>
+        bool operator!=(Weak<U> const &o) const {
             return h != o.h;
         }
     };
 
-    template<typename T>
-    Weak<T> Shared<T>::ToWeak() const noexcept {
+    template<typename T, bool weakSupport>
+    Weak<T> Shared_<T, weakSupport>::ToWeak() const requires(weakSupport) {
         if (pointer) {
-            auto h = (HeaderType *) pointer - 1;
-            return *(Weak<T> *) &h;
+            auto h = GetHeader();
+            return (Weak<T>&)h;
         }
         return {};
     }
 
-
     /************************************************************************************/
 
-    // generic store weak ptrs ( for managers )
-    struct WeakHolder {
-        PtrHeaderBase *h = nullptr;
+    // memmove support flags
+    template<typename T> struct IsPod<Shared<T>, void> : std::true_type {};
+    template<typename T> struct IsPod<Weak<T>, void> : std::true_type {};
+    template<typename T> struct IsPod<Ref<T>, void> : std::true_type {};
 
-        template<typename U>
-        WeakHolder(Weak<U> &&o) noexcept {
-            static_assert(std::is_base_of_v<PtrHeaderBase, typename Weak<U>::HeaderType>);
-            h = std::exchange(o.h, nullptr);
-        }
-        template<typename U>
-        WeakHolder(Weak<U> const&o) noexcept {
-            static_assert(std::is_base_of_v<PtrHeaderBase, typename Weak<U>::HeaderType>);
-            if ((h = o.h)) {
-                ++o.h->weakCount;
-            }
-        }
-        template<typename U>
-        WeakHolder(Shared<U> &o) noexcept : WeakHolder(o.ToWeak()) {}
-        WeakHolder() = default;
-        WeakHolder(WeakHolder const&) = delete;
-        WeakHolder& operator=(WeakHolder const&) = delete;
-        WeakHolder(WeakHolder &&o) noexcept : h(std::exchange(o.h, nullptr)) {}
-        WeakHolder& operator=(WeakHolder &&o) noexcept {
-            std::swap(h, o.h);
-            return *this;
-        }
-        ~WeakHolder() {
-            if (h) {
-                if (h->weakCount == 1 && h->sharedCount == 0) {
-                    free(h);
-                } else {
-                    --h->weakCount;
-                }
-                h = nullptr;
-            }
-        }
-        operator bool() const noexcept {
-            return h && h->sharedCount;
-        }
-    };
+    template<typename T> struct IsShared : std::false_type {};
+    template<typename T> struct IsShared<Shared<T>> : std::true_type {};
+    template<typename T> struct IsShared<Shared<T> &> : std::true_type {};
+    template<typename T> struct IsShared<Shared<T> const &> : std::true_type {};
+    template<typename T> constexpr bool IsShared_v = IsShared<T>::value;
 
-    /************************************************************************************/
-    // helpers
+    template<typename T> struct IsWeak : std::false_type {};
+    template<typename T> struct IsWeak<Weak<T>> : std::true_type {};
+    template<typename T> struct IsWeak<Weak<T> &> : std::true_type {};
+    template<typename T> struct IsWeak<Weak<T> const &> : std::true_type {};
+    template<typename T> constexpr bool IsWeak_v = IsWeak<T>::value;
 
-    // 标识内存可移动
-    template<typename T>
-    struct IsPod<Shared<T>, void> : std::true_type {};
-    template<typename T>
-    struct IsPod<Weak<T>, void> : std::true_type {};
-
-
-    template<typename T>
-    struct IsShared : std::false_type {
-    };
-    template<typename T>
-    struct IsShared<Shared<T>> : std::true_type {
-    };
-    template<typename T>
-    struct IsShared<Shared<T> &> : std::true_type {
-    };
-    template<typename T>
-    struct IsShared<Shared<T> const &> : std::true_type {
-    };
-    template<typename T>
-    constexpr bool IsShared_v = IsShared<T>::value;
-
-
-    template<typename T>
-    struct IsWeak : std::false_type {
-    };
-    template<typename T>
-    struct IsWeak<Weak<T>> : std::true_type {
-    };
-    template<typename T>
-    struct IsWeak<Weak<T> &> : std::true_type {
-    };
-    template<typename T>
-    struct IsWeak<Weak<T> const &> : std::true_type {
-    };
-    template<typename T>
-    constexpr bool IsWeak_v = IsWeak<T>::value;
+    template<typename T> struct IsRef : std::false_type {};
+    template<typename T> struct IsRef<Ref<T>> : std::true_type {};
+    template<typename T> struct IsRef<Ref<T>&> : std::true_type {};
+    template<typename T> struct IsRef<Ref<T> const&> : std::true_type {};
+    template<typename T> constexpr bool IsRef_v = IsRef<T>::value;
 
 
     template<typename T, typename...Args>
-    [[maybe_unused]] [[nodiscard]] Shared<T> MakeShared(Args &&...args) {
+    Shared<T> MakeShared(Args &&...args) {
         Shared<T> rtv;
         rtv.Emplace(std::forward<Args>(args)...);
-        //std::cout << "Make<" << xx::TypeName<T>() << ">.pointer = " << (size_t)rtv.pointer << std::endl;
         return rtv;
     }
 
     template<typename T, typename ...Args>
-    Shared<T> TryMakeShared(Args &&...args) noexcept {
+    Shared<T> TryMakeShared(Args &&...args) {
         try {
             return Make<T>(std::forward<Args>(args)...);
         }
@@ -574,18 +513,18 @@ namespace xx {
     }
 
     template<typename T, typename ...Args>
-    Shared<T> &TryMakeSharedTo(Shared<T> &v, Args &&...args) noexcept {
+    Shared<T> &TryMakeSharedTo(Shared<T> &v, Args &&...args) {
         v = TryMake<T>(std::forward<Args>(args)...);
         return v;
     }
 
     template<typename T, typename U>
-    Shared<T> As(Shared<U> const &v) noexcept {
+    Shared<T> As(Shared<U> const &v) {
         return v.template As<T>();
     }
 
     template<typename T, typename U>
-    bool Is(Shared<U> const &v) noexcept {
+    bool Is(Shared<U> const &v) {
         return !v.template As<T>().Empty();
     }
 
@@ -603,259 +542,8 @@ namespace xx {
         return (*(Shared<T>*)&thiz).ToWeak();
     }
 
-
-
-
-
-
-
-// 针对跨线程安全访问需求，将 pointer 持有+1 并塞入 std::shared_ptr，参数为安全删除 lambda
-// 令 std::shared_ptr 在最终销毁时，将指针( xx::Shared 的原始形态 ) 封送到安全线程操作
-// 最终利用 o 的析构来安全删除 pointer ( 可能还有别的持有 )
-// 下面的封装 令 std::shared_ptr<T*> 用起来更友善
-/* 示例：下列代码可能存在于主线程环境类中
-
-    // 共享：加持 & 封送
-    template<typename T>
-    xx::SharedBox<T> ToSharedBox(xx::Shared<T> const& s) {
-        return xx::SharedBox<T>(s, [this](T **p) { Dispatch([p] { xx::Shared<T> o; o.pointer = *p; }); });
-    }
-
-    // 如果独占：不加持 不封送 就地删除
-    template<typename T>
-    xx::SharedBox<T> ToSharedBox(xx::Shared<T> && s) {
-        if (s.GetHeader()->sharedCount == 1) return xx::SharedBox<T>(std::move(s), [this](T **p) { xx::Shared<T> o; o.pointer = *p; });
-        else return xx::SharedBox<T>(s, [this](T **p) { Dispatch([p] { xx::Shared<T> o; o.pointer = *p; }); });
-    }
-
-*/
-    template<typename T>
-    struct SharedBox {
-        SharedBox(SharedBox const&) = default;
-        SharedBox(SharedBox &&) noexcept = default;
-        SharedBox& operator=(SharedBox const&) = default;
-        SharedBox& operator=(SharedBox &&) noexcept = default;
-
-        std::shared_ptr<T*> ptr;
-
-        template<typename F>
-        SharedBox(Shared<T> const& s, F &&f) {
-            assert(s);
-            ++s.GetHeader()->sharedCount;
-            ptr = std::shared_ptr<T*>(new T *(s.pointer), std::forward<F>(f));
-        }
-
-        template<typename F>
-        SharedBox(Shared<T> && s, F &&f) {
-            assert(s);
-            ptr = std::shared_ptr<T*>(new T *(s.pointer), std::forward<F>(f));
-            s.pointer = nullptr;
-        }
-
-        XX_INLINE explicit operator T *const &() const noexcept {
-            return *ptr;
-        }
-
-        XX_INLINE explicit operator T *&() noexcept {
-            return *ptr;
-        }
-
-        XX_INLINE T *const &operator->() const noexcept {
-            return *ptr;
-        }
-    };
-
-
-
-
-
-
-
-
-    /************************************************************************************/
-    // tiny version Shared ( no weak )
-    // support align > 8
-
-    template<typename T>
-    struct Ref {
-        typedef void(*Deleter)(void*);
-        struct HeaderType {
-            size_t sharedCount;
-            Deleter deleter;
-            T data;
-        };
-
-        using ElementType = T;
-        T* pointer = nullptr;
-
-        XX_INLINE operator T* const& () const noexcept {
-            return pointer;
-        }
-
-        XX_INLINE operator T*& () noexcept {
-            return pointer;
-        }
-
-        XX_INLINE T* const& operator->() const noexcept {
-            return pointer;
-        }
-
-        XX_INLINE T const& Value() const noexcept {
-            return *pointer;
-        }
-
-        XX_INLINE T& Value() noexcept {
-            return *pointer;
-        }
-
-        template<typename ...Args>
-        XX_INLINE decltype(auto) operator()(Args&&...args) {
-            return (*pointer)(std::forward<Args>(args)...);
-        }
-
-        XX_INLINE auto& operator[](size_t idx) {
-            return pointer->operator[](idx);
-        }
-        XX_INLINE auto const& operator[](size_t idx) const {
-            return pointer->operator[](idx);
-        }
-
-        XX_INLINE operator bool() const noexcept {
-            return pointer != nullptr;
-        }
-
-        XX_INLINE size_t GetSharedCount() const noexcept {
-            if (!pointer) return 0;
-            return GetHeader()->sharedCount;
-        }
-
-        XX_INLINE static HeaderType* GetHeader(void* p) {
-            return container_of(p, HeaderType, data);
-        }
-
-        // unsafe
-        XX_INLINE HeaderType* GetHeader() const noexcept {
-            return GetHeader(pointer);
-        }
-
-        // unsafe
-        template<typename U>
-        XX_INLINE Ref<U>& Cast() const noexcept {
-            return *(Ref<U>*)this;
-        }
-
-        void Reset() {
-            if (pointer) {
-                auto h = GetHeader();
-                assert(h->sharedCount);
-                if (h->sharedCount == 1) {
-                    h->deleter(pointer);
-                    pointer = nullptr;
-                    AlignedFree<HeaderType>(h);
-                } else {
-                    --h->sharedCount;
-                    pointer = nullptr;
-                }
-            }
-        }
-
-        template<std::derived_from<T> U>
-        void Reset(U* ptr) {
-            if (pointer == ptr) return;
-            Reset();
-            if (ptr) {
-                pointer = ptr;
-                ++GetHeader(ptr)->sharedCount;
-            }
-        }
-
-        XX_INLINE ~Ref() {
-            Reset();
-        }
-
-        Ref() = default;
-
-        template<std::derived_from<T> U>
-        XX_INLINE Ref(U* ptr) {
-            pointer = ptr;
-            if (ptr) {
-                ++GetHeader(ptr)->sharedCount;
-            }
-        }
-
-        XX_INLINE Ref(T* ptr) {
-            pointer = ptr;
-            if (ptr) {
-                ++GetHeader(ptr)->sharedCount;
-            }
-        }
-
-        XX_INLINE Ref(Ref const& o) : Ref(o.pointer) {}
-
-        XX_INLINE Ref(Ref&& o) noexcept {
-            pointer = o.pointer;
-            o.pointer = nullptr;
-        }
-
-        XX_INLINE Ref& operator=(T* ptr) {
-            Reset(ptr);
-            return *this;
-        }
-
-        XX_INLINE Ref& operator=(Ref const& o) {
-            Reset(o.pointer);
-            return *this;
-        }
-
-        XX_INLINE Ref& operator=(Ref&& o) {
-            std::swap(pointer, o.pointer);
-            return *this;
-        }
-
-        template<typename U>
-        XX_INLINE bool operator==(Ref<U> const& o) const noexcept {
-            return pointer == o.pointer;
-        }
-
-        template<typename U>
-        XX_INLINE bool operator!=(Ref<U> const& o) const noexcept {
-            return pointer != o.pointer;
-        }
-
-        template<std::derived_from<T> U = T, typename...Args>
-        Ref<U>& Emplace(Args &&...args) {
-            using UHT = Ref<U>::HeaderType;
-            static_assert(alignof(UHT) == alignof(HeaderType));
-            Reset();
-            auto h = AlignedAlloc<HeaderType>();
-            h->sharedCount = 1;
-            h->deleter = [](void* o) { ((U*)o)->~U(); };
-            pointer = &h->data;
-            new (&h->data) U(std::forward<Args>(args)...);
-            return (Ref<U>&)*this;
-        }
-    };
-
-
-    /************************************************************************************/
-    // helpers
-
-    template<typename T>
-    struct IsPod<Ref<T>, void> : std::true_type {};
-
-    template<typename T>
-    struct IsRef : std::false_type {};
-    template<typename T>
-    struct IsRef<Ref<T>> : std::true_type {};
-    template<typename T>
-    struct IsRef<Ref<T>&> : std::true_type {};
-    template<typename T>
-    struct IsRef<Ref<T> const&> : std::true_type {};
-    template<typename T>
-    constexpr bool IsRef_v = IsRef<T>::value;
-
     template<typename T, typename...Args>
-    [[maybe_unused]] [[nodiscard]] Ref<T> MakeRef(Args &&...args) {
+    Ref<T> MakeRef(Args &&...args) {
         Ref<T> rtv;
         rtv.Emplace(std::forward<Args>(args)...);
         return rtv;

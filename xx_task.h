@@ -283,9 +283,9 @@ namespace xx {
         }
     };
 
-    using WeakTasks = CondTasks<WeakHolder>;
+    //using WeakTasks = CondTasks<WeakHolder>;
 
-    using OptWeakTasks = CondTasks<std::optional<WeakHolder>>;
+    //using OptWeakTasks = CondTasks<std::optional<WeakHolder>>;
 
     /*************************************************************************************************************************/
     /*************************************************************************************************************************/
