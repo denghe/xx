@@ -1,38 +1,23 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
-
-	<Type Name="xx::PtrHeaderBase" Inheritable="false">
-		<Expand>
-			<Item Name="sharedCount">sharedCount</Item>
-			<Item Name="weakCount">weakCount</Item>
-			<Item Name="placeHolder">placeHolder</Item>
-		</Expand>
-	</Type>
-
-	<Type Name="xx::Shared&lt;*&gt;">
+	
+	<Type Name="xx::Shared_&lt;*,*&gt;">
 		<DisplayString Condition="pointer == 0">null</DisplayString>
-		<DisplayString Condition="pointer != 0">{*pointer}</DisplayString>
-		<Expand>
-			<Item Condition="pointer != 0" Name="[header]">(HeaderType*)pointer - 1</Item>
-			<Item Condition="pointer != 0" Name="[pointer]">pointer</Item>
+		<DisplayString Condition="pointer != 0">{((HeaderType*)((char*)pointer - ((::size_t)&amp;(char&amp;)((((HeaderType*)0)->data)))))}</DisplayString>
+		<Expand HideRawView="true">
+			<Item Condition="pointer != 0" Name="[sharedCount]">((HeaderType*)((char*)pointer - ((::size_t)&amp;(char&amp;)((((HeaderType*)0)->data)))))->sharedCount</Item>
+			<Item Condition="pointer != 0" Name="[weakCount]">((HeaderType*)((char*)pointer - ((::size_t)&amp;(char&amp;)((((HeaderType*)0)->data)))))->weakCount</Item>
+			<Item Condition="pointer != 0" Name="[data]">pointer</Item>
 		</Expand>
 	</Type>
-
+	
 	<Type Name="xx::Weak&lt;*&gt;">
 		<DisplayString Condition="h == 0 || (*h).sharedCount == 0">null</DisplayString>
-		<DisplayString Condition="h != 0 &amp;&amp; (*h).sharedCount != 0">{($T1*)(h+1)}</DisplayString>
-		<Expand>
-			<Item Condition="h != 0" Name="[header]">h</Item>
-			<Item Condition="h != 0 &amp;&amp; (*h).sharedCount != 0" Name="[pointer]">($T1*)(h+1)</Item>
-		</Expand>
-	</Type>
-
-	<Type Name="xx::Ref&lt;*&gt;">
-		<DisplayString Condition="pointer == 0">null</DisplayString>
-		<DisplayString Condition="pointer != 0">{*pointer}</DisplayString>
-		<Expand>
-			<Item Condition="pointer != 0" Name="[header]">(HeaderType*)pointer - 1</Item>
-			<Item Condition="pointer != 0" Name="[pointer]">pointer</Item>
+		<DisplayString Condition="h != 0 &amp;&amp; (*h).sharedCount != 0">{h}</DisplayString>
+		<Expand HideRawView="true">
+			<Item Condition="h != 0" Name="[sharedCount]">h->sharedCount</Item>
+			<Item Condition="h != 0" Name="[weakCount]">h->weakCount</Item>
+			<Item Condition="h != 0 &amp;&amp; (*h).sharedCount != 0" Name="[data]">h->data</Item>
 		</Expand>
 	</Type>
 

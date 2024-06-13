@@ -8,30 +8,28 @@ namespace xx {
 
     /***********************************************************************************************/
 
-    typedef void(*PtrDeleter)(void*);
-
-    struct PtrHeaderBase {
+    template<typename T>
+    struct PtrHeader {
         uint32_t sharedCount;
         uint32_t weakCount;
-
+        T data;
         XX_INLINE void Init() {
             sharedCount = 1;
             weakCount = 0;
         }
     };
 
-    struct PtrHeaderBaseEx : PtrHeaderBase {
+    typedef void(*PtrDeleter)(void*);
+    template<typename T>
+    struct PtrHeaderEx {
+        uint32_t sharedCount;
+        uint32_t weakCount;
         PtrDeleter deleter{};
-    };
-
-    template<typename T>
-    struct PtrHeader : PtrHeaderBase {
         T data;
-    };
-
-    template<typename T>
-    struct PtrHeaderEx : PtrHeaderBaseEx {
-        T data;
+        XX_INLINE void Init() {
+            sharedCount = 1;
+            weakCount = 0;
+        }
     };
 
     template<typename HT>
@@ -48,7 +46,7 @@ namespace xx {
     using PtrHeader_t = typename PtrHeaderSwitcher<T>::type;
 
     template<typename T, typename U>
-    constexpr bool PtrAlignOK = alignof(U) <= sizeof(void*) && alignof(T) <= sizeof(void*) || alignof(U) == alignof(T);
+    constexpr bool PtrAlignCheck_v = alignof(U) <= sizeof(void*) && alignof(T) <= sizeof(void*) || alignof(U) == alignof(T);
 
     template<typename T>
     struct Weak;
@@ -112,7 +110,7 @@ namespace xx {
 
         template<std::derived_from<T> U>
         Shared_(U* ptr) : pointer(ptr) {
-            static_assert(PtrAlignOK<T, U>);
+            static_assert(PtrAlignCheck_v<T, U>);
             if (ptr) {
                 ++GetPtrHeader<HeaderType>(ptr)->sharedCount;
             }
@@ -126,14 +124,14 @@ namespace xx {
 
         template<std::derived_from<T> U>
         Shared_(S<U> const& o) : Shared_(o.pointer) {
-            static_assert(PtrAlignOK<T, U>);
+            static_assert(PtrAlignCheck_v<T, U>);
         }
 
         Shared_(Shared_ const& o) : Shared_(o.pointer) {}
 
         template<std::derived_from<T> U>
         Shared_(S<U>&& o) {
-            static_assert(PtrAlignOK<T, U>);
+            static_assert(PtrAlignCheck_v<T, U>);
             pointer = o.pointer;
             o.pointer = {};
         }
@@ -145,7 +143,7 @@ namespace xx {
 
         template<std::derived_from<T> U>
         Shared_ &operator=(U* ptr) {
-            static_assert(PtrAlignOK<T, U>);
+            static_assert(PtrAlignCheck_v<T, U>);
             Reset(ptr);
             return *this;
         }
@@ -157,7 +155,7 @@ namespace xx {
 
         template<std::derived_from<T> U>
         Shared_ &operator=(S<U> const& o) {
-            static_assert(PtrAlignOK<T, U>);
+            static_assert(PtrAlignCheck_v<T, U>);
             Reset(o.pointer);
             return *this;
         }
@@ -169,7 +167,7 @@ namespace xx {
 
         template<std::derived_from<T> U>
         Shared_ &operator=(S<U> &&o) {
-            static_assert(PtrAlignOK<T, U>);
+            static_assert(PtrAlignCheck_v<T, U>);
             Reset();
             std::swap(pointer, (*(Shared_ *) &o).pointer);
             return *this;
@@ -192,7 +190,7 @@ namespace xx {
 
         template<std::derived_from<T> U>
         S<U> As() const {
-            static_assert(PtrAlignOK<T, U>);
+            static_assert(PtrAlignCheck_v<T, U>);
             if constexpr (std::is_same_v<U, T>) {
                 return *this;
             } else if constexpr (std::is_base_of_v<U, T>) {
@@ -205,7 +203,7 @@ namespace xx {
         // unsafe
         template<std::derived_from<T> U>
         S<U> &Cast() const {
-            static_assert(PtrAlignOK<T, U>);
+            static_assert(PtrAlignCheck_v<T, U>);
             return *(S<U> *) this;
         }
 
@@ -254,7 +252,7 @@ namespace xx {
 
         template<std::derived_from<T> U>
         void Reset(U* ptr) {
-            static_assert(PtrAlignOK<T, U>);
+            static_assert(PtrAlignCheck_v<T, U>);
             if (pointer == ptr) return;
             Reset();
             if (ptr) {
@@ -269,7 +267,7 @@ namespace xx {
 
         template<std::derived_from<T> U = T, typename...Args>
         S<U>& Emplace(Args &&...args) {
-            static_assert(PtrAlignOK<T, U>);
+            static_assert(PtrAlignCheck_v<T, U>);
             Reset();
             auto h = AlignedAlloc<typename S<U>::HeaderType>();
             h->Init();
@@ -281,7 +279,7 @@ namespace xx {
             return (S<U>&)*this;
         }
 
-        struct Weak<T> ToWeak() const requires(weakSupport);
+        Weak<T> ToWeak() const requires(weakSupport);
     };
 
     template<typename T>
@@ -346,7 +344,7 @@ namespace xx {
 
         template<std::derived_from<T> U>
         void Reset(Shared<U> const& s) {
-            static_assert(PtrAlignOK<T, U>);
+            static_assert(PtrAlignCheck_v<T, U>);
             Reset();
             if (s.pointer) {
                 h = s.GetHeader();
@@ -407,7 +405,7 @@ namespace xx {
 
         template<std::derived_from<T> U>
         Weak(Weak<U> const &o) : h(o.h) {
-            static_assert(PtrAlignOK<T, U>);
+            static_assert(PtrAlignCheck_v<T, U>);
             if (o.h) {
                 ++o.h->weakCount;
             }
@@ -419,7 +417,7 @@ namespace xx {
 
         template<std::derived_from<T> U>
         Weak(Weak<U> &&o) : h(o.h) {
-            static_assert(PtrAlignOK<T, U>);
+            static_assert(PtrAlignCheck_v<T, U>);
             o.h = {};
         }
 
@@ -556,6 +554,16 @@ namespace xx {
         return (Ref<T>&)thiz;
     }
 
+    template<typename U, typename T = U>
+    Weak<T> ToWeak(Shared<U> const& s) {
+        static_assert(std::is_base_of_v<T, U>);
+        static_assert(PtrAlignCheck_v<T, U>);
+        if (s) {
+            auto h = s.GetHeader();
+            return (Weak<T>&)h;
+        }
+        return {};
+    }
 }
 
 // let Shared Weak Ref support std hash container
