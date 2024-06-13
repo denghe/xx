@@ -8,20 +8,9 @@ namespace xx {
 
     /***********************************************************************************************/
 
-    template<typename T>
-    struct PtrHeader {
-        uint32_t sharedCount;
-        uint32_t weakCount;
-        T data;
-        XX_INLINE void Init() {
-            sharedCount = 1;
-            weakCount = 0;
-        }
-    };
-
     typedef void(*PtrDeleter)(void*);
     template<typename T>
-    struct PtrHeaderEx {
+    struct PtrHeader {
         uint32_t sharedCount;
         uint32_t weakCount;
         PtrDeleter deleter{};
@@ -39,7 +28,7 @@ namespace xx {
 
     template<typename T, typename ENABLED = void>
     struct PtrHeaderSwitcher {
-        using type = std::conditional_t<std::has_virtual_destructor_v<T>, PtrHeader<T>, PtrHeaderEx<T>>;
+        using type = PtrHeader<T>;
     };
 
     template<typename T, typename ENABLED = void>
@@ -228,11 +217,7 @@ namespace xx {
                 assert(h->sharedCount);
                 // think about field weak point to self
                 if (h->sharedCount == 1) {
-                    if constexpr (!std::has_virtual_destructor_v<T>) {
-                        h->deleter(pointer);
-                    } else {
-                        std::destroy_at(pointer);
-                    }
+                    h->deleter(pointer);
                     pointer = {};
                     if constexpr (weakSupport) {
                         if (h->weakCount == 0) {
@@ -272,9 +257,7 @@ namespace xx {
             auto h = AlignedAlloc<typename S<U>::HeaderType>();
             h->Init();
             pointer = (T*)&h->data;
-            if constexpr (!std::has_virtual_destructor_v<U>) {
-                h->deleter = [](void* o) { std::destroy_at((U*)o); };
-            }
+            h->deleter = [](void* o) { std::destroy_at((U*)o); };
             std::construct_at(&h->data, std::forward<Args>(args)...);
             return (S<U>&)*this;
         }
@@ -464,6 +447,7 @@ namespace xx {
     /************************************************************************************/
 
     // memmove support flags
+    template<typename T, bool b> struct IsPod<Shared_<T, b>, void> : std::true_type {};
     template<typename T> struct IsPod<Shared<T>, void> : std::true_type {};
     template<typename T> struct IsPod<Weak<T>, void> : std::true_type {};
     template<typename T> struct IsPod<Ref<T>, void> : std::true_type {};

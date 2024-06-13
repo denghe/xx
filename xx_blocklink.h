@@ -242,8 +242,8 @@ namespace xx {
 		}
 
 		// foreach by flags
-		// .Foreach([](T& o)->void {    });
-		// .Foreach([](T& o)->xx::ForeachResult {    });
+		// .ForeachFlags( [](T& o)->void {    } );
+		// .ForeachFlags( [](T& o)->xx::ForeachResult {    } );
 		template<bool callByClear = false, typename F, typename R = std::invoke_result_t<F, T&>>
 		void ForeachFlags(F&& func) requires enableFlags {
 			if (this->len <= 0) return;
@@ -291,8 +291,8 @@ namespace xx {
 		}
 
 		// foreach by head / tail link
-		// .Foreach([](T& o)->void {    });
-		// .Foreach([](T& o)->xx::ForeachResult {    });
+		// .ForeachLink( [](T& o)->void {    } );
+		// .ForeachLink( [](T& o)->xx::ForeachResult {    } );
 		template<bool fromHead = true, typename F, typename R = std::invoke_result_t<F, T&>>
 		void ForeachLink(F&& func, int32_t beginIdx = -1) requires isDoubleLink {
 			if (beginIdx == -1) {
@@ -337,6 +337,10 @@ namespace xx {
 
 		XX_FORCE_INLINE int32_t Count() const {
 			return this->len - this->freeCount;
+		}
+
+		XX_FORCE_INLINE bool Empty() const {
+			return this->len == this->freeCount;
 		}
 
 		XX_FORCE_INLINE Node<T>* TryGet(BlockLinkVI const& vi) const {
