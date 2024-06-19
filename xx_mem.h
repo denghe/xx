@@ -40,7 +40,7 @@ namespace xx {
     XX_INLINE T* AlignedAlloc(size_t siz = sizeof(T)) {
         if constexpr (alignof(T) <= sizeof(void*)) return (T*)malloc(siz);
         else {
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__MINGW32__)
             return (T*)_aligned_malloc(siz, alignof(T));
 #else
             return (T*)aligned_alloc(alignof(T), siz);

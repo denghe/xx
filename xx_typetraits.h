@@ -4,6 +4,10 @@
 namespace xx {
 
     /************************************************************************************/
+
+    template <class A, class B> concept IsBaseOfOrSame = std::is_base_of_v<A, B> || std::is_same_v<A, B>;
+
+    /************************************************************************************/
     // std::is_pod 的自定义扩展, 用于标识一个类可以在容器中被 memcpy | memmove
 
     template<typename T, typename ENABLED = void>
@@ -393,7 +397,7 @@ namespace xx {
     	using swallow = int[];
     	(void)swallow { 1, (f(std::get<Indices>(std::forward<Tuple>(tuple))), void(), int{})... };
     }
-    
+
     template <typename Tuple, typename F>
     void ForEach(Tuple&& tuple, F&& f) {
     	constexpr std::size_t N = std::tuple_size<std::remove_reference_t<Tuple>>::value;
