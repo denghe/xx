@@ -53,7 +53,9 @@ namespace xx {
                 }
                 else {
                     size_t i = 0;
-                    while ((c = format[offset])) {
+                LabLoop:
+                    c = format[offset];
+                    if (c) {
                         if (c == '}') {
                             if (i >= sizeof...(vs)) return i;   // error
                             if (cache[i].second) {
@@ -64,13 +66,15 @@ namespace xx {
                                 AppendFormatCore(std::make_index_sequence<sizeof...(TS)>(), s, i, vs...);
                                 cache[i].second = s.size() - cache[i].first;
                             }
-                            break;
+                            goto LabEnd;
                         }
                         else {
                             i = i * 10 + (c - '0');
                         }
                         ++offset;
                     }
+                    goto LabLoop;
+                LabEnd:;
                 }
             }
             else {
@@ -95,6 +99,64 @@ namespace xx {
         return s;
     }
 
+    // double to 1.234k  5M 7.8T  1e123 ...
+    inline int ToStringEN(double d, char* o) {
+        if (d < 1) {
+            o[0] = '0';
+            return 1;
+        }
+        int len{};
+        auto e = (int)std::log10(d);
+        if (e < 3) {
+            len = e + 1;
+            auto n = (int)d;
+            while (n >= 10) {
+                auto a = n / 10;
+                auto b = n - a * 10;
+                o[e--] = (char)(b + 48);
+                n = a;
+            }
+            o[0] = (char)(n + 48);
+        } else {
+            auto idx = e / 3;
+            d /= std::pow(10, idx * 3);
+            e = e - idx * 3;
+            len = e + 1;
+            auto n = (int)d;
+            auto bak = n;
+            while (n >= 10) {
+                auto a = n / 10;
+                auto b = n - a * 10;
+                o[e--] = (char)(b + 48);
+                n = a;
+            }
+            o[0] = (char)(n + 48);
+            if (d > bak) {
+                auto first = (int)((d - bak) * 10);
+                if (first > 0) {
+                    o[len++] = '.';
+                    o[len++] = (char)(first + 48);
+                }
+            }
+            if (idx < 10) {
+                o[len++] = " KMGTPEZYB"[idx];
+            } else {
+                o[len++] = 'e';
+                idx *= 3;
+                len += (int)std::log10(idx) + 1;
+                e = len - 1;
+                n = idx;
+                while (n >= 10) {
+                    auto a = n / 10;
+                    auto b = n - a * 10;
+                    o[e--] = (char)(b + 48);
+                    n = a;
+                }
+                o[e] = (char)(n + 48);
+            }
+        }
+        return len;
+    }
 
 
     // ucs4 to utf8. write to out. return len

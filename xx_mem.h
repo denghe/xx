@@ -1,4 +1,4 @@
-﻿ #pragma once
+﻿#pragma once
 #include "xx_includes.h"
 
 namespace xx {
@@ -43,7 +43,7 @@ namespace xx {
 #if defined(_MSC_VER) || defined(__MINGW32__)
             return (T*)_aligned_malloc(siz, alignof(T));
 #else
-            return (T*)aligned_alloc(alignof(T), siz);
+            return (T*)aligned_malloc(alignof(T), siz);
 #endif
         }
     }

@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <xx_time.h>
+#include "xx_time.h"
 
 namespace xx {
 
@@ -102,7 +102,7 @@ namespace xx {
             if constexpr (std::is_floating_point_v<V>) {
                 return from + Next<V>() * (to - from);
             } else {
-                return from + Next<V>() % (to - from + 1);
+                return from + Next<V>() % (to - from/* + 1*/);
             }
         }
 
@@ -115,7 +115,7 @@ namespace xx {
             if constexpr (std::is_floating_point_v<V>) {
                 return from + Next<V>() * (to - from);
             } else {
-                return from + Next<V>() % (to - from + 1);
+                return from + Next<V>() % (to - from/* + 1*/);
             }
         }
 

@@ -1,10 +1,10 @@
 ﻿#pragma once
-#include <xx_xy.h>
+#include "xx_xy.h"
 
 namespace xx {
 
     inline static constexpr float gPI{ (float)M_PI }, gNPI{ -gPI }, g2PI{ gPI * 2 }, gPI_2{ gPI / 2 };
-
+    inline static constexpr float gSQRT2{ 1.414213562373095f }, gSQRT2_1 { 0.7071067811865475f };
 
     /*******************************************************************************************************************************************/
     /*******************************************************************************************************************************************/
@@ -56,19 +56,37 @@ namespace xx {
         // return cur's new value
         inline XX_FORCE_INLINE float LerpAngleByRate(float tar, float cur, float rate) {
             auto gap = Gap(tar, cur);
-            return cur - gap * rate;
+            return cur - gap * rate;        // todo: verify
         }
 
+        /*
+         * linear example:
+
+            auto bak = radians;
+            radians = xx::RotateControl::LerpAngleByFixed(targetRadians, radians, frameMaxChangeRadian);
+            auto rd = bak - radians;
+            if (rd >= xx::gPI)
+            {
+                rd -= xx::g2PI;
+            }
+            else if (rd < xx::gNPI)
+            {
+                rd += xx::g2PI;
+            }
+            auto radiansStep = rd / n;
+        */
         // calc cur to tar by fixed raidians
         // return cur's new value
         inline XX_FORCE_INLINE float LerpAngleByFixed(float tar, float cur, float a) {
             auto gap = Gap(tar, cur);
             if (gap < 0) {
                 if (gap >= -a) return tar;
-                else return cur + a;
+                else if (auto r = cur + a; r < gPI) return r;
+                else return r - g2PI;
             } else {
                 if (gap <= a) return tar;
-                else return cur - a;
+                else if (auto r = cur - a; r > gPI) return r;
+                else return r + g2PI;
             }
         }
 
