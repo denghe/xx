@@ -4,9 +4,9 @@
 namespace xx {
 
 	struct MouseEventHandlerNode : Node, SpaceGridABItem<MouseEventHandlerNode, XY> {
-		virtual void OnMouseDown() = 0;
-		virtual void OnMouseMove() = 0;
-		virtual void OnMouseUp() = 0;
+		virtual void OnMouseDown() {};
+		virtual void OnMouseMove() {};
+		virtual void OnMouseUp() {};
 
 		XX_FORCE_INLINE bool MousePosInArea() const {		// virtual ?
 			return PosInArea(gEngine->mouse.pos);

@@ -4,10 +4,6 @@
 namespace xx {
 
     /************************************************************************************/
-
-    template <class A, class B> concept IsBaseOfOrSame = std::is_base_of_v<A, B> || std::is_same_v<A, B>;
-
-    /************************************************************************************/
     // std::is_pod 的自定义扩展, 用于标识一个类可以在容器中被 memcpy | memmove
 
     template<typename T, typename ENABLED = void>
