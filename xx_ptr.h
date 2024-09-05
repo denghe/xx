@@ -35,7 +35,7 @@ namespace xx {
     using PtrHeader_t = typename PtrHeaderSwitcher<T>::type;
 
     template<typename T, typename U>
-    constexpr bool PtrAlignCheck_v = alignof(U) <= sizeof(void*) && alignof(T) <= sizeof(void*) || alignof(U) == alignof(T);
+    constexpr bool PtrAlignCheck_v = alignof(U) == alignof(T);		// did u forget alignas(8) on base?
 
     template<typename T>
     struct Weak;

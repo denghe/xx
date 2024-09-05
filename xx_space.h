@@ -326,146 +326,59 @@ namespace xx
 			return &ST::RefNode(idx).value;
 		}
 
-		// // .Foreach9([](T& o)->void {  all  });
-		// // .Foreach([](T& o)->bool {  break  });
-		// // .Foreach([](T& o)->xx::ForeachResult {    });
-		// // return is Break or RemoveAndBreak
-		// template <typename F, typename R = std::invoke_result_t<F, T&>>
-		// XX_FORCE_INLINE bool ForeachCell(int32_t cidx, F&& func)
-		// {
-		// 	auto idx = cells[cidx];
-		// 	while (idx >= 0)
-		// 	{
-		// 		auto& o = ST::RefNode(idx);
-		// 		auto nex = o.nex;
-		// 		if constexpr (std::is_void_v<R>)
-		// 		{
-		// 			func(o.value);
-		// 		}
-		// 		else
-		// 		{
-		// 			auto r = func(o.value);
-		// 			if constexpr (std::is_same_v<R, bool>)
-		// 			{
-		// 				if (r) return true;
-		// 			}
-		// 			else
-		// 			{
-		// 				switch (r)
-		// 				{
-		// 				case ForeachResult::Continue: break;
-		// 				case ForeachResult::RemoveAndContinue:
-		// 					Free(o);
-		// 					break;
-		// 				case ForeachResult::Break: return true;
-		// 				case ForeachResult::RemoveAndBreak:
-		// 					Free(o);
-		// 					return true;
-		// 				default:
-		// 					XX_ASSUME(false);
-		// 				}
-		// 			}
-		// 		}
-		// 		idx = nex;
-		// 	}
-		// 	return false;
-		// }
+		/*******************************************************************************************************/
+		/*******************************************************************************************************/
+		// search functions
+		// todo: more test & bug fix ( because copy from c# )
 
-		
-		// constexpr static std::array<XYi, 9> offsets9 = {
-		// 	XYi
-		// 	{0, 0},
-		// 	{-1, -1}, {-1, 0}, {-1, 1}, {0, 1}, {1, 1}, {1, 0}, {1, -1}, {0, -1}
-		// };
-		//
-		// // foreach target cell + round 8 = 9 cells
-		// // .Foreach9([](T& o)->void {  all  });
-		// // .Foreach9([](T& o)->bool {  break  });
-		// // .Foreach9([](T& o)->xx::ForeachResult {    });
-		// template <typename F, typename R = std::invoke_result_t<F, T&>>
-		// void Foreach9(XYf const& pos, F&& func)
-		// {
-		// 	auto crIdxBase = PosToCrIdx(pos);
-		// 	for (auto offset : offsets9)
-		// 	{
-		// 		auto crIdx = crIdxBase + offset;
-		// 		if (crIdx.x < 0 || crIdx.x >= numCols) continue;
-		// 		if (crIdx.y < 0 || crIdx.y >= numRows) continue;
-		// 		auto cidx = CrIdxToCIdx(crIdx);
-		//
-		// 		auto idx = cells[cidx];
-		// 		while (idx >= 0)
-		// 		{
-		// 			auto& o = ST::RefNode(idx);
-		// 			auto nex = o.nex;
-		// 			if constexpr (std::is_void_v<R>)
-		// 			{
-		// 				func(o.value);
-		// 			}
-		// 			else
-		// 			{
-		// 				auto r = func(o.value);
-		// 				if constexpr (std::is_same_v<R, bool>)
-		// 				{
-		// 					if (r) return;
-		// 				}
-		// 				else
-		// 				{
-		// 					switch (r)
-		// 					{
-		// 					case ForeachResult::Continue: break;
-		// 					case ForeachResult::RemoveAndContinue:
-		// 						Free(o);
-		// 						break;
-		// 					case ForeachResult::Break: return;
-		// 					case ForeachResult::RemoveAndBreak:
-		// 						Free(o);
-		// 						return;
-		// 					default:
-		// 						XX_ASSUME(false);
-		// 					}
-		// 				}
-		// 			}
-		// 			idx = nex;
-		// 		}
-		// 	}
-		// }
-
-		// // can't break
-		// template <typename F, typename R = std::invoke_result_t<F, T&>>
-		// void ForeachByRange(SpaceRingDiffuseData const& d, XYf const& pos, float maxDistance, F&& func)
-		// {
-		// 	auto crIdxBase = PosToCrIdx(pos); // calc grid col row index
-		// 	float rr = maxDistance * maxDistance;
-		// 	auto& lens = d.lens;
-		// 	auto& idxs = d.idxs;
-		// 	for (int i = 1; i < lens.len; i++)
-		// 	{
-		// 		auto offsets = &idxs[lens[i - 1].count];
-		// 		auto size = lens[i].count - lens[i - 1].count;
-		//
-		// 		for (int j = 0; j < size; ++j)
-		// 		{
-		// 			auto crIdx = crIdxBase + offsets[j];
-		// 			if (crIdx.x < 0 || crIdx.x >= numCols) continue;
-		// 			if (crIdx.y < 0 || crIdx.y >= numRows) continue;
-		// 			auto cidx = CrIdxToCIdx(crIdx);
-		// 			ForeachCell(cidx, [&](T& m)-> void
-		// 			{
-		// 				auto v = m.pos - pos;
-		// 				if (v.x * v.x + v.y * v.y < rr)
-		// 				{
-		// 					func(m); // todo: check func's args. send v, rr to func ?
-		// 				}
-		// 			});
-		// 		}
-		//
-		// 		if (lens[i].radius > maxDistance) break; // limit search range
-		// 	}
-		// }
-
+		// .ForeachCell([](T& o)->void {  all  });
+		// .ForeachCell([](T& o)->bool {  break  });
+		// .ForeachCell([](T& o)->xx::ForeachResult {    });
+		// return is Break or RemoveAndBreak
+		template <typename F, typename R = std::invoke_result_t<F, T&>>
+		XX_FORCE_INLINE bool ForeachCell(int32_t cidx, F&& func)
+		{
+			auto idx = cells[cidx];
+			while (idx >= 0)
+			{
+		 		auto& o = ST::RefNode(idx);
+		 		if constexpr (std::is_void_v<R>)
+		 		{
+		 			func(o.value);
+		 		}
+		 		else
+		 		{
+		 			auto r = func(o.value);
+		 			if constexpr (std::is_same_v<R, bool>)
+		 			{
+		 				if (r) return true;
+		 			}
+		 			else
+		 			{
+		 				switch (r)
+		 				{
+		 				case ForeachResult::Continue: break;
+		 				case ForeachResult::RemoveAndContinue:
+		 					Free(o);
+		 					break;
+		 				case ForeachResult::Break: return true;
+		 				case ForeachResult::RemoveAndBreak:
+		 					Free(o);
+		 					return true;
+		 				default:
+		 					XX_ASSUME(false);
+		 				}
+		 			}
+		 		}
+		 		idx = o.nex;
+			}
+			return false;
+		}
 
 		// ring diffuse foreach ( usually for update logic )
+		// .ForeachByRange([](T& o)->void {  all  });
+		// .ForeachByRange([](T& o)->bool {  break  });
+		// .ForeachByRange([](T& o)->xx::ForeachResult {    });
 		template <typename F, typename R = std::invoke_result_t<F, T&>>
 		void ForeachByRange(SpaceRingDiffuseData const& d, float x, float y, float maxDistance, F&& func)
 		{
@@ -531,14 +444,6 @@ namespace xx
 				if (lens[i].radius > searchRange) break;
 			}
 		}
-
-		
-
-		/*******************************************************************************************************/
-		/*******************************************************************************************************/
-		// other impls ( special & faster ? )
-
-		// todo: more test & bug fix ( because copy from c# )
 
 		// foreach target cell + round 8 = 9 cells
 		// .Foreach9All([](T& o)->void {  all  });

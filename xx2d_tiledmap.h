@@ -6,7 +6,7 @@
 
 namespace xx::TMX {
 
-	struct RefBase {};	// for all Ref<T>
+	struct alignas(8) RefBase {};	// for all Ref<T>
 
 	enum class PropertyTypes : uint8_t {
 		Bool,
@@ -38,7 +38,7 @@ namespace xx::TMX {
 		MAX_VALUE_UNKNOWN
 	};
 
-	struct Object : RefBase {
+	struct alignas(8) Object : RefBase {
 		ObjectTypes type = ObjectTypes::MAX_VALUE_UNKNOWN;
 		uint32_t id = 0;
 		std::string name;

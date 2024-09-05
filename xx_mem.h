@@ -42,8 +42,8 @@ namespace xx {
         else {
 #if defined(_MSC_VER) || defined(__MINGW32__)
             return (T*)_aligned_malloc(siz, alignof(T));
-#else
-            return (T*)aligned_malloc(alignof(T), siz);
+#else   // emscripten
+            return (T*)aligned_alloc(alignof(T), siz);
 #endif
         }
     }

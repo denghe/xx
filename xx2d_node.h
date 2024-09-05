@@ -3,7 +3,7 @@
 
 namespace xx {
 
-	struct Node {
+	struct alignas(8) Node {
 		Listi32<Shared<Node>> children;
 		Weak<Node> parent;										// fill by MakeChildren
 		Weak<Node> scissor;										// fill by scroll view MakeContent
