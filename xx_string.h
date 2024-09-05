@@ -100,7 +100,8 @@ namespace xx {
     }
 
     // double to 1.234k  5M 7.8T  1e123 ...
-    inline int ToStringEN(double d, char* o) {
+    template<typename CharType = char>
+    inline int ToStringEN(double d, CharType* o) {
         if (d < 1) {
             o[0] = '0';
             return 1;
