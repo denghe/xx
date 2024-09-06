@@ -80,6 +80,15 @@ namespace xx {
 			version = o.version;
 			return *this;
 		}
+		BlockLinkWeak(T const* v) {
+			operator=(v);
+		}
+		BlockLinkWeak& operator=(T const* v) {
+			auto& o = *container_of(v, Node<T>, value);
+			pointer = (T*)v;
+			version = o.version;
+			return *this;
+		}
 
 		XX_FORCE_INLINE Node<T>& RefNode() const {
 			return (Node<T>&)*container_of(pointer, Node<T>, value);
