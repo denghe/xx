@@ -64,6 +64,7 @@ namespace xx {
 
 		T* pointer{};
 		int32_t version{ -2 };
+		int32_t userData{};
 
 		BlockLinkWeak() = default;
 		BlockLinkWeak(BlockLinkWeak const&) = default;
