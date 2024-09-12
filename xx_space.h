@@ -187,7 +187,6 @@ namespace xx
 			o.cidx = cidx;
 		}
 
-		// very slowly when row cells large size
 		// foreach by flags ( copy ForeachFlags to here )
 		// .Foreach([](T& o)->void {    });
 		// .Foreach([](T& o)->xx::ForeachResult {    });

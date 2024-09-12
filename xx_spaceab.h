@@ -198,32 +198,102 @@ namespace xx {
 			}
 		}
 
-		template<typename F>
-		void ForeachCell(XYi crIdx, F&& func) {
-			if (crIdx.x < 0 || crIdx.x >= numCols || crIdx.y < 0 || crIdx.y >= numRows) return;
-			auto c = cells[crIdx.y * numCols + crIdx.x];
-			while (c) {
-				auto next = c->next;
-				func(c->self->value);
-				c = next;
+		//template<typename F>
+		//void ForeachCell(XYi crIdx, F&& func) {
+		//	if (crIdx.x < 0 || crIdx.x >= numCols || crIdx.y < 0 || crIdx.y >= numRows) return;
+		//	auto c = cells[crIdx.y * numCols + crIdx.x];
+		//	while (c) {
+		//		auto next = c->next;
+		//		func(c->self->value);
+		//		c = next;
+		//	}
+		//}
+
+		// foreach by flags ( copy ForeachFlags to here )
+		// .Foreach([](T& o)->void {    });
+		// .Foreach([](T& o)->xx::ForeachResult {    });
+		template <typename F, typename R = std::invoke_result_t<F, T&>>
+		void Foreach(F&& func) {
+			if (ST::len <= 0) return;
+
+			for (int32_t i = 0, n = ST::blocks.len - 1; i <= n; ++i) {
+				auto& block = *(typename ST::Block*)ST::blocks[i];
+				auto& flags = block.flags;
+				if (!flags) continue;
+
+				auto left = ST::len & 0b111111;
+				int32_t e = (i < n || !left) ? 64 : left;
+				for (int32_t j = 0; j < e; ++j) {
+					auto& o = block.buf[j];
+					auto bit = uint64_t(1) << j;
+					if ((flags & bit) == 0) {
+						assert(o.version >= -2);
+						continue;
+					}
+					assert(o.version < -2);
+
+					if constexpr (std::is_void_v<R>) {
+						func(o.value);
+					} else {
+						auto r = func(o.value);
+						switch (r) {
+						case ForeachResult::Continue: break;
+						case ForeachResult::RemoveAndContinue:
+							Free(o);
+							break;
+						case ForeachResult::Break: return;
+						case ForeachResult::RemoveAndBreak:
+							Free(o);
+							return;
+						default:
+							XX_ASSUME(false);
+						}
+					}
+				}
 			}
 		}
 
-		// todo: check func return value ?
-		template<typename F>
-		void ForeachPoint(XY const& p, F&& func) {
-			XYi crIdx{ p / cellSize };
-			if (crIdx.x < 0 || crIdx.x >= numCols || crIdx.y < 0 || crIdx.y >= numRows) return;
-			auto c = cells[crIdx.y * numCols + crIdx.x];
-			while (c) {
-				auto next = c->next;
-				auto& v = c->self->value;
-				auto& ab = v.aabb;
-				if (!(ab.to.x < p.x || p.x < ab.from.x || ab.to.y < p.y || p.y < ab.from.y)) {
-					func(v);
-				}
-				c = next;
-			}
+		//// .ForeachPoint([](T& o)->void {    });
+		//// .ForeachPoint([](T& o)->xx::ForeachResult {    });
+		//template <typename F, typename R = std::invoke_result_t<F, T&>>
+		//void ForeachPoint(XY const& p, F&& func) {
+		//	XYi crIdx{ p / cellSize };
+		//	if (crIdx.x < 0 || crIdx.x >= numCols || crIdx.y < 0 || crIdx.y >= numRows) return;
+		//	auto c = cells[crIdx.y * numCols + crIdx.x];
+		//	while (c) {
+		//		auto next = c->next;
+		//		auto& v = c->self->value;
+		//		auto& ab = v.aabb;
+		//		if (!(ab.to.x < p.x || p.x < ab.from.x || ab.to.y < p.y || p.y < ab.from.y)) {
+		//			if constexpr (std::is_void_v<R>) {
+		//				func(v);
+		//			} else {
+		//				auto r = func(v);
+		//				switch (r) {
+		//				case ForeachResult::Continue: break;
+		//				case ForeachResult::RemoveAndContinue:
+		//					Free(*c->self);
+		//					break;
+		//				case ForeachResult::Break: return;
+		//				case ForeachResult::RemoveAndBreak:
+		//					Free(*c->self);
+		//					return;
+		//				default:
+		//					XX_ASSUME(false);
+		//				}
+		//			}
+		//		}
+		//		c = next;
+		//	}
+		//}
+
+		// return true: success( aabb in area )
+		XX_FORCE_INLINE bool TryFixAABB(FromTo<XY>& aabb) {
+			if (aabb.from.x < 0) aabb.from.x = 0;
+			if (aabb.from.y < 0) aabb.from.y = 0;
+			if (aabb.to.x >= max.x) aabb.to.x = max.x - std::numeric_limits<float>::epsilon();	// todo: maybe no effect
+			if (aabb.to.y >= max.y) aabb.to.y = max.y - std::numeric_limits<float>::epsilon();
+			return aabb.from.x < aabb.to.x && aabb.from.y < aabb.to.y;
 		}
 
 		void ClearResults() {
@@ -231,15 +301,6 @@ namespace xx {
 				container_of(v, NodeType, value)->flag = 0;
 			}
 			results.Clear();
-		}
-
-		// return true: success( aabb in area )
-		XX_FORCE_INLINE bool TryFixAABB(FromTo<XY>& aabb) {
-			if (aabb.from.x < 0) aabb.from.x = 0;
-			if (aabb.from.y < 0) aabb.from.y = 0;
-			if (aabb.to.x >= max.x) aabb.to.x = max.x - std::numeric_limits<float>::epsilon();
-			if (aabb.to.y >= max.y) aabb.to.y = max.y - std::numeric_limits<float>::epsilon();
-			return aabb.from.x < aabb.to.x && aabb.from.y < aabb.to.y;
 		}
 
 		// fill items to results. need ClearResults()
