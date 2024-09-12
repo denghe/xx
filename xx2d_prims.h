@@ -642,7 +642,7 @@ namespace xx {
             // b: box    c: circle    r: radius
             // if intersect return true
             template<typename T = int32_t>
-            bool BoxCircle(T bx, T by, T bHalfWidth, T bHalfHeight, T cx, T cy, T cr) {
+            XX_FORCE_INLINE bool BoxCircle(T bx, T by, T bHalfWidth, T bHalfHeight, T cx, T cy, T cr) {
                 auto dx = std::abs(cx - bx);
                 if (dx > bHalfWidth + cr) return false;
 

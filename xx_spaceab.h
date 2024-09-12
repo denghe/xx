@@ -209,6 +209,13 @@ namespace xx {
 		//	}
 		//}
 
+		bool ExistsPoint(XYf p) {
+			if (p.x < 0 || p.y < 0 || p.x >= max.x || p.y >= max.y) return false;
+			auto crIdx = (XYi)p / cellSize;
+			assert(crIdx.x >= 0 && crIdx.x < numCols && crIdx.y >= 0 && crIdx.y < numRows);
+			return cells[crIdx.y * numCols + crIdx.x] != nullptr;
+		}
+
 		// foreach by flags ( copy ForeachFlags to here )
 		// .Foreach([](T& o)->void {    });
 		// .Foreach([](T& o)->xx::ForeachResult {    });
