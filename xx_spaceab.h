@@ -209,11 +209,13 @@ namespace xx {
 		//	}
 		//}
 
-		bool ExistsPoint(XYf p) {
-			if (p.x < 0 || p.y < 0 || p.x >= max.x || p.y >= max.y) return false;
+		// 0 mean empty, 1 exists, 2 out of range
+		int ExistsPoint(XYf p) {
+			if (p.x < 0 || p.y < 0 || p.x >= max.x || p.y >= max.y) return 2;
 			auto crIdx = (XYi)p / cellSize;
 			assert(crIdx.x >= 0 && crIdx.x < numCols && crIdx.y >= 0 && crIdx.y < numRows);
-			return cells[crIdx.y * numCols + crIdx.x] != nullptr;
+			if (cells[crIdx.y * numCols + crIdx.x] != nullptr) return 1;
+			else return 0;
 		}
 
 		// foreach by flags ( copy ForeachFlags to here )
@@ -298,8 +300,8 @@ namespace xx {
 		XX_FORCE_INLINE bool TryFixAABB(FromTo<XY>& aabb) {
 			if (aabb.from.x < 0) aabb.from.x = 0;
 			if (aabb.from.y < 0) aabb.from.y = 0;
-			if (aabb.to.x >= max.x) aabb.to.x = max.x - std::numeric_limits<float>::epsilon();	// todo: maybe no effect
-			if (aabb.to.y >= max.y) aabb.to.y = max.y - std::numeric_limits<float>::epsilon();
+			if (aabb.to.x >= max.x) aabb.to.x = max.x - 0.1f;
+			if (aabb.to.y >= max.y) aabb.to.y = max.y - 0.1f;
 			return aabb.from.x < aabb.to.x && aabb.from.y < aabb.to.y;
 		}
 
