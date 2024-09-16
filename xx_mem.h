@@ -38,6 +38,7 @@ namespace xx {
 
     template<typename T>
     XX_INLINE T* AlignedAlloc(size_t siz = sizeof(T)) {
+        assert(siz >= sizeof(T));
         if constexpr (alignof(T) <= sizeof(void*)) return (T*)malloc(siz);
         else {
 #if defined(_MSC_VER) || defined(__MINGW32__)

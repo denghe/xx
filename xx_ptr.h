@@ -88,12 +88,13 @@ namespace xx {
             return (*pointer)(std::forward<Args>(args)...);
         }
 
-        auto& operator[](size_t idx) {
-            return pointer->operator[](idx);
+        template<typename IDX>
+        auto& operator[](IDX&& idx) {
+            return pointer->operator[](std::forward<IDX>(idx));
         }
-
+        template<typename IDX>
         auto const& operator[](size_t idx) const {
-            return pointer->operator[](idx);
+            return pointer->operator[](std::forward<IDX>(idx));
         }
 
         Shared_() = default;
@@ -262,16 +263,21 @@ namespace xx {
         }
 
         template<typename U = T, typename...Args>
-        S<U>& Emplace(Args &&...args) {
+        S<U>& EmplaceEx(size_t attachSize, Args &&...args) {
             static_assert(std::is_base_of_v<T, U> || std::is_same_v<T, U>);
             static_assert(PtrAlignCheck_v<T, U>);
             Reset();
-            auto h = AlignedAlloc<typename S<U>::HeaderType>();
+            auto h = AlignedAlloc<typename S<U>::HeaderType>(sizeof(typename S<U>::HeaderType) + attachSize);
             h->Init();
             pointer = (T*)&h->data;
             h->deleter = [](void* o) { std::destroy_at((U*)o); };
             std::construct_at(&h->data, std::forward<Args>(args)...);
-            return (S<U>&)*this;
+            return (S<U>&) * this;
+        }
+
+        template<typename U = T, typename...Args>
+        S<U>& Emplace(Args &&...args) {
+            return EmplaceEx<U>(0, std::forward<Args>(args)...);
         }
 
         Weak<T> ToWeak() const requires(weakSupport);

@@ -88,6 +88,7 @@ namespace xx {
                 timePool += delta;
                 while (timePool >= ((Derived*)this)->frameDelay) {
                     timePool -= ((Derived*)this)->frameDelay;
+                    time += ((Derived*)this)->frameDelay;
                     ++frameNumber;
                     fpsViewer.Update();
                     if constexpr (Has_Update<Derived>) {

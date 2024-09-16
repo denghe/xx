@@ -81,6 +81,7 @@ namespace xx {
         double nowSecs{}, delta{};
         double timePool{};
         int frameNumber{};
+        float time{};               // low precision
         EM_BOOL running{ EM_TRUE };
 
 
