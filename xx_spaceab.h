@@ -297,7 +297,7 @@ namespace xx {
 		//}
 
 		// return true: success( aabb in area )
-		XX_FORCE_INLINE bool TryFixAABB(FromTo<XY>& aabb) {
+		XX_FORCE_INLINE bool TryLimitAABB(FromTo<XY>& aabb) {
 			if (aabb.from.x < 0) aabb.from.x = 0;
 			if (aabb.from.y < 0) aabb.from.y = 0;
 			if (aabb.to.x >= max.x) aabb.to.x = max.x - 0.1f;
@@ -312,7 +312,7 @@ namespace xx {
 			results.Clear();
 		}
 
-		// fill items to results. need ClearResults()
+		// fill items to results. need ClearResults() && TryLimitAABB
 		// auto guard = xx::MakeSimpleScopeGuard([&] { sg.ClearResults(); });
 		template<bool enableLimit = false, bool enableExcept = false>
 		void ForeachAABB(FromTo<XY> const& ab, int32_t* limit = nullptr, T* except = nullptr) {
