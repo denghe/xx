@@ -95,11 +95,16 @@ namespace xx {
 			return (Node<T>&)*container_of(pointer, Node<T>, value);
 		}
 
-		XX_FORCE_INLINE bool Exists() const noexcept {
+		XX_FORCE_INLINE bool Exists() const {
 			return pointer && version < -2 && version == RefNode().version;
 		}
-		XX_FORCE_INLINE operator bool() const noexcept {
+		XX_FORCE_INLINE operator bool() const {
 			return Exists();
+		}
+
+		XX_FORCE_INLINE T* GetPointer() const {
+			if (Exists()) return (T*)pointer;
+			else return nullptr;
 		}
 
 		XX_FORCE_INLINE T& operator()() const {
