@@ -25,6 +25,12 @@ namespace xx {
         int32_t cellsLen{};
         std::unique_ptr<Item*[]> cells;
 
+		// unsafe
+		void Clear() {
+			assert(cells);
+			memset(cells.get(), 0, sizeof(Item*) * cellsLen);
+		}
+
         void Init(int32_t const& numRows_, int32_t numCols_, int32_t cellSize_) {
             assert(!cells);
             assert(numRows_ > 0 && numCols_ > 0 && cellSize_ > 0);
@@ -37,7 +43,7 @@ namespace xx {
 
             cellsLen = numRows * numCols;
             cells = std::make_unique<Item*[]>(cellsLen);
-            memset(cells.get(), 0, sizeof(Item*) * cellsLen);
+			Clear();
         }
 
         void Add(Item* c) {
@@ -483,7 +489,7 @@ namespace xx {
 			++cIdx;
 			if (cIdx >= numCols) return nullptr;
 			++idx;
-			auto c = cells[idx];
+			c = cells[idx];
 			while (c) {
 				auto nex = c->_sgcNext;
 
@@ -505,7 +511,7 @@ namespace xx {
 			++rIdx;
 			if (rIdx >= numRows) return nullptr;
 			idx += numCols;
-			auto c = cells[idx];
+			c = cells[idx];
 			while (c) {
 				auto nex = c->_sgcNext;
 
@@ -525,7 +531,7 @@ namespace xx {
 
 			// 2
 			--idx;
-			auto c = cells[idx];
+			c = cells[idx];
 			while (c) {
 				auto nex = c->_sgcNext;
 
@@ -547,7 +553,7 @@ namespace xx {
 			cIdx -= 2;
 			if (cIdx < 0) return nullptr;
 			--idx;
-			auto c = cells[idx];
+			c = cells[idx];
 			while (c) {
 				auto nex = c->_sgcNext;
 
@@ -567,7 +573,7 @@ namespace xx {
 
 			// 4
 			idx -= numCols;
-			auto c = cells[idx];
+			c = cells[idx];
 			while (c) {
 				auto nex = c->_sgcNext;
 
@@ -589,7 +595,7 @@ namespace xx {
 			rIdx -= 2;
 			if (rIdx < 0) return nullptr;
 			idx -= numCols;
-			auto c = cells[idx];
+			c = cells[idx];
 			while (c) {
 				auto nex = c->_sgcNext;
 
@@ -609,7 +615,7 @@ namespace xx {
 
 			// 8
 			++idx;
-			auto c = cells[idx];
+			c = cells[idx];
 			while (c) {
 				auto nex = c->_sgcNext;
 
@@ -629,7 +635,7 @@ namespace xx {
 
 			// 9
 			++idx;
-			auto c = cells[idx];
+			c = cells[idx];
 			while (c) {
 				auto nex = c->_sgcNext;
 
@@ -660,7 +666,7 @@ namespace xx {
 			if (rIdxBase < 0 || rIdxBase >= numRows) return nullptr;
 			auto searchRange = maxDistance + cellSize;
 
-			T* rtv = nullptr;
+			T* rtv{};
 			float maxV{};
 
 			auto& lens = d.lens;

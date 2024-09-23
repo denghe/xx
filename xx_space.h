@@ -16,25 +16,27 @@ namespace xx
 	};
 
 	struct SpaceGridRingDiffuseData	{
+		int32_t cellSize;
 		Listi32<SpaceGridCountRadius> lens;
 		Listi32<XYi> idxs;
 
-		void Init(int gridNumRows, int cellSize) {
+		void Init(int32_t gridNumRows, int32_t cellSize_) {
+			cellSize = cellSize_;
 			lens.Emplace(0, 0.f);
 			idxs.Emplace();
 			std::unordered_set<uint64_t> set;
 			set.insert(0);
-			for (float radius = 0; radius < cellSize * gridNumRows; radius += cellSize) {
+			for (float radius = 0; radius < cellSize_ * gridNumRows; radius += cellSize_) {
 				auto lenBak = idxs.len;
 				auto radians = std::asin(0.5f / radius) * 2;
-				auto step = (int)(M_PI * 2 / radians);
+				auto step = (int32_t)(M_PI * 2 / radians);
 				auto inc = M_PI * 2 / step;
-				for (int i = 0; i < step; ++i) {
+				for (int32_t i = 0; i < step; ++i) {
 					auto a = inc * i;
 					auto cos = std::cos(a);
 					auto sin = std::sin(a);
-					auto ix = (int)(cos * radius) / cellSize;
-					auto iy = (int)(sin * radius) / cellSize;
+					auto ix = (int32_t)(cos * radius) / cellSize_;
+					auto iy = (int32_t)(sin * radius) / cellSize_;
 					auto key = ((uint64_t)iy << 32) + (uint64_t)ix;
 					if (set.insert(key).second) {
 						idxs.Emplace(ix, iy);
@@ -329,18 +331,18 @@ namespace xx
 		// .ForeachByRange([](T& o)->xx::ForeachResult {    });
 		template <bool enableExcept = false, typename F, typename R = std::invoke_result_t<F, T&>>
 		void ForeachByRange(SpaceGridRingDiffuseData const& d, float x, float y, float maxDistance, F&& func, T* except = {}) {
-			int cIdxBase = (int)(x * _1_cellSize);
+			auto cIdxBase = (int32_t)(x * _1_cellSize);
 			if (cIdxBase < 0 || cIdxBase >= numCols) return;
-			int rIdxBase = (int)(y * _1_cellSize);
+			auto rIdxBase = (int32_t)(y * _1_cellSize);
 			if (rIdxBase < 0 || rIdxBase >= numRows) return;
-			auto searchRange = maxDistance + cellSize;
+			auto searchRange = maxDistance + cellSize;		// todo: scale by d.cellsize ?
 
 			auto& lens = d.lens;
 			auto& idxs = d.idxs;
-			for (int i = 1, e = lens.len; i < e; i++) {
+			for (int32_t i = 1, e = lens.len; i < e; i++) {
 				auto offsets = lens[i - 1].count;
 				auto size = lens[i].count - lens[i - 1].count;
-				for (int j = 0; j < size; ++j) {
+				for (int32_t j = 0; j < size; ++j) {
 					auto& tmp = idxs[offsets + j];
 					auto cIdx = cIdxBase + tmp.x;
 					if (cIdx < 0 || cIdx >= numCols) continue;
@@ -394,13 +396,13 @@ namespace xx
 		// .Foreach9All([](T& o)->xx::ForeachResult {    });
 		template <bool enableExcept = false, typename F, typename R = std::invoke_result_t<F, T&>>
 		void Foreach9All(float x, float y, F&& func, T* except = {}) {
-			int cIdx = (int)(x * _1_cellSize);
+			auto cIdx = (int32_t)(x * _1_cellSize);
 			if (cIdx < 0 || cIdx >= numCols) return;
-			int rIdx = (int)(y * _1_cellSize);
+			auto rIdx = (int32_t)(y * _1_cellSize);
 			if (rIdx < 0 || rIdx >= numRows) return;
 
 			// 5
-			int idx = rIdx * numCols + cIdx;
+			auto idx = rIdx * numCols + cIdx;
 			auto i = cells[idx];
 			while (i >= 0) {
 				auto& o = ST::RefNode(i);
@@ -728,13 +730,13 @@ namespace xx
 		// required: float T::radius
 		template<bool enableExcept = false>
 		T* FindFirstCrossBy9(float x, float y, float radius, T* except = {}) {
-			int cIdx = (int)(x * _1_cellSize);
+			auto cIdx = (int32_t)(x * _1_cellSize);
 			if (cIdx < 0 || cIdx >= numCols) return nullptr;
-			int rIdx = (int)(y * _1_cellSize);
+			auto rIdx = (int32_t)(y * _1_cellSize);
 			if (rIdx < 0 || rIdx >= numRows) return nullptr;
 
 			// 5
-			int idx = rIdx * numCols + cIdx;
+			auto idx = rIdx * numCols + cIdx;
 			auto i = cells[idx];
 			while (i >= 0) {
 				auto& c = ST::RefNode(i);
@@ -938,21 +940,21 @@ namespace xx
 		// required: float T::radius
 		template<bool enableExcept = false>
 		T* FindNearestByRange(SpaceGridRingDiffuseData const& d, float x, float y, float maxDistance, T* except = {}) {
-			int cIdxBase = (int)(x * _1_cellSize);
+			auto cIdxBase = (int32_t)(x * _1_cellSize);
 			if (cIdxBase < 0 || cIdxBase >= numCols) return nullptr;
-			int rIdxBase = (int)(y * _1_cellSize);
+			auto rIdxBase = (int32_t)(y * _1_cellSize);
 			if (rIdxBase < 0 || rIdxBase >= numRows) return nullptr;
-			auto searchRange = maxDistance + cellSize;
+			auto searchRange = maxDistance + cellSize;		// todo: scale by d.cellsize ?
 
 			T* rtv = nullptr;
 			float maxV{};
 
 			auto& lens = d.lens;
 			auto& idxs = d.idxs;
-			for (int i = 1, e = lens.len; i < e; i++) {
+			for (int32_t i = 1, e = lens.len; i < e; i++) {
 				auto offsets = lens[i - 1].count;
 				auto size = lens[i].count - lens[i - 1].count;
-				for (int j = 0; j < size; ++j) {
+				for (int32_t j = 0; j < size; ++j) {
 					auto& tmp = idxs[offsets + j];
 					auto cIdx = cIdxBase + tmp.x;
 					if (cIdx < 0 || cIdx >= numCols) continue;
@@ -999,22 +1001,22 @@ namespace xx
 		// maxDistance: search limit( edge distance )
 		// required: float T::radius
 		template<bool enableExcept = false>
-		int FindNearestNByRange(SpaceGridRingDiffuseData const& d, float x, float y, float maxDistance, int n, T* except = {}) {
-			int cIdxBase = (int)(x * _1_cellSize);
+		int32_t FindNearestNByRange(SpaceGridRingDiffuseData const& d, float x, float y, float maxDistance, int32_t n, T* except = {}) {
+			auto cIdxBase = (int32_t)(x * _1_cellSize);
 			if (cIdxBase < 0 || cIdxBase >= numCols) return 0;
-			int rIdxBase = (int)(y * _1_cellSize);
+			auto rIdxBase = (int32_t)(y * _1_cellSize);
 			if (rIdxBase < 0 || rIdxBase >= numRows) return 0;
-			auto searchRange = maxDistance + cellSize;
+			auto searchRange = maxDistance + cellSize;		// todo: scale by d.cellsize ?
 
 			auto& os = result_FindNearestN;
 			os.Clear();
 
 			auto& lens = d.lens;
 			auto& idxs = d.idxs;
-			for (int i = 1, e = lens.len; i < e; i++) {
+			for (int32_t i = 1, e = lens.len; i < e; i++) {
 				auto offsets = lens[i - 1].count;
 				auto size = lens[i].count - lens[i - 1].count;
-				for (int j = 0; j < size; ++j) {
+				for (int32_t j = 0; j < size; ++j) {
 					auto& tmp = idxs[offsets + j];
 					auto cIdx = cIdxBase + tmp.x;
 					if (cIdx < 0 || cIdx >= numCols) continue;
@@ -1063,9 +1065,9 @@ namespace xx
 
 	protected:
 		// sort result_FindNearestN
-		void Quick_Sort(int left, int right) {
+		void Quick_Sort(int32_t left, int32_t right) {
 			if (left < right) {
-				int pivot = Partition(left, right);
+				int32_t pivot = Partition(left, right);
 				if (pivot > 1) {
 					Quick_Sort(left, pivot - 1);
 				}
@@ -1076,7 +1078,7 @@ namespace xx
 		}
 
 		// sort result_FindNearestN
-		XX_FORCE_INLINE int Partition(int left, int right) {
+		XX_FORCE_INLINE int32_t Partition(int32_t left, int32_t right) {
 			auto& arr = result_FindNearestN;
 			auto pivot = arr[left];
 			while (true) {
