@@ -6,35 +6,35 @@
 namespace xx {
 
 	template<typename T>
-	struct SpaceABNode;
+	struct SpaceGridABNode;
 
 	template<typename T>
-	struct SpaceABCell {
-		SpaceABNode<T>* self;
+	struct SpaceGridABCell {
+		SpaceGridABNode<T>* self;
 		int32_t cidx;
-		SpaceABCell* prev, * next;
+		SpaceGridABCell* prev, * next;
 	};
 
 	template<typename T>
-	struct SpaceABNode : BlockLinkVI {
-		using CellType = SpaceABCell<T>;
+	struct SpaceGridABNode : BlockLinkVI {
+		using CellType = SpaceGridABCell<T>;
 		FromTo<XYi> crIdx;
 		TinyList<CellType> cs;
 		uint32_t flag;
 		T value;
 
-		static SpaceABNode& From(T& value) {
-			return *container_of(&value, SpaceABNode, value);
+		static SpaceGridABNode& From(T& value) {
+			return *container_of(&value, SpaceGridABNode, value);
 		}
 	};
 
 	template<typename T>
-	using SpaceABWeak = BlockLinkWeak<T, SpaceABNode>;
+	using SpaceGridABWeak = BlockLinkWeak<T, SpaceGridABNode>;
 
 	// requires
 	// T has member: xx::FromTo<XY> aabb;	// XY s2{ siz / 2 }; aabb.from = pos - s2; aabb.to = pos + s2;
-	template<typename T, typename ST = BlockLink<T, SpaceABNode>>
-	struct SpaceABGrid : protected ST {
+	template<typename T, typename ST = BlockLink<T, SpaceGridABNode>>
+	struct SpaceGridAB : protected ST {
 		using ST::ST;
 		using NodeType = typename ST::NodeType;
 		using CellType = typename NodeType::CellType;

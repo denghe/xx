@@ -3,22 +3,24 @@
 
 namespace xx {
 
+	// todo: refine
+
 	// space grid index system for AABB bounding box. coordinate (0, 0) at left-top, +x = right, +y = buttom
 	template<typename Item, typename XY_t = XYi>
-	struct SpaceGridAB;
+	struct SpaceGridAB2;
 
 	template<typename T>
-	struct SpaceGridABItemCellInfo {
+	struct SpaceGridAB2ItemCellInfo {
 		T* self{};
 		size_t idx{};
-		SpaceGridABItemCellInfo* prev{}, * next{};
+		SpaceGridAB2ItemCellInfo* prev{}, * next{};
 	};
 
 	// for inherit
 	template<typename Derived, typename XY_t = XYi>
-	struct SpaceGridABItem {
-		using SGABCoveredCellInfo = SpaceGridABItemCellInfo<Derived>;
-		SpaceGridAB<Derived, XY_t>* _sgab{};
+	struct SpaceGridAB2Item {
+		using SGABCoveredCellInfo = SpaceGridAB2ItemCellInfo<Derived>;
+		SpaceGridAB2<Derived, XY_t>* _sgab{};
 		XY_t _sgabPos, _sgabRadius, _sgabMin, _sgabMax;	// for Add & Update calc covered cells
 		XYi _sgabCRIdxFrom, _sgabCRIdxTo;	// backup for Update speed up
 		std::vector<SGABCoveredCellInfo> _sgabCoveredCellInfos;	// todo: change to custom single buf container ?
@@ -31,7 +33,7 @@ namespace xx {
 			_sgabMax = pos + _sgabRadius;
 		}
 
-		XX_FORCE_INLINE void SGABAdd(SpaceGridAB<Derived, XY_t>& sgab, XY_t const& pos, XY_t const& siz) {
+		XX_FORCE_INLINE void SGABAdd(SpaceGridAB2<Derived, XY_t>& sgab, XY_t const& pos, XY_t const& siz) {
 			assert(!_sgab);
 			assert(!_sgabFlag);
 			assert(_sgabCoveredCellInfos.empty());
@@ -46,7 +48,7 @@ namespace xx {
 			_sgab->Update(((Derived*)(this)));
 		}
 
-		XX_FORCE_INLINE void SGABAddOrUpdate(SpaceGridAB<Derived, XY_t>& sgab, XY_t const& pos, XY_t const& siz) {
+		XX_FORCE_INLINE void SGABAddOrUpdate(SpaceGridAB2<Derived, XY_t>& sgab, XY_t const& pos, XY_t const& siz) {
 			if (_sgab) {
 				assert(_sgab == &sgab);
 				SGABUpdate(pos, siz);
@@ -64,8 +66,8 @@ namespace xx {
 	};
 
 	template<typename Item, typename XY_t>
-	struct SpaceGridAB {
-		using ItemCellInfo = SpaceGridABItemCellInfo<Item>;
+	struct SpaceGridAB2 {
+		using ItemCellInfo = SpaceGridAB2ItemCellInfo<Item>;
 		using VT = XY_t::ElementType;
 		XYi cellSize;
 		XY_t max, max_2;

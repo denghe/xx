@@ -5,18 +5,18 @@
 namespace xx
 {
 	template <typename T>
-	struct SpaceNode : BlockLinkVI {
+	struct SpaceGridNode : BlockLinkVI {
 		int32_t nex, pre, cidx;
 		T value;
 	};
 
-	struct SpaceCountRadius	{
+	struct SpaceGridCountRadius	{
 		int32_t count;
 		float radius;
 	};
 
-	struct SpaceRingDiffuseData	{
-		Listi32<SpaceCountRadius> lens;
+	struct SpaceGridRingDiffuseData	{
+		Listi32<SpaceGridCountRadius> lens;
 		Listi32<XYi> idxs;
 
 		void Init(int gridNumRows, int cellSize) {
@@ -48,11 +48,11 @@ namespace xx
 	};
 
 	template <typename T>
-	using SpaceWeak = BlockLinkWeak<T, SpaceNode>;
+	using SpaceGridWeak = BlockLinkWeak<T, SpaceGridNode>;
 
 	// requires
 	// T has member: XY pos
-	template <typename T, typename ST = BlockLink<T, SpaceNode>>
+	template <typename T, typename ST = BlockLink<T, SpaceGridNode>>
 	struct SpaceGrid : protected ST {
 		using ST::ST;
 		using NodeType = typename ST::NodeType;
@@ -328,7 +328,7 @@ namespace xx
 		// .ForeachByRange([](T& o)->bool {  break  });
 		// .ForeachByRange([](T& o)->xx::ForeachResult {    });
 		template <bool enableExcept = false, typename F, typename R = std::invoke_result_t<F, T&>>
-		void ForeachByRange(SpaceRingDiffuseData const& d, float x, float y, float maxDistance, F&& func, T* except = {}) {
+		void ForeachByRange(SpaceGridRingDiffuseData const& d, float x, float y, float maxDistance, F&& func, T* except = {}) {
 			int cIdxBase = (int)(x * _1_cellSize);
 			if (cIdxBase < 0 || cIdxBase >= numCols) return;
 			int rIdxBase = (int)(y * _1_cellSize);
@@ -937,7 +937,7 @@ namespace xx
 		// ring diffuse search   nearest edge   best one and return
 		// required: float T::radius
 		template<bool enableExcept = false>
-		T* FindNearestByRange(SpaceRingDiffuseData const& d, float x, float y, float maxDistance, T* except = {}) {
+		T* FindNearestByRange(SpaceGridRingDiffuseData const& d, float x, float y, float maxDistance, T* except = {}) {
 			int cIdxBase = (int)(x * _1_cellSize);
 			if (cIdxBase < 0 || cIdxBase >= numCols) return nullptr;
 			int rIdxBase = (int)(y * _1_cellSize);
@@ -999,7 +999,7 @@ namespace xx
 		// maxDistance: search limit( edge distance )
 		// required: float T::radius
 		template<bool enableExcept = false>
-		int FindNearestNByRange(SpaceRingDiffuseData const& d, float x, float y, float maxDistance, int n, T* except = {}) {
+		int FindNearestNByRange(SpaceGridRingDiffuseData const& d, float x, float y, float maxDistance, int n, T* except = {}) {
 			int cIdxBase = (int)(x * _1_cellSize);
 			if (cIdxBase < 0 || cIdxBase >= numCols) return 0;
 			int rIdxBase = (int)(y * _1_cellSize);
@@ -1033,8 +1033,8 @@ namespace xx
 							}
 						}
 
-						auto vx = o.x - x;
-						auto vy = o.y - y;
+						auto vx = o.pos.x - x;
+						auto vy = o.pos.y - y;
 						auto dd = vx * vx + vy * vy;
 						auto r = maxDistance + o.radius;
 						auto v = r * r - dd;

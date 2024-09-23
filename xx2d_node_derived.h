@@ -3,7 +3,7 @@
 
 namespace xx {
 
-	struct MouseEventHandlerNode : Node, SpaceGridABItem<MouseEventHandlerNode, XY> {
+	struct MouseEventHandlerNode : Node, SpaceGridAB2Item<MouseEventHandlerNode, XY> {
 		virtual void OnMouseDown() {};
 		virtual void OnMouseMove() {};
 		virtual void OnMouseUp() {};

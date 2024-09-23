@@ -70,7 +70,7 @@ namespace xx {
 
         // events
         Weak<MouseEventHandlerNode> mouseEventHandler{};	// current( focus )
-        SpaceGridAB<MouseEventHandlerNode, XY> mouseEventHandlers;	// mouse down event receivers
+        SpaceGridAB2<MouseEventHandlerNode, XY> mouseEventHandlers;	// mouse down event receivers
 
         std::array<bool, 512> keyboardKeysStates{};
         std::array<double, 512> keyboardKeysDelays{};
