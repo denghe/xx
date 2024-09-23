@@ -7,11 +7,13 @@ namespace xx {
 	// required: XY T::pos
 	// required: float T::radius
 
+	// Ex == add count for every cell
+
 	template <typename T>
-	using SpaceGridWeak = BlockLinkWeak<T, SpaceGridNode>;
+	using SpaceGridExWeak = BlockLinkWeak<T, SpaceGridNode>;
 
 	template <typename T, typename ST = BlockLink<T, SpaceGridNode>>
-	struct SpaceGrid : protected ST {
+	struct SpaceGridEx : protected ST {
 		using ST::ST;
 		using NodeType = typename ST::NodeType;
 
@@ -23,11 +25,10 @@ namespace xx {
 		double _1_cellSize{}; // = 1 / cellSize
 		XYi max{};
 
-	protected:
 		int32_t cellsLen{};
 		std::unique_ptr<int32_t[]> cells;
+		std::unique_ptr<int32_t[]> counts;
 
-	public:
 		void Init(int32_t numRows_, int32_t numCols_, int32_t cellSize_) {
 			assert(!cells);
 			assert(numRows_ > 0 && numCols_ > 0 && cellSize_ > 0);
@@ -40,7 +41,8 @@ namespace xx {
 
 			cellsLen = numRows * numCols;
 			cells = std::make_unique<int32_t[]>(cellsLen);
-			memset(cells.get(), -1, sizeof(int32_t) * cellsLen); // -1 mean empty
+			counts = std::make_unique<int32_t[]>(cellsLen);
+			Clear();
 		}
 
 		template <bool freeBuf = false, bool resetVersion = false>
@@ -48,6 +50,7 @@ namespace xx {
 			if (!cells) return;
 			ST::template Clear<freeBuf, resetVersion>();
 			memset(cells.get(), -1, sizeof(int32_t) * cellsLen);
+			memset(counts.get(), 0, sizeof(int32_t) * cellsLen);
 		}
 
 		// Emplace + Init( args ) + cells[ pos ] = o
@@ -66,6 +69,8 @@ namespace xx {
 			o.nex = head;
 			o.pre = -1;
 			o.cidx = cidx;
+
+			++counts[cidx];	// sync count
 			return o;
 		}
 
@@ -77,6 +82,8 @@ namespace xx {
 	protected:
 		XX_FORCE_INLINE void Free(NodeType& o) {
 			assert(o.pre != o.index && o.nex != o.index && o.cidx >= 0);
+
+			--counts[o.cidx];	// sync count
 
 			if (o.index == cells[o.cidx]) {
 				cells[o.cidx] = o.nex;
@@ -114,6 +121,9 @@ namespace xx {
 			assert(o.nex != o.index);
 			auto cidx = PosToCIdx(v.pos);
 			if (cidx == o.cidx) return; // no change
+
+			--counts[o.cidx];	// sync count
+			++counts[cidx];		// sync count
 
 			// unlink
 			if (o.index != cells[o.cidx]) {
