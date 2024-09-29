@@ -295,16 +295,16 @@ namespace xx {
 			return false;
 		}
 
-		struct Iter {
-			T* ptr;
-			bool operator!=(Iter const& other) noexcept { return ptr != other.ptr; }
-			Iter& operator++() noexcept { ++ptr; return *this; }
-			T& operator*() noexcept { return *ptr; }
-		};
-		Iter begin() noexcept { assert(core); return Iter{ core->buf }; }
-		Iter end() noexcept { assert(core); return Iter{ core->buf + core->len }; }
-		Iter begin() const noexcept { assert(core); return Iter{ core->buf }; }
-		Iter end() const noexcept { assert(core); return Iter{ core->buf + core->len }; }
+		//struct Iter {
+		//	T* ptr;
+		//	bool operator!=(Iter const& other) noexcept { return ptr != other.ptr; }
+		//	Iter& operator++() noexcept { ++ptr; return *this; }
+		//	T& operator*() noexcept { return *ptr; }
+		//};
+		//Iter begin() noexcept { assert(core); return Iter{ core->buf }; }
+		//Iter end() noexcept { assert(core); return Iter{ core->buf + core->len }; }
+		//Iter begin() const noexcept { assert(core); return Iter{ core->buf }; }
+		//Iter end() const noexcept { assert(core); return Iter{ core->buf + core->len }; }
 
 	};
 
