@@ -237,10 +237,18 @@ namespace xx {
 			}
 		}
 
+		// return true: success( aabb in area )
+		XX_FORCE_INLINE bool TryLimitAABB(FromTo<XY_t>& aabb) {
+			if (aabb.from.x < 0) aabb.from.x = 0;
+			if (aabb.from.y < 0) aabb.from.y = 0;
+			if (aabb.to.x >= max.x) aabb.to.x = max.x - 1;
+			if (aabb.to.y >= max.y) aabb.to.y = max.y - 1;
+			return aabb.from.x < aabb.to.x && aabb.from.y < aabb.to.y;
+		}
+
 		// fill items to results. need ClearResults()
 		// auto guard = xx::MakeSimpleScopeGuard([&] { sg.ClearResults(); });
-		template<bool enableLimit = false, bool enableExcept = false>
-		void ForeachAABB(XY_t const& minXY, XY_t const& maxXY, int32_t* limit = nullptr, Item* except = nullptr) {
+		void ForeachAABB(XY_t const& minXY, XY_t const& maxXY, Item* except = nullptr) {
 			assert(minXY.x < maxXY.x);
 			assert(minXY.y < maxXY.y);
 			assert(minXY.x >= 0 && minXY.y >= 0);
@@ -251,8 +259,7 @@ namespace xx {
 			auto crIdxTo = maxXY.template As<int32_t>() / cellSize;
 
 			// except set flag
-			if constexpr (enableExcept) {
-				assert(except);
+			if (except) {
 				except->_sgabFlag = 1;
 			}
 
@@ -267,9 +274,6 @@ namespace xx {
 								if (!s->_sgabFlag) {
 									s->_sgabFlag = 1;
 									results.push_back(s);
-								}
-								if constexpr (enableLimit) {
-									if (--*limit == 0) break;
 								}
 							}
 							c = c->next;
@@ -290,9 +294,6 @@ namespace xx {
 							s->_sgabFlag = 1;
 							results.push_back(s);
 						}
-						if constexpr (enableLimit) {
-							if (--*limit == 0) break;
-						}
 					}
 					c = c->next;
 				}
@@ -306,9 +307,6 @@ namespace xx {
 							if (!s->_sgabFlag) {
 								s->_sgabFlag = 1;
 								results.push_back(s);
-							}
-							if constexpr (enableLimit) {
-								if (--*limit == 0) break;
 							}
 						}
 						c = c->next;
@@ -324,9 +322,6 @@ namespace xx {
 							if (!s->_sgabFlag) {
 								s->_sgabFlag = 1;
 								results.push_back(s);
-							}
-							if constexpr (enableLimit) {
-								if (--*limit == 0) break;
 							}
 						}
 						c = c->next;
@@ -346,9 +341,6 @@ namespace xx {
 								s->_sgabFlag = 1;
 								results.push_back(s);
 							}
-							if constexpr (enableLimit) {
-								if (--*limit == 0) break;
-							}
 						}
 						c = c->next;
 					}
@@ -361,9 +353,6 @@ namespace xx {
 							if (!s->_sgabFlag) {
 								s->_sgabFlag = 1;
 								results.push_back(s);
-							}
-							if constexpr (enableLimit) {
-								if (--*limit == 0) break;
 							}
 							c = c->next;
 						}
@@ -378,9 +367,6 @@ namespace xx {
 								if (!s->_sgabFlag) {
 									s->_sgabFlag = 1;
 									results.push_back(s);
-								}
-								if constexpr (enableLimit) {
-									if (--*limit == 0) break;
 								}
 							}
 							c = c->next;
@@ -401,9 +387,6 @@ namespace xx {
 								s->_sgabFlag = 1;
 								results.push_back(s);
 							}
-							if constexpr (enableLimit) {
-								if (--*limit == 0) break;
-							}
 						}
 						c = c->next;
 					}
@@ -417,9 +400,6 @@ namespace xx {
 								if (!s->_sgabFlag) {
 									s->_sgabFlag = 1;
 									results.push_back(s);
-								}
-								if constexpr (enableLimit) {
-									if (--*limit == 0) break;
 								}
 							}
 							c = c->next;
@@ -436,9 +416,6 @@ namespace xx {
 									s->_sgabFlag = 1;
 									results.push_back(s);
 								}
-								if constexpr (enableLimit) {
-									if (--*limit == 0) break;
-								}
 							}
 							c = c->next;
 						}
@@ -447,8 +424,7 @@ namespace xx {
 			}
 
 			// except clear flag
-			if constexpr (enableExcept) {
-				assert(except);
+			if (except) {
 				except->_sgabFlag = 0;
 			}
 
