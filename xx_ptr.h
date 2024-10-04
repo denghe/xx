@@ -11,9 +11,13 @@ namespace xx {
     typedef void(*PtrDeleter)(void*);
     template<typename T>
     struct PtrHeader {
+        static_assert(sizeof(PtrDeleter) == sizeof(size_t));
         uint32_t sharedCount;
         uint32_t weakCount;
-        PtrDeleter deleter{};
+        union {
+            PtrDeleter deleter;
+            size_t ud;
+        };
         T data;
         XX_INLINE void Init() {
             sharedCount = 1;
@@ -228,7 +232,11 @@ namespace xx {
                 assert(h->sharedCount);
                 // think about field weak point to self
                 if (h->sharedCount == 1) {
-                    h->deleter(pointer);
+                    if constexpr (!std::has_virtual_destructor_v<T>) {
+                        h->deleter(pointer);
+                    } else {
+                        std::destroy_at(pointer);
+                    }
                     pointer = {};
                     if constexpr (weakSupport) {
                         if (h->weakCount == 0) {
@@ -262,7 +270,7 @@ namespace xx {
             Reset();
         }
 
-        template<typename U = T, typename...Args>
+        template<typename U = T, bool fillTypeId = false, typename...Args>
         S<U>& EmplaceEx(size_t attachSize, Args &&...args) {
             static_assert(std::is_base_of_v<T, U> || std::is_same_v<T, U>);
             static_assert(PtrAlignCheck_v<T, U>);
@@ -270,14 +278,21 @@ namespace xx {
             auto h = AlignedAlloc<typename S<U>::HeaderType>(sizeof(typename S<U>::HeaderType) + attachSize);
             h->Init();
             pointer = (T*)&h->data;
-            h->deleter = [](void* o) { std::destroy_at((U*)o); };
+            if constexpr (fillTypeId) {
+                pointer->typeId = T::cTypeId;
+            }
+            if constexpr (!std::has_virtual_destructor_v<T>) {
+                h->deleter = [](void* o) { std::destroy_at((U*)o); };
+            } else {
+                h->deleter = {};
+            }
             std::construct_at(&h->data, std::forward<Args>(args)...);
             return (S<U>&) * this;
         }
 
-        template<typename U = T, typename...Args>
+        template<typename U = T, bool fillTypeId = false, typename...Args>
         S<U>& Emplace(Args &&...args) {
-            return EmplaceEx<U>(0, std::forward<Args>(args)...);
+            return EmplaceEx<U, fillTypeId>(0, std::forward<Args>(args)...);
         }
 
         Weak<T> ToWeak() const requires(weakSupport);
@@ -363,22 +378,22 @@ namespace xx {
         }
 
         // unsafe: need ensure "alive"
-        ElementType *operator->() const {
+        T *operator->() const {
             return &h->data;
         }
 
         // unsafe: need ensure "alive"
-        ElementType const &Value() const {
+        T const &Value() const {
             return h->data;
         }
 
         // unsafe: need ensure "alive"
-        ElementType &Value() {
+        T &Value() {
             return h->data;
         }
 
         // unsafe: need ensure "alive"
-        operator ElementType *() const {
+        operator T *() const {
             return &h->data;
         }
 
@@ -496,10 +511,10 @@ namespace xx {
     template<typename T> constexpr bool IsRef_v = IsRef<T>::value;
 
 
-    template<typename T, typename...Args>
+    template<typename T, bool fillTypeId = false, typename...Args>
     Shared<T> MakeShared(Args &&...args) {
         Shared<T> rtv;
-        rtv.Emplace(std::forward<Args>(args)...);
+        rtv.Emplace<T, fillTypeId>(std::forward<Args>(args)...);
         return rtv;
     }
 

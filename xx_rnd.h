@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "xx_time.h"
+#include "xx_data.h"
 
 namespace xx {
 
@@ -129,5 +130,20 @@ namespace xx {
             return Next(fromTo.first, fromTo.second);
         }
     };
+
+
+
+    template<typename T>
+    struct DataFuncs<T, std::enable_if_t<std::is_base_of_v<Rnd, T>>> {
+        static constexpr size_t siz = sizeof(Rnd::state);
+        template<bool needReserve = true>
+        static inline void Write(Data& d, T const& in) {
+            d.WriteFixedArray<needReserve>(&in.state[0], in.state.size());
+        }
+        static inline int Read(Data_r& d, T& out) {
+            return d.ReadFixedArray(&out.state[0], out.state.size());
+        }
+    };
+
 
 }

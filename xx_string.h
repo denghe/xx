@@ -494,10 +494,10 @@ namespace xx {
         }
     };
 
-    // 适配 std::vector<T>
+    // 适配 std::vector<T> std::array<T, ?>
     template<typename T>
-    struct StringFuncs<std::vector<T>, void> {
-        static inline void Append(std::string& s, std::vector<T> const& in) {
+    struct StringFuncs<T, std::enable_if_t<IsVector_v<T> || IsArray_v<T>>> {
+        static inline void Append(std::string& s, T const& in) {
             s.push_back('[');
             if (auto inLen = in.size()) {
                 for(size_t i = 0; i < inLen; ++i) {
