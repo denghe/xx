@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "xx_typetraits.h"
 #include "xx_mem.h"
+#include "xx_list.h"
 
 namespace xx {
 
@@ -824,13 +825,13 @@ namespace xx {
     // 适配 enum( 根据原始数据类型调上面的适配 )
     template<typename T>
     struct DataFuncs<T, std::enable_if_t<std::is_enum_v<T>>> {
-        typedef std::underlying_type_t<T> UT;
+        typedef std::underlying_type_t<T> U;
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
-            d.Write<needReserve>((UT const&)in);
+            d.Write<needReserve>((U const&)in);
         }
         static inline int Read(Data_r& d, T& out) {
-            return d.Read((UT&)out);
+            return d.Read((U&)out);
         }
     };
 
@@ -986,17 +987,18 @@ namespace xx {
     // 适配 std::vector, std::array   // todo: queue / deque
     template<typename T>
     struct DataFuncs<T, std::enable_if_t< (IsVector_v<T> || IsArray_v<T>)/* && IsBaseDataType_v<T>*/>> {
+        using U = typename T::value_type;
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
             if constexpr (IsVector_v<T>) {
                 d.WriteVarInteger<needReserve>(in.size());
                 if (in.empty()) return;
             }
-            if constexpr (sizeof(T) == 1 || std::is_floating_point_v<T>) {
+            if constexpr (sizeof(U) == 1 || std::is_floating_point_v<U>) {
                 d.WriteFixedArray<needReserve>(in.data(), in.size());
-            } else if constexpr (std::is_integral_v<typename T::value_type>) {
+            } else if constexpr (std::is_integral_v<U>) {
                 if constexpr (needReserve) {
-                    auto cap = in.size() * (sizeof(T) + 2);
+                    auto cap = in.size() * (sizeof(U) + 2);
                     if (d.cap < cap) {
                         d.Reserve<false>(cap);
                     }
@@ -1021,7 +1023,51 @@ namespace xx {
                 siz = out.size();
             }
             auto buf = out.data();
-            if constexpr (sizeof(T) == 1 || std::is_floating_point_v<T>) {
+            if constexpr (sizeof(U) == 1 || std::is_floating_point_v<U>) {
+                if (int r = d.ReadFixedArray(buf, siz)) return r;
+            } else {
+                for (size_t i = 0; i < siz; ++i) {
+                    if (int r = d.Read(buf[i])) return r;
+                }
+            }
+            return 0;
+        }
+    };
+
+    // 适配 xx::List
+    template<typename T>
+    struct DataFuncs<T, std::enable_if_t< (IsXxList_v<T>)>> {
+        using U = typename T::ChildType;
+        template<bool needReserve = true>
+        static inline void Write(Data& d, T const& in) {
+            d.WriteVarInteger<needReserve>((size_t)in.len);
+            if (!in.len) return;
+            if constexpr (sizeof(U) == 1 || std::is_floating_point_v<U>) {
+                d.WriteFixedArray<needReserve>(in.buf, in.len);
+            } else if constexpr (std::is_integral_v<U>) {
+                if constexpr (needReserve) {
+                    auto cap = in.len * (sizeof(U) + 2);
+                    if (d.cap < cap) {
+                        d.Reserve<false>(cap);
+                    }
+                }
+                for (auto&& o : in) {
+                    d.WriteVarInteger<false>(o);
+                }
+            } else {
+                for (auto&& o : in) {
+                    d.Write<needReserve>(o);
+                }
+            }
+        }
+        static inline int Read(Data_r& d, T& out) {
+            size_t siz = 0;
+            if (int r = d.ReadVarInteger(siz)) return r;
+            if (d.offset + siz > d.len) return __LINE__;
+            out.Resize(decltype(out.len)(siz));
+            if (siz == 0) return 0;
+            auto buf = out.buf;
+            if constexpr (sizeof(U) == 1 || std::is_floating_point_v<U>) {
                 if (int r = d.ReadFixedArray(buf, siz)) return r;
             } else {
                 for (size_t i = 0; i < siz; ++i) {
@@ -1035,13 +1081,14 @@ namespace xx {
     // 适配 std::set, unordered_set
     template<typename T>
     struct DataFuncs<T, std::enable_if_t< IsSetSeries_v<T>/* && IsBaseDataType_v<T>*/>> {
+        using U = typename T::value_type;
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
             d.WriteVarInteger<needReserve>(in.size());
             if (in.empty()) return;
-            if constexpr (std::is_integral_v<typename T::value_type>) {
+            if constexpr (std::is_integral_v<U>) {
                 if constexpr (needReserve) {
-                    auto cap = in.size() * (sizeof(T) + 2);
+                    auto cap = in.size() * (sizeof(U) + 2);
                     if (d.cap < cap) {
                         d.Reserve<false>(cap);
                     }

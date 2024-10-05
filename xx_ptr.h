@@ -278,15 +278,15 @@ namespace xx {
             auto h = AlignedAlloc<typename S<U>::HeaderType>(sizeof(typename S<U>::HeaderType) + attachSize);
             h->Init();
             pointer = (T*)&h->data;
-            if constexpr (fillTypeId) {
-                pointer->typeId = T::cTypeId;
-            }
             if constexpr (!std::has_virtual_destructor_v<T>) {
                 h->deleter = [](void* o) { std::destroy_at((U*)o); };
             } else {
                 h->deleter = {};
             }
             std::construct_at(&h->data, std::forward<Args>(args)...);
+            if constexpr (fillTypeId) {
+                pointer->typeId = T::cTypeId;
+            }
             return (S<U>&) * this;
         }
 
