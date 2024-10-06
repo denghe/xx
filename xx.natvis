@@ -1,6 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
-	
+
+	<Type Name="xx::FX64">
+		<DisplayString>{value * 4294967296.0}</DisplayString>
+		<Expand HideRawView="true">
+			<Item Name="[data]">value</Item>
+		</Expand>
+	</Type>
+
 	<Type Name="xx::Shared_&lt;*,*&gt;">
 		<DisplayString Condition="pointer == 0">null</DisplayString>
 		<DisplayString Condition="pointer != 0">{((HeaderType*)((char*)pointer - ((::size_t)&amp;(char&amp;)((((HeaderType*)0)->data)))))}</DisplayString>
