@@ -6,6 +6,9 @@
 
 namespace xx {
 
+    // for SerdeBase check
+    template <class T> concept HasMemberType_cParentTypeId = requires(T) { T::cParentTypeId; };
+
     /***********************************************************************************************/
 
     typedef void(*PtrDeleter)(void*);
@@ -270,7 +273,7 @@ namespace xx {
             Reset();
         }
 
-        template<typename U = T, bool fillTypeId = false, typename...Args>
+        template<typename U = T, typename...Args>
         S<U>& EmplaceEx(size_t attachSize, Args &&...args) {
             static_assert(std::is_base_of_v<T, U> || std::is_same_v<T, U>);
             static_assert(PtrAlignCheck_v<T, U>);
@@ -284,15 +287,15 @@ namespace xx {
                 h->deleter = {};
             }
             std::construct_at(&h->data, std::forward<Args>(args)...);
-            if constexpr (fillTypeId) {
+            if constexpr (HasMemberType_cParentTypeId<T>) {
                 pointer->typeId = T::cTypeId;
             }
             return (S<U>&) * this;
         }
 
-        template<typename U = T, bool fillTypeId = false, typename...Args>
+        template<typename U = T, typename...Args>
         S<U>& Emplace(Args &&...args) {
-            return EmplaceEx<U, fillTypeId>(0, std::forward<Args>(args)...);
+            return EmplaceEx<U>(0, std::forward<Args>(args)...);
         }
 
         Weak<T> ToWeak() const requires(weakSupport);
@@ -511,10 +514,10 @@ namespace xx {
     template<typename T> constexpr bool IsRef_v = IsRef<T>::value;
 
 
-    template<typename T, bool fillTypeId = false, typename...Args>
+    template<typename T, typename...Args>
     Shared<T> MakeShared(Args &&...args) {
         Shared<T> rtv;
-        rtv.Emplace<T, fillTypeId>(std::forward<Args>(args)...);
+        rtv.Emplace<T>(std::forward<Args>(args)...);
         return rtv;
     }
 

@@ -8,6 +8,9 @@ namespace xx {
     // 基础二进制数据跨度/引用容器( buf + len ) 类似 C++20 的 std::span
     // 注意: 因 追加 & 扩容 导致的数据失效问题, 追加自身存储的数据时要小心，需要先 reserve
 
+    template<typename T> concept Has_GetBuf = requires(T t) { t.GetBuf(); };
+    template<typename T> concept Has_GetLen = requires(T t) { t.GetLen(); };
+
     struct Span {
         uint8_t* buf;
         size_t len;
@@ -114,7 +117,11 @@ namespace xx {
         // 引用一个 含有 buf + len 成员的对象的数据
         template<typename T, typename = std::enable_if_t<std::is_class_v<T>>>
         [[maybe_unused]] Data_r(T const& d, size_t offset = 0) {
-            Reset(d.buf, d.len, offset);
+            if constexpr (Has_GetBuf<T> && Has_GetLen<T>) {
+                Reset(d.GetBuf(), d.GetLen(), offset);
+            } else {
+                Reset(d.buf, d.len, offset);
+            }
         }
 
         // 引用一段数据

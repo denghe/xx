@@ -4,14 +4,45 @@
 
 namespace xx {
 
+    /*  for copy
+struct XXXXXXXXXXX {
+    static constexpr uint16_t cTypeId{ 111111111 };
+	static constexpr uint16_t cParentTypeId{ xx::SerdeBase::cTypeId };
+    void WriteTo(xx::Data& d) const override;
+    int32_t ReadFrom(xx::Data_r& dr) override;
+};
+    */
     struct SerdeBase {
         static constexpr uint16_t cTypeId{};
         static constexpr uint16_t cParentTypeId{};
         SerdeBase() = default;
         virtual ~SerdeBase() = default;
-        virtual void Write(Data& d) const {};
-        virtual int Read(Data_r& dr) { return __LINE__; }
-        uint16_t typeId;  // fill by MakeShared<T, true>, after constructor
+        virtual void WriteTo(Data& d) const {};
+        virtual int32_t ReadFrom(Data_r& dr) { return __LINE__; }
+        uint16_t typeId;  // fill by MakeShared, after constructor
+    };
+
+    struct SerdeInfo;
+    struct DataEx_r : Data_r {
+        using Data_r::Data_r;
+        SerdeInfo* si{};                            // need fill before use
+        xx::Listi32<xx::Shared<SerdeBase>> ptrs;    // need clear after read finish
+    };
+
+    struct UdPtr {
+        size_t* p;
+        UdPtr(size_t* p) : p(p) {}
+        UdPtr(UdPtr const&) = default;
+        UdPtr& operator=(UdPtr const&) = default;
+        ~UdPtr() {
+            *p = 0;
+        }
+    };
+
+    struct DataEx : Data {
+        using Data::Data;
+        SerdeInfo* si{};                            // need fill before use
+        xx::Listi32<UdPtr> ptrs;                    // need clear after write finish
     };
 
     struct SerdeInfo {
@@ -49,7 +80,7 @@ namespace xx {
 		void Register() {
 			static_assert(std::is_base_of_v<SerdeBase, T>);
 			pids[T::cTypeId] = T::cParentTypeId;
-			fs[T::cTypeId] = []() -> Shared<SerdeBase> { return ::xx::MakeShared<T, true>(); };
+			fs[T::cTypeId] = []() -> Shared<SerdeBase> { return ::xx::MakeShared<T>(); };
 		}
 
         template<typename T = SerdeBase>
@@ -58,28 +89,19 @@ namespace xx {
             if (!typeId || !fs[typeId] || !IsBaseOf<T>(typeId)) return nullptr;
 			return (Shared<T>&)fs[typeId]();
 		}
-    };
 
-    struct DataEx_r : Data_r {
-        using Data_r::Data_r;
-        SerdeInfo* si{};                            // need fill before use
-        xx::Listi32<xx::Shared<SerdeBase>> ptrs;    // need clear after read finish
-    };
-
-    struct UdPtr {
-        size_t* p;
-        UdPtr(size_t* p) : p(p) {}
-        UdPtr(UdPtr const&) = default;
-        UdPtr& operator=(UdPtr const&) = default;
-        ~UdPtr() {
-            *p = 0;
+        DataEx MakeDataEx() {
+            DataEx d;
+            d.si = this;
+            return d;
         }
-    };
 
-    struct DataEx : Data {
-        using Data::Data;
-        SerdeInfo* si{};                            // need fill before use
-        xx::Listi32<UdPtr> ptrs;                    // need clear after write finish
+        template<typename D>
+        DataEx_r MakeDataEx_r(D&& d) {
+            DataEx_r dr(std::forward<D>(d));
+            dr.si = this;
+            return dr;
+        }
     };
 
     template<typename T>
