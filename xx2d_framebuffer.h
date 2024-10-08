@@ -42,6 +42,7 @@ namespace xx {
 
     protected:
         void Begin(Ref<GLTexture>& t, std::optional<RGBA8> const& c = {}) {
+            assert(t);
             auto& eb = EngineBase1::Instance();
             eb.ShaderEnd();
             bakWndSiz = eb.windowSize;
