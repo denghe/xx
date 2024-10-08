@@ -26,7 +26,7 @@ namespace xx {
 
 			auto cornerSize = cfg_.GetCornerSize();
 			lbl = MakeChildren<Label>();
-			lbl->Init(z + 1, (cornerSize + cTextPadding) / 2, { 1, 1 }, {}, RGBA8_White, txt_);
+			lbl->Init(z + 1, (cornerSize + cTextPadding) / 2, cfg_.texScale, {}, RGBA8_White, txt_);
 			size = lbl->size + cornerSize + cTextPadding;
 
 			bg = MakeChildren<Scale9Sprite>();

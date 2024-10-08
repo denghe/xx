@@ -21,10 +21,10 @@ namespace xx {
 			auto len = (int)txt_.size();
 			fs.Resize(len);
 			auto& ctc = EngineBase2::Instance().ctcDefault;
-			size = { 0, (float)ctc.canvasHeight };
+			size = { 0, (float)ctc.canvasHeight * scale.x };
 			for (int i = 0; i < len; ++i) {
 				fs[i] = &ctc.Find(txt_[i]);
-				size.x += fs[i]->texRect.w;
+				size.x += fs[i]->texRect.w * scale.x;
 			}
 			FillTrans();
 		}
@@ -42,12 +42,12 @@ namespace xx {
 			auto basePos = trans().Offset();
 			for (auto& f : fs) {
 				auto& q = *shader.Draw(f->tex->GetValue(), 1);
-				q.anchor = { 0.f, 0.f };
-				q.color = color;
-				q.colorplus = 1;
 				q.pos = basePos;
-				q.radians = {};
+				q.anchor = { 0.f, 0.f };
 				q.scale = { trans().a, trans().d };
+				q.radians = {};
+				q.colorplus = 1;
+				q.color = color;
 				q.texRect.data = f->texRect.data;
 				basePos.x += f->texRect.w * trans().a;
 			}

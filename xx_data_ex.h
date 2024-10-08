@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "xx_data.h"
+#include "xx_data_shared.h"
 #include "xx_ptr.h"
 
 namespace xx {
@@ -34,10 +34,19 @@ struct XXXXXXXXXXX {
         UdPtr(size_t* p) : p(p) {}
         UdPtr(UdPtr const&) = default;
         UdPtr& operator=(UdPtr const&) = default;
+        UdPtr(UdPtr&& u) noexcept {
+            p = std::exchange(u.p, nullptr);
+        }
+        UdPtr& operator=(UdPtr&& u) noexcept {
+            p = std::exchange(u.p, nullptr);
+            return *this;
+        }
         ~UdPtr() {
             *p = 0;
         }
     };
+    template<>
+    struct IsPod<UdPtr, void> : std::true_type {};
 
     struct DataEx : Data {
         using Data::Data;
@@ -104,6 +113,20 @@ struct XXXXXXXXXXX {
         }
     };
 
+    inline XX_INLINE uint16_t ReadVarUint16(void* buf, size_t offset, size_t len) {
+        auto u = ((uint8_t*)buf)[offset] & 0x7Fu;
+        if ((((uint8_t*)buf)[offset] & 0x80u) == 0) return u;
+        if (offset + 1 >= len) return 0;
+        return u | ((((uint8_t*)buf)[offset + 1] & 0x7Fu) << 7);
+    }
+
+    inline XX_INLINE uint16_t ReadTypeId(DataShared const& ds) {
+        auto buf = ds.GetBuf();
+        auto len = ds.GetLen();
+        if (len < 2 || buf[0] != 1) return 0;
+        return ReadVarUint16(buf, 1, len);
+    }
+
     template<typename T>
     struct DataFuncs<T, std::enable_if_t<xx::IsShared_v<T> && std::is_base_of_v<SerdeBase, typename T::ElementType>>> {
         using U = typename T::ElementType;
@@ -114,9 +137,9 @@ struct XXXXXXXXXXX {
             if (!in) {
                 d.WriteFixed<needReserve>((uint8_t)0);              // index( nullptr ) same as WriteVar(size_t 0)
             } else {
-                auto& ptrs = ((DataEx&)d).ptrs;
                 auto h = in.GetHeader();
                 if (h->ud == 0) {                   // first time
+                    auto& ptrs = ((DataEx&)d).ptrs;
                     ptrs.Emplace(&h->ud);           // for restore
                     h->ud = (size_t)ptrs.len;       // store index
                     d.WriteVarInteger<needReserve>(h->ud);          // index
@@ -148,8 +171,8 @@ struct XXXXXXXXXXX {
 
                 if (!out || out->typeId != typeId) {
                     out = std::move(si.MakeShared<U>(typeId));
-                    assert(out);
                 }
+                assert(out);
                 ptrs.Emplace(out);
                 return out->ReadFrom(dr);
             } else {
