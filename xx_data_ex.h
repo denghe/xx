@@ -60,6 +60,7 @@ struct XXXXXXXXXXX {
 
         std::array<Func, 65536> fs{};
         std::array<uint16_t, 65536> pids{};
+
         void Init() {
             memset(fs.data(), 0, sizeof(Func) * fs.size());
             memset(pids.data(), 0, sizeof(uint16_t) * pids.size());
@@ -88,6 +89,7 @@ struct XXXXXXXXXXX {
 		template<typename T>
         XX_INLINE void Register() {
 			static_assert(std::is_base_of_v<SerdeBase, T>);
+            assert(!fs[T::cTypeId]);
 			pids[T::cTypeId] = T::cParentTypeId;
 			fs[T::cTypeId] = []() -> Shared<SerdeBase> { return ::xx::MakeShared<T>(); };
 		}

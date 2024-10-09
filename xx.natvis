@@ -2,7 +2,7 @@
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
 	<Type Name="xx::FX64">
-		<DisplayString>{value * 4294967296.0}</DisplayString>
+		<DisplayString>{(double)value * (1.0 / 4294967296.0)}</DisplayString>
 		<Expand HideRawView="true">
 			<Item Name="[data]">value</Item>
 		</Expand>

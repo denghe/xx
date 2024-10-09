@@ -29,7 +29,7 @@ namespace xx {
     };
 
     template<typename HT>
-    XX_INLINE HT* GetPtrHeader(void* p) {
+    XX_INLINE HT* CalcPtrHeader(void* p) {
         return container_of(p, HT, data);
     }
 
@@ -111,13 +111,13 @@ namespace xx {
             static_assert(std::is_base_of_v<T, U> || std::is_same_v<T, U>);
             static_assert(PtrAlignCheck_v<T, U>);
             if (ptr) {
-                ++GetPtrHeader<HeaderType>(ptr)->sharedCount;
+                ++CalcPtrHeader<HeaderType>(ptr)->sharedCount;
             }
         }
 
         Shared_(T* ptr) : pointer(ptr) {
             if (ptr) {
-                ++GetPtrHeader<HeaderType>(ptr)->sharedCount;
+                ++CalcPtrHeader<HeaderType>(ptr)->sharedCount;
             }
         }
 
@@ -216,7 +216,7 @@ namespace xx {
 
         // unsafe
         XX_INLINE HeaderType* GetHeader() const {
-            return (HeaderType*)GetPtrHeader<HeaderType>(pointer);
+            return (HeaderType*)CalcPtrHeader<HeaderType>(pointer);
         }
 
         uint32_t GetSharedCount() const {
@@ -265,7 +265,7 @@ namespace xx {
             Reset();
             if (ptr) {
                 pointer = ptr;
-                ++GetPtrHeader<HeaderType>(ptr)->sharedCount;
+                ++CalcPtrHeader<HeaderType>(ptr)->sharedCount;
             }
         }
 
@@ -308,6 +308,11 @@ namespace xx {
     using Ref = Shared_<T, false>;
 
     inline static void* Nil{};
+
+    template<typename T>
+    XX_INLINE typename Shared<T>::HeaderType* GetPtrHeader(T const* p) {
+        return container_of(p, typename Shared<T>::HeaderType, data);
+    }
 
     /************************************************************************************/
     // std::weak_ptr like
