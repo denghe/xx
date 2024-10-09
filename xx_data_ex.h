@@ -86,7 +86,7 @@ struct XXXXXXXXXXX {
 		}
 
 		template<typename T>
-		void Register() {
+        XX_INLINE void Register() {
 			static_assert(std::is_base_of_v<SerdeBase, T>);
 			pids[T::cTypeId] = T::cParentTypeId;
 			fs[T::cTypeId] = []() -> Shared<SerdeBase> { return ::xx::MakeShared<T>(); };
@@ -99,17 +99,37 @@ struct XXXXXXXXXXX {
 			return (Shared<T>&)fs[typeId]();
 		}
 
-        DataEx MakeDataEx() {
+        XX_INLINE DataEx MakeDataEx() {
             DataEx d;
             d.si = this;
             return d;
         }
 
+        template<typename M>
+        XX_INLINE DataShared MakeDataShared(M&& msg) {
+            auto d = MakeDataEx();
+            d.Write(std::forward<M>(msg));
+            return std::move(d);
+        }
+
+        template<typename M>
+        XX_INLINE DataShared MakeDataShared() {
+            return MakeDataShared(::xx::MakeShared<M>());
+        }
+
         template<typename D>
-        DataEx_r MakeDataEx_r(D&& d) {
+        XX_INLINE DataEx_r MakeDataEx_r(D&& d) {
             DataEx_r dr(std::forward<D>(d));
             dr.si = this;
             return dr;
+        }
+
+        template<typename M>
+        XX_INLINE Shared<M> MakeMessage(DataShared const& ds) {
+            auto dr = MakeDataEx_r(ds);
+            xx::Shared<M> msg;
+            if (dr.Read(msg)) return {};
+            return msg;
         }
     };
 
