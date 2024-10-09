@@ -11,8 +11,8 @@ namespace xx {
 	// for inherit
 	template<typename Derived>
 	struct Spacei32Item {
-		Spacei32<Derived>* _sgc{};             // weak ref
-		Derived* _sgcPrev{}, * _sgcNext{};   // weak ref
+		Spacei32<Derived>* _sgc{};          // weak ref
+		Derived* _sgcPrev{}, * _sgcNext{};  // weak ref
 		int32_t _sgcIdx{ -1 };              // index at Sapce.cells
 		int32_t _x{}, _y{}, _radius{};		// need fill / sync before Add / Update
 	};

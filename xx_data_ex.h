@@ -128,7 +128,10 @@ struct XXXXXXXXXXX {
         XX_INLINE Shared<M> MakeMessage(DataShared const& ds) {
             auto dr = MakeDataEx_r(ds);
             xx::Shared<M> msg;
-            if (dr.Read(msg)) return {};
+            if (auto r = dr.Read(msg))
+                return {};
+            if (dr.offset != dr.len)
+                return {};
             return msg;
         }
     };
@@ -173,7 +176,7 @@ struct XXXXXXXXXXX {
 
         static inline int Read(Data_r& dr, T& out) {
             size_t idx;
-            if (int r = dr.Read(idx)) return r;                 // index
+            if (int r = dr.Read(idx)) return r;                     // index
             if (!idx) {                             // nullptr
                 out.Reset();
                 return 0;
@@ -184,7 +187,7 @@ struct XXXXXXXXXXX {
             auto len = (size_t)ptrs.len;
             if (idx == len) {                       // first time
                 uint16_t typeId;
-                if (int r = dr.Read(typeId)) return r;          // type id
+                if (int r = dr.Read(typeId)) return r;              // type id
                 if (!typeId) return __LINE__;
                 if (!si.fs[typeId]) return __LINE__;
                 if (!si.IsBaseOf<U>(typeId)) return __LINE__;

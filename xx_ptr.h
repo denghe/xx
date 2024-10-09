@@ -307,6 +307,8 @@ namespace xx {
     template<typename T>
     using Ref = Shared_<T, false>;
 
+    inline static void* Nil{};
+
     /************************************************************************************/
     // std::weak_ptr like
 
