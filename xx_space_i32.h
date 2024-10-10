@@ -312,12 +312,12 @@ namespace xx {
 			c = cells[idx].item;
 			while (c) {
 				auto nex = c->_sgcNext;
-				if constexpr (enableExcept) {
-					if (c == except) {
-						c = nex;
-						continue;
-					}
-				}
+				//if constexpr (enableExcept) {
+				//	if (c == except) {
+				//		c = nex;
+				//		continue;
+				//	}
+				//}
 				if constexpr (std::is_void_v<R>) {
 					func(c);
 				} else {
@@ -333,12 +333,12 @@ namespace xx {
 			c = cells[idx].item;
 			while (c) {
 				auto nex = c->_sgcNext;
-				if constexpr (enableExcept) {
-					if (c == except) {
-						c = nex;
-						continue;
-					}
-				}
+				//if constexpr (enableExcept) {
+				//	if (c == except) {
+				//		c = nex;
+				//		continue;
+				//	}
+				//}
 				if constexpr (std::is_void_v<R>) {
 					func(c);
 				} else {
@@ -352,12 +352,12 @@ namespace xx {
 			c = cells[idx].item;
 			while (c) {
 				auto nex = c->_sgcNext;
-				if constexpr (enableExcept) {
-					if (c == except) {
-						c = nex;
-						continue;
-					}
-				}
+				//if constexpr (enableExcept) {
+				//	if (c == except) {
+				//		c = nex;
+				//		continue;
+				//	}
+				//}
 				if constexpr (std::is_void_v<R>) {
 					func(c);
 				} else {
@@ -373,12 +373,12 @@ namespace xx {
 			c = cells[idx].item;
 			while (c) {
 				auto nex = c->_sgcNext;
-				if constexpr (enableExcept) {
-					if (c == except) {
-						c = nex;
-						continue;
-					}
-				}
+				//if constexpr (enableExcept) {
+				//	if (c == except) {
+				//		c = nex;
+				//		continue;
+				//	}
+				//}
 				if constexpr (std::is_void_v<R>) {
 					func(c);
 				} else {
@@ -392,12 +392,12 @@ namespace xx {
 			c = cells[idx].item;
 			while (c) {
 				auto nex = c->_sgcNext;
-				if constexpr (enableExcept) {
-					if (c == except) {
-						c = nex;
-						continue;
-					}
-				}
+				//if constexpr (enableExcept) {
+				//	if (c == except) {
+				//		c = nex;
+				//		continue;
+				//	}
+				//}
 				if constexpr (std::is_void_v<R>) {
 					func(c);
 				} else {
@@ -413,12 +413,12 @@ namespace xx {
 			c = cells[idx].item;
 			while (c) {
 				auto nex = c->_sgcNext;
-				if constexpr (enableExcept) {
-					if (c == except) {
-						c = nex;
-						continue;
-					}
-				}
+				//if constexpr (enableExcept) {
+				//	if (c == except) {
+				//		c = nex;
+				//		continue;
+				//	}
+				//}
 				if constexpr (std::is_void_v<R>) {
 					func(c);
 				} else {
@@ -432,12 +432,12 @@ namespace xx {
 			c = cells[idx].item;
 			while (c) {
 				auto nex = c->_sgcNext;
-				if constexpr (enableExcept) {
-					if (c == except) {
-						c = nex;
-						continue;
-					}
-				}
+				//if constexpr (enableExcept) {
+				//	if (c == except) {
+				//		c = nex;
+				//		continue;
+				//	}
+				//}
 				if constexpr (std::is_void_v<R>) {
 					func(c);
 				} else {
@@ -451,12 +451,12 @@ namespace xx {
 			c = cells[idx].item;
 			while (c) {
 				auto nex = c->_sgcNext;
-				if constexpr (enableExcept) {
-					if (c == except) {
-						c = nex;
-						continue;
-					}
-				}
+				//if constexpr (enableExcept) {
+				//	if (c == except) {
+				//		c = nex;
+				//		continue;
+				//	}
+				//}
 				if constexpr (std::is_void_v<R>) {
 					func(c);
 				} else {

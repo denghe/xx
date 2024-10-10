@@ -132,6 +132,35 @@ namespace xx {
 
         /********************************************************************************************/
 
+        XX_INLINE FX64 Sqrt() const { return Fixed64::Sqrt(value); }
+        XX_INLINE FX64 SqrtFast() const { return Fixed64::SqrtFast(value); }
+        XX_INLINE FX64 SqrtFastest() const { return Fixed64::SqrtFastest(value); }
+        XX_INLINE FX64 SqrtPrecise() const { return Fixed64::SqrtPrecise(value); }
+
+        XX_INLINE FX64 Sin() const { return Fixed64::Sin(value); }
+        XX_INLINE FX64 SinFast() const { return Fixed64::SinFast(value); }
+        XX_INLINE FX64 SinFastest() const { return Fixed64::SinFastest(value); }
+
+        XX_INLINE FX64 Cos() const { return Fixed64::Cos(value); }
+        XX_INLINE FX64 CosFast() const { return Fixed64::CosFast(value); }
+        XX_INLINE FX64 CosFastest() const { return Fixed64::CosFastest(value); }
+
+        XX_INLINE static FX64 Atan2(FX64 const& y, FX64 const& x) { return Fixed64::Atan2(y.value, x.value); }
+        XX_INLINE static FX64 Atan2Fast(FX64 const& y, FX64 const& x) { return Fixed64::Atan2Fast(y.value, x.value); }
+        XX_INLINE static FX64 Atan2Fastest(FX64 const& y, FX64 const& x) { return Fixed64::Atan2Fastest(y.value, x.value); }
+
+        XX_INLINE FX64 Abs() const { return Fixed64::Abs(value); }
+
+        XX_INLINE FX64 Normalize() const {
+            auto m = Mul(value, value);
+            auto s = Fixed64::Sqrt(m);
+            return Div(value, s);
+        }
+
+        // ... atan2 div ? ...
+
+        /********************************************************************************************/
+
         FP_LONG value;
         //constexpr operator FP_LONG() const { return value; }
 
@@ -169,13 +198,13 @@ namespace xx {
         constexpr bool operator<(FX64 const& v) const { return value < v.value; }
 
         constexpr void SetZero() { value = 0; }
+        constexpr bool IsZero() { return value == 0; }
         constexpr int32_t ToInt() { return FloorToInt(value); }
         constexpr int32_t ToIntFloor() { return FloorToInt(value); }
         constexpr int32_t ToIntCeil() { return CeilToInt(value); }
         constexpr int32_t ToIntRound() { return RoundToInt(value); }
         constexpr double ToDouble() { return ToDouble(value); }
         constexpr float ToFloat() { return ToFloat(value); }
-
     };
 
     template<typename T>
