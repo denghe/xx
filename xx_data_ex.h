@@ -12,7 +12,7 @@ struct XXXXXXXXXXX {
     int32_t ReadFrom(xx::Data_r& dr) override;
 };
     */
-    struct SerdeBase {
+    struct alignas(8) SerdeBase {
         static constexpr uint16_t cTypeId{};
         static constexpr uint16_t cParentTypeId{};
         SerdeBase() = default;
@@ -98,7 +98,7 @@ struct XXXXXXXXXXX {
         XX_INLINE Shared<T> MakeShared(uint16_t const& typeId) {
             static_assert(std::is_base_of_v<SerdeBase, T>);
             if (!typeId || !fs[typeId] || !IsBaseOf<T>(typeId)) return nullptr;
-			return (Shared<T>&)fs[typeId]();
+			return fs[typeId]().Cast<T>();
 		}
 
         XX_INLINE DataEx MakeDataEx() {

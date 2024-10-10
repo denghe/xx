@@ -137,6 +137,10 @@ namespace xx {
         XX_INLINE FX64 SqrtFastest() const { return Fixed64::SqrtFastest(value); }
         XX_INLINE FX64 SqrtPrecise() const { return Fixed64::SqrtPrecise(value); }
 
+        XX_INLINE FX64 RSqrt() const { return Fixed64::RSqrt(value); }
+        XX_INLINE FX64 RSqrtFast() const { return Fixed64::RSqrtFast(value); }
+        XX_INLINE FX64 RSqrtFastest() const { return Fixed64::RSqrtFastest(value); }
+
         XX_INLINE FX64 Sin() const { return Fixed64::Sin(value); }
         XX_INLINE FX64 SinFast() const { return Fixed64::SinFast(value); }
         XX_INLINE FX64 SinFastest() const { return Fixed64::SinFastest(value); }
@@ -157,7 +161,7 @@ namespace xx {
             return Div(value, s);
         }
 
-        // ... atan2 div ? ...
+        // ... 
 
         /********************************************************************************************/
 

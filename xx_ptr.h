@@ -524,7 +524,7 @@ namespace xx {
     template<typename T, typename...Args>
     Shared<T> MakeShared(Args &&...args) {
         Shared<T> rtv;
-        rtv.Emplace<T>(std::forward<Args>(args)...);
+        rtv.template Emplace<T>(std::forward<Args>(args)...);
         return rtv;
     }
 
