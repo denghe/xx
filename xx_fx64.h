@@ -202,13 +202,13 @@ namespace xx {
         constexpr bool operator<(FX64 const& v) const { return value < v.value; }
 
         constexpr void SetZero() { value = 0; }
-        constexpr bool IsZero() { return value == 0; }
-        constexpr int32_t ToInt() { return FloorToInt(value); }
-        constexpr int32_t ToIntFloor() { return FloorToInt(value); }
-        constexpr int32_t ToIntCeil() { return CeilToInt(value); }
-        constexpr int32_t ToIntRound() { return RoundToInt(value); }
-        constexpr double ToDouble() { return ToDouble(value); }
-        constexpr float ToFloat() { return ToFloat(value); }
+        constexpr bool IsZero() const { return value == 0; }
+        constexpr int32_t ToInt() const { return FloorToInt(value); }
+        constexpr int32_t ToIntFloor() const { return FloorToInt(value); }
+        constexpr int32_t ToIntCeil() const { return CeilToInt(value); }
+        constexpr int32_t ToIntRound() const { return RoundToInt(value); }
+        constexpr double ToDouble() const { return ToDouble(value); }
+        constexpr float ToFloat() const { return ToFloat(value); }
     };
 
     template<typename T>
@@ -221,6 +221,13 @@ namespace xx {
 
         static inline int Read(Data_r& dr, T& out) {
             return dr.ReadFixed(out.value);
+        }
+    };
+
+    template<typename T>
+    struct StringFuncs<T, std::enable_if_t<std::is_base_of_v<FX64, T>>> {
+        static inline void Append(std::string& s, T const& in) {
+            ::xx::Append(s, in.ToDouble());
         }
     };
 
