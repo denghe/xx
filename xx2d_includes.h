@@ -11,8 +11,18 @@
 #include <xx_space2.h>
 #include <xx_spaceab.h>
 #include <xx_spaceab2.h>
+#include <xx_space_i32.h>
+#include <xx_spaceab_i32.h>
+#include <xx_prims.h>
+#include <xx_math.h>
 #include <xx_rnd.h>
 #include <xx_zstd.h>
+#include <xx_data_ex.h>
+#include <xx_fx64.h>
+using XY = xx::XY;
+using XYi = xx::XYi;
+using FX64 = xx::FX64;
+
 
 #include <nameof.hpp>
 

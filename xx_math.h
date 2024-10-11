@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "xx_xy.h"
+#include "xx_fx64.h"
 
 namespace xx {
 
@@ -391,16 +392,22 @@ namespace xx {
                 auto dSeq = dx2 * dx2 + dy2 * dy2;
                 if (dSeq == T{}) {
                     if constexpr (std::is_integral_v<T>) {
-                        incX = bHalfWidth + T(cr * 7071 / 10000 + 1);
-                        incY = bHalfHeight + T(cr * 7071 / 10000 + 1);
+                        incX = bHalfWidth + cr * 7071 / 10000 + 1;
+                        incY = bHalfHeight + cr * 7071 / 10000 + 1;
                     } else {
-                        incX = bHalfWidth + T(cr * 0.7071 + 1);
-                        incY = bHalfHeight + T(cr * 0.7071 + 1);
+                        incX = bHalfWidth + cr * T{ 0.7071 } + 1;
+                        incY = bHalfHeight + cr * T{ 0.7071 } + 1;
                     }
                 } else {
-                    auto d = std::sqrt(dSeq);
-                    incX = bHalfWidth + T(cr * dx2 / d) + 1;
-                    incY = bHalfHeight + T(cr * dy2 / d) + 1;
+                    if constexpr (std::is_integral_v<T>) {
+                        auto d = FX64{ dSeq }.RSqrtFastest();
+                        incX = bHalfWidth + (FX64{ cr * dx2 } * d).ToInt() + 1;
+                        incY = bHalfHeight + (FX64{ cr * dy2 } * d).ToInt() + 1;
+                    } else {
+                        auto d = std::sqrt(dSeq);
+                        incX = bHalfWidth + cr * dx2 / d + 1;
+                        incY = bHalfHeight + cr * dy2 / d + 1;
+                    }
                 }
 
                 if constexpr (canUp && canRight && canDown && canLeft) {
@@ -480,67 +487,67 @@ namespace xx {
         }
 
         // up
-        template<typename T> void PushOut1(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, false, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut1(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, false, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
         }
         // right
-        template<typename T> void PushOut2(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, true, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut2(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, true, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
         }
         // up + right
-        template<typename T> void PushOut3(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, true, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut3(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, true, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
         }
         // down
-        template<typename T> void PushOut4(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, false, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut4(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, false, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
         }
         // up + down
-        template<typename T> void PushOut5(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, false, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut5(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, false, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
         }
         // right + down
-        template<typename T> void PushOut6(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, true, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut6(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, true, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
         }
         // up + right + down
-        template<typename T> void PushOut7(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, true, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut7(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, true, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
         }
         // left
-        template<typename T> void PushOut8(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, false, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut8(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, false, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
         }
         // up + left
-        template<typename T> void PushOut9(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, false, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut9(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, false, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
         }
         // right + left
-        template<typename T> void PushOut10(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, true, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut10(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, true, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
         }
         // up + right + left
-        template<typename T> void PushOut11(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, true, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut11(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, true, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
         }
         // down + left
-        template<typename T> void PushOut12(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, false, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut12(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, false, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
         }
         // up + down + left
-        template<typename T> void PushOut13(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, false, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut13(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, false, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
         }
         // right + down + left
-        template<typename T> void PushOut14(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, true, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut14(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, true, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
         }
         // up + right + down + left
-        template<typename T> void PushOut15(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, true, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut15(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, true, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
         }
 
-        typedef void(*PushOutFuncInt32)(int32_t bx, int32_t by, int32_t bHalfWidth, int32_t bHalfHeight, int32_t& cx, int32_t& cy, int32_t cr);
+        typedef bool(*PushOutFuncInt32)(int32_t bx, int32_t by, int32_t bHalfWidth, int32_t bHalfHeight, int32_t& cx, int32_t& cy, int32_t cr);
         inline static PushOutFuncInt32 pushOutFuncsInt32[] = {
             PushOut15<int32_t>,
             PushOut1<int32_t>,
@@ -560,7 +567,7 @@ namespace xx {
             PushOut15<int32_t>,
         };
 
-        typedef void(*PushOutFuncFloat)(float bx, float by, float bHalfWidth, float bHalfHeight, float& cx, float& cy, float cr);
+        typedef bool(*PushOutFuncFloat)(float bx, float by, float bHalfWidth, float bHalfHeight, float& cx, float& cy, float cr);
         inline static PushOutFuncFloat pushOutFuncsFloat[] = {
             PushOut15<float>,
             PushOut1<float>,

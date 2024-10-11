@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include <xx2d_includes.h>
-#include <xx2d_prims.h>
 #include <xx2d_gdesign.h>
 #include <xx2d_curvemovepath.h>
 #ifndef DISABLE_ENGINE_AUDIO

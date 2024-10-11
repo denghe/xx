@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include <xx2d_includes.h>
 #include <xx2d_opengl.h>
-#include <xx2d_prims.h>
 
 namespace xx {
 

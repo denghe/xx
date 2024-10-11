@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <xx2d_prims.h>
+#include <xx_prims.h>
 
 namespace xx {
 

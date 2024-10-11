@@ -147,8 +147,8 @@ namespace xx {
 			assert(c->_aabb.to.x < c->_sgc->max.x && c->_aabb.to.y < c->_sgc->max.y);
 
 			// calc covered cells
-			auto crIdxFrom = c->_aabb.from.template As<int32_t>() / cellSize;
-			auto crIdxTo = c->_aabb.to.template As<int32_t>() / cellSize;
+			auto crIdxFrom = c->_aabb.from / cellSize;
+			auto crIdxTo = c->_aabb.to / cellSize;
 			auto numCoveredCells = (crIdxTo.x - crIdxFrom.x + 1) * (crIdxTo.y - crIdxFrom.y + 1);
 
 			auto& ccis = c->_sgcCoveredCellInfos;
@@ -201,20 +201,25 @@ namespace xx {
 		int ExistsPoint(XYi p) {
 			if (p.x < 0 || p.y < 0 || p.x >= max.x || p.y >= max.y) return 2;
 			auto crIdx = p / cellSize;
-			if (cells[crIdx.y * numCols + crIdx.x].item != nullptr) return 1;
-			else return 0;
+			auto c = cells[crIdx.y * numCols + crIdx.x].item;
+			while (c) {
+				auto&& s = c->self;
+				if (!(s->_aabb.to.x < p.x || p.x < s->_aabb.from.x || s->_aabb.to.y < p.y || p.y < s->_aabb.from.y)) return 1;
+				c = c->next;
+			}
+			return 0;
 		}
 
 		void ClearResults() {
 			for (auto& o : results) {
 				o->_sgcFlag = 0;
 			}
-			results.clear();
+			results.Clear();
 		}
 
 		template<typename F>
 		void ForeachPoint(XYi const& p, F&& func) {
-			auto crIdx = p.template As<int32_t>() / cellSize;
+			auto crIdx = p / cellSize;
 			if (crIdx.x < 0 || crIdx.x >= numCols
 				|| crIdx.y < 0 || crIdx.y >= numRows) return;
 			auto c = cells[crIdx.y * numCols + crIdx.x].item;
@@ -240,15 +245,15 @@ namespace xx {
 
 		// fill items to results. need ClearResults()
 		// auto guard = xx::MakeSimpleScopeGuard([&] { sg.ClearResults(); });
-		void ForeachAABB(XYi const& minXY, XYi const& maxXY, Item* except = nullptr) {
-			assert(minXY.x < maxXY.x);
-			assert(minXY.y < maxXY.y);
-			assert(minXY.x >= 0 && minXY.y >= 0);
-			assert(maxXY.x < max.x && maxXY.y < max.y);
+		void ForeachAABB(FromTo<XYi>& aabb, Item* except = nullptr) {
+			assert(aabb.from.x < aabb.to.x);
+			assert(aabb.from.y < aabb.to.y);
+			assert(aabb.from.x >= 0 && aabb.from.y >= 0);
+			assert(aabb.to.x < max.x && aabb.to.y < max.y);
 
 			// calc covered cells
-			auto crIdxFrom = minXY.template As<int32_t>() / cellSize;
-			auto crIdxTo = maxXY.template As<int32_t>() / cellSize;
+			auto crIdxFrom = aabb.from / cellSize;
+			auto crIdxTo = aabb.to / cellSize;
 
 			// except set flag
 			if (except) {
@@ -262,10 +267,10 @@ namespace xx {
 						auto c = cells[rIdx * numCols + cIdx].item;
 						while (c) {
 							auto&& s = c->self;
-							if (!(s->_aabb.to.x < minXY.x || maxXY.x < s->_aabb.from.x || s->_aabb.to.y < minXY.y || maxXY.y < s->_aabb.from.y)) {
+							if (!(s->_aabb.to.x < aabb.from.x || aabb.to.x < s->_aabb.from.x || s->_aabb.to.y < aabb.from.y || aabb.to.y < s->_aabb.from.y)) {
 								if (!s->_sgcFlag) {
 									s->_sgcFlag = 1;
-									results.push_back(s);
+									results.Emplace(s);
 								}
 							}
 							c = c->next;
@@ -281,10 +286,10 @@ namespace xx {
 				auto c = cells[rIdx * numCols + cIdx].item;
 				while (c) {
 					auto&& s = c->self;
-					if (s->_aabb.to.x > minXY.x && s->_aabb.to.y > minXY.y) {
+					if (s->_aabb.to.x > aabb.from.x && s->_aabb.to.y > aabb.from.y) {
 						if (!s->_sgcFlag) {
 							s->_sgcFlag = 1;
-							results.push_back(s);
+							results.Emplace(s);
 						}
 					}
 					c = c->next;
@@ -295,10 +300,10 @@ namespace xx {
 					c = cells[rIdx * numCols + cIdx].item;
 					while (c) {
 						auto&& s = c->self;
-						if (s->_aabb.to.y > minXY.y) {
+						if (s->_aabb.to.y > aabb.from.y) {
 							if (!s->_sgcFlag) {
 								s->_sgcFlag = 1;
-								results.push_back(s);
+								results.Emplace(s);
 							}
 						}
 						c = c->next;
@@ -310,10 +315,10 @@ namespace xx {
 					auto c = cells[rIdx * numCols + cIdx].item;
 					while (c) {
 						auto&& s = c->self;
-						if (s->_aabb.from.x < maxXY.x && s->_aabb.to.y > minXY.y) {
+						if (s->_aabb.from.x < aabb.to.x && s->_aabb.to.y > aabb.from.y) {
 							if (!s->_sgcFlag) {
 								s->_sgcFlag = 1;
-								results.push_back(s);
+								results.Emplace(s);
 							}
 						}
 						c = c->next;
@@ -328,10 +333,10 @@ namespace xx {
 					c = cells[rIdx * numCols + cIdx].item;
 					while (c) {
 						auto&& s = c->self;
-						if (s->_aabb.to.x > minXY.x) {
+						if (s->_aabb.to.x > aabb.from.x) {
 							if (!s->_sgcFlag) {
 								s->_sgcFlag = 1;
-								results.push_back(s);
+								results.Emplace(s);
 							}
 						}
 						c = c->next;
@@ -344,7 +349,7 @@ namespace xx {
 							auto&& s = c->self;
 							if (!s->_sgcFlag) {
 								s->_sgcFlag = 1;
-								results.push_back(s);
+								results.Emplace(s);
 							}
 							c = c->next;
 						}
@@ -355,10 +360,10 @@ namespace xx {
 						auto c = cells[rIdx * numCols + cIdx].item;
 						while (c) {
 							auto&& s = c->self;
-							if (s->_aabb.from.x < maxXY.x) {
+							if (s->_aabb.from.x < aabb.to.x) {
 								if (!s->_sgcFlag) {
 									s->_sgcFlag = 1;
-									results.push_back(s);
+									results.Emplace(s);
 								}
 							}
 							c = c->next;
@@ -374,10 +379,10 @@ namespace xx {
 					c = cells[rIdx * numCols + cIdx].item;
 					while (c) {
 						auto&& s = c->self;
-						if (s->_aabb.to.x > minXY.x && s->_aabb.from.y < maxXY.y) {
+						if (s->_aabb.to.x > aabb.from.x && s->_aabb.from.y < aabb.to.y) {
 							if (!s->_sgcFlag) {
 								s->_sgcFlag = 1;
-								results.push_back(s);
+								results.Emplace(s);
 							}
 						}
 						c = c->next;
@@ -388,10 +393,10 @@ namespace xx {
 						c = cells[rIdx * numCols + cIdx].item;
 						while (c) {
 							auto&& s = c->self;
-							if (s->_aabb.from.y < maxXY.y) {
+							if (s->_aabb.from.y < aabb.to.y) {
 								if (!s->_sgcFlag) {
 									s->_sgcFlag = 1;
-									results.push_back(s);
+									results.Emplace(s);
 								}
 							}
 							c = c->next;
@@ -403,10 +408,10 @@ namespace xx {
 						auto c = cells[rIdx * numCols + cIdx].item;
 						while (c) {
 							auto&& s = c->self;
-							if (s->_aabb.from.x < maxXY.x && s->_aabb.from.y < maxXY.y) {
+							if (s->_aabb.from.x < aabb.to.x && s->_aabb.from.y < aabb.to.y) {
 								if (!s->_sgcFlag) {
 									s->_sgcFlag = 1;
-									results.push_back(s);
+									results.Emplace(s);
 								}
 							}
 							c = c->next;
