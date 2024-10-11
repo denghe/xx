@@ -14,40 +14,40 @@ namespace xx {
 		float minX{}, maxX{}, minY{}, maxY{};						// 4 corner pos
 		float safeMinX{}, safeMaxX{}, safeMinY{}, safeMaxY{};		// corner + max tex/frame size
 
-		XX_FORCE_INLINE Camera& SetMaxFrameSize(XY const& maxFrameSize_) {
+		XX_INLINE Camera& SetMaxFrameSize(XY const& maxFrameSize_) {
 			maxFrameSize = maxFrameSize_;
 			return *this;
 		}
 
-		XX_FORCE_INLINE Camera& SetOriginal(XY const& original_) {
+		XX_INLINE Camera& SetOriginal(XY const& original_) {
 			original = original_;
 			return *this;
 		}
 
-		XX_FORCE_INLINE Camera& SetScale(float scale_) {
+		XX_INLINE Camera& SetScale(float scale_) {
 			scale = scale_;
 			zoom = 1 / scale_;
 			return *this;
 		}
 
-		XX_FORCE_INLINE Camera& SetZoom(float zoom_) {
+		XX_INLINE Camera& SetZoom(float zoom_) {
 			zoom = zoom_;
 			scale = 1 / zoom_;
 			return *this;
 		}
 
-		XX_FORCE_INLINE Camera& AddScale(float offset) {
+		XX_INLINE Camera& AddScale(float offset) {
 			return SetScale(scale + offset);
 		}
 
-		XX_FORCE_INLINE Camera& IncreaseScale(float v, float maxScale) {
+		XX_INLINE Camera& IncreaseScale(float v, float maxScale) {
 			scale += v;
 			if (scale > maxScale) scale = maxScale;
 			zoom = 1 / scale;
 			return *this;
 		}
 
-		XX_FORCE_INLINE Camera& DecreaseScale(float v, float minScale) {
+		XX_INLINE Camera& DecreaseScale(float v, float minScale) {
 			scale -= v;
 			if (scale < minScale) scale = minScale;
 			zoom = 1 / scale;
@@ -73,20 +73,20 @@ namespace xx {
 		// following funcs Calc() is required
 
 		template<typename XY_t>
-		XX_FORCE_INLINE bool InArea(XY_t const& pos) const {
+		XX_INLINE bool InArea(XY_t const& pos) const {
 			return pos.x >= safeMinX && pos.x <= safeMaxX
 				&& pos.y >= safeMinY && pos.y <= safeMaxY;
 		}
 
 		// need calc
-		XX_FORCE_INLINE XY ToGLPos(XY const& logicPos) const {
+		XX_INLINE XY ToGLPos(XY const& logicPos) const {
 			return (logicPos - original).FlipY() * scale;
 		}
-		XX_FORCE_INLINE XY ToGLPos(float x, float y) const {
+		XX_INLINE XY ToGLPos(float x, float y) const {
 			return ToGLPos({ x, y });
 		}
 
-		XX_FORCE_INLINE XY ToLogicPos(XY const& glPos) const {
+		XX_INLINE XY ToLogicPos(XY const& glPos) const {
 			return (glPos / scale).FlipY() + original;
 		}
 

@@ -118,7 +118,7 @@ namespace xx {
 		}
 
 	protected:
-		XX_FORCE_INLINE void Free(NodeType& o) {
+		XX_INLINE void Free(NodeType& o) {
 			assert(o.cs.Len());
 
 			// unlink
@@ -297,7 +297,7 @@ namespace xx {
 		//}
 
 		// return true: success( aabb in area )
-		XX_FORCE_INLINE bool TryLimitAABB(FromTo<XY>& aabb) {
+		XX_INLINE bool TryLimitAABB(FromTo<XY>& aabb) {
 			if (aabb.from.x < 0) aabb.from.x = 0;
 			if (aabb.from.y < 0) aabb.from.y = 0;
 			if (aabb.to.x >= max.x) aabb.to.x = max.x - 0.1f;

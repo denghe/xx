@@ -244,50 +244,50 @@ namespace xx {
         float tx{}, ty{};
 
         // anchorSize = anchor * size
-        XX_FORCE_INLINE void PosScaleAnchorSize(XY const& pos, XY const& scale, XY const& anchorSize) {
+        XX_INLINE void PosScaleAnchorSize(XY const& pos, XY const& scale, XY const& anchorSize) {
             a = scale.x;
             d = scale.y;
             tx = pos.x - scale.x * anchorSize.x;
             ty = pos.y - scale.y * anchorSize.y;
         }
 
-        XX_FORCE_INLINE void Identity() {
+        XX_INLINE void Identity() {
             a = 1;
             d = 1;
             tx = 0;
             ty = 0;
         }
 
-        XX_FORCE_INLINE XY const& Offset() const {
+        XX_INLINE XY const& Offset() const {
             return (XY&)tx;
         }
 
-        XX_FORCE_INLINE XY const& Scale() const {
+        XX_INLINE XY const& Scale() const {
             return (XY&)a;
         }
 
         // apply
-        XX_FORCE_INLINE XY operator()(XY const& point) const {
+        XX_INLINE XY operator()(XY const& point) const {
             return { (float)((double)a * point.x + tx), (float)((double)d * point.y + ty) };
         }
 
         // child concat parent
-        XX_FORCE_INLINE SimpleAffineTransform MakeConcat(SimpleAffineTransform const& t2) const {
+        XX_INLINE SimpleAffineTransform MakeConcat(SimpleAffineTransform const& t2) const {
             auto& t1 = *this;
             return { t1.a * t2.a, t1.d * t2.d, t1.tx * t2.a + t2.tx, t1.ty * t2.d + t2.ty };
         }
 
-        XX_FORCE_INLINE SimpleAffineTransform MakeInvert() const {
+        XX_INLINE SimpleAffineTransform MakeInvert() const {
             auto& t = *this;
             auto determinant = 1 / (t.a * t.d);
             return { determinant * t.d, determinant * t.a, determinant * (-t.d * t.tx), determinant * (-t.a * t.ty) };
         }
 
-        XX_FORCE_INLINE static SimpleAffineTransform MakeIdentity() {
+        XX_INLINE static SimpleAffineTransform MakeIdentity() {
             return { 1.0, 1.0, 0.0, 0.0 };
         }
 
-        XX_FORCE_INLINE static SimpleAffineTransform MakePosScaleAnchorSize(XY const& pos, XY const& scale, XY const& anchorSize) {
+        XX_INLINE static SimpleAffineTransform MakePosScaleAnchorSize(XY const& pos, XY const& scale, XY const& anchorSize) {
             SimpleAffineTransform t;
             t.PosScaleAnchorSize(pos, scale, anchorSize);
             return t;

@@ -22,7 +22,7 @@ namespace xx {
 		}
 
 	protected:
-		XX_FORCE_INLINE void DirectBegin(float x, float y, float w, float h) {
+		XX_INLINE void DirectBegin(float x, float y, float w, float h) {
 			auto& eb = EngineBase1::Instance();
 			eb.ShaderEnd();
 			bakBlend = eb.blend;
@@ -32,7 +32,7 @@ namespace xx {
 			glEnable(GL_SCISSOR_TEST);
 		}
 
-		XX_FORCE_INLINE void DirectEnd() {
+		XX_INLINE void DirectEnd() {
 			auto& eb = EngineBase1::Instance();
 			eb.ShaderEnd();
 			glDisable(GL_SCISSOR_TEST);
@@ -40,7 +40,7 @@ namespace xx {
 		}
 
 
-		XX_FORCE_INLINE void OffsetBegin(float x, float y, float w, float h) {
+		XX_INLINE void OffsetBegin(float x, float y, float w, float h) {
 			auto& eb = EngineBase1::Instance();
 			eb.ShaderEnd();
 			bakWndSiz = eb.windowSize;
@@ -53,7 +53,7 @@ namespace xx {
 			glEnable(GL_SCISSOR_TEST);
 		}
 
-		XX_FORCE_INLINE void OffsetEnd() {
+		XX_INLINE void OffsetEnd() {
 			auto& eb = EngineBase1::Instance();
 			eb.ShaderEnd();
 			glDisable(GL_SCISSOR_TEST);

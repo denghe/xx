@@ -18,7 +18,7 @@ namespace xx {
 		}
 
 		template<typename T>
-		XX_FORCE_INLINE Shared<T>& MakeContent() {
+		XX_INLINE Shared<T>& MakeContent() {
 			auto& c = children[0];
 			assert(c->scissor.pointer() == this);
 			auto& r = c->MakeChildren<T>();
@@ -27,7 +27,7 @@ namespace xx {
 		}
 
 		template<bool resetPosition = true>
-		XX_FORCE_INLINE void InitContentSize(XY const& contentSize_) {
+		XX_INLINE void InitContentSize(XY const& contentSize_) {
 			auto& c = children[0];
 			assert(c->scissor.pointer() == this);
 			if (c->size != contentSize_) {
@@ -42,7 +42,7 @@ namespace xx {
 			}
 		}
 
-		XX_FORCE_INLINE void CalcDragLimit(XY const& contentSize_) {
+		XX_INLINE void CalcDragLimit(XY const& contentSize_) {
 			if (size.y > contentSize_.y) {
 				basePos = { 0, size.y - contentSize_.y };
 			} else {
@@ -52,7 +52,7 @@ namespace xx {
 			dragLimit.y = contentSize_.y > size.y ? -(contentSize_.y - size.y) : 0;
 		}
 
-		XX_FORCE_INLINE bool UpdateContentPosition(XY pos) {
+		XX_INLINE bool UpdateContentPosition(XY pos) {
 			auto& c = children[0];
 			assert(c->scissor.pointer() == this);
 			if (pos.x > 0) pos.x = 0;

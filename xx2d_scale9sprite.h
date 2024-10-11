@@ -9,11 +9,11 @@ namespace xx {
 		UVRect center;
 		RGBA8 color;
 
-		XX_FORCE_INLINE XY GetCornerSize() const {
+		XX_INLINE XY GetCornerSize() const {
 			return { float(frame->textureRect.w - center.w), float(frame->textureRect.h - center.h) };
 		}
 
-		XX_FORCE_INLINE XY GetCornerScaledSize() const {
+		XX_INLINE XY GetCornerScaledSize() const {
 			return GetCornerSize() * texScale;
 		}
 	};

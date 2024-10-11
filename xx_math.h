@@ -11,25 +11,25 @@ namespace xx {
 
     namespace FrameControl {
 
-        inline XX_FORCE_INLINE void Forward(float& frameIndex, float inc, float from, float to) {
+        inline XX_INLINE void Forward(float& frameIndex, float inc, float from, float to) {
             frameIndex += inc;
             if (frameIndex >= to) {
                 frameIndex = from + (frameIndex - to);
             }
         }
 
-        inline XX_FORCE_INLINE void Forward(float& frameIndex, float inc, float to) {
+        inline XX_INLINE void Forward(float& frameIndex, float inc, float to) {
             Forward(frameIndex, inc, 0, to);
         }
 
-        inline XX_FORCE_INLINE	void Backward(float& frameIndex, float inc, float from, float to) {
+        inline XX_INLINE	void Backward(float& frameIndex, float inc, float from, float to) {
             frameIndex -= inc;
             if (frameIndex <= from) {
                 frameIndex = to - (from - frameIndex);
             }
         }
 
-        inline XX_FORCE_INLINE	void Backward(float& frameIndex, float inc, float to) {
+        inline XX_INLINE	void Backward(float& frameIndex, float inc, float to) {
             Backward(frameIndex, inc, 0, to);
         }
 
@@ -41,7 +41,7 @@ namespace xx {
 
     namespace RotateControl {
 
-        inline XX_FORCE_INLINE float Gap(float tar, float cur) {
+        inline XX_INLINE float Gap(float tar, float cur) {
             auto gap = cur - tar;
             if (gap > gPI) {
                 gap -= g2PI;
@@ -54,7 +54,7 @@ namespace xx {
 
         // calc cur to tar by rate
         // return cur's new value
-        inline XX_FORCE_INLINE float LerpAngleByRate(float tar, float cur, float rate) {
+        inline XX_INLINE float LerpAngleByRate(float tar, float cur, float rate) {
             auto gap = Gap(tar, cur);
             return cur - gap * rate;        // todo: verify
         }
@@ -77,7 +77,7 @@ namespace xx {
         */
         // calc cur to tar by fixed raidians
         // return cur's new value
-        inline XX_FORCE_INLINE float LerpAngleByFixed(float tar, float cur, float a) {
+        inline XX_INLINE float LerpAngleByFixed(float tar, float cur, float a) {
             auto gap = Gap(tar, cur);
             if (gap < 0) {
                 if (gap >= -a) return tar;
@@ -92,13 +92,13 @@ namespace xx {
 
         // change cur to tar by a( max value )
         // return true: cur == tar
-        inline XX_FORCE_INLINE bool Step(float& cur, float tar, float a) {
+        inline XX_INLINE bool Step(float& cur, float tar, float a) {
             return (cur = LerpAngleByFixed(tar, cur, a)) == tar;
         }
 
         // limit a by from ~ to
         // no change: return false
-        inline XX_FORCE_INLINE bool Limit(float& a, float from, float to) {
+        inline XX_INLINE bool Limit(float& a, float from, float to) {
             // -PI ~~~~~~~~~~~~~~~~~~~~~~~~~ a ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PI
             assert(a >= gNPI && a <= gPI);
             // from ~~~~~~~~~~~~~~ a ~~~~~~~~~~~~~~~~ to
@@ -289,6 +289,298 @@ namespace xx {
             return false;
         }
 
+
+
+
+        // b: box    c: circle    w: width    h: height    r: radius
+        // if intersect, cx & cy will be changed & return true
+        template<typename T, bool canUp, bool canRight, bool canDown, bool canLeft>
+        XX_INLINE bool MoveCircleIfIntersectsBoxEx(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            static_assert(canUp || canRight || canDown || canLeft);
+
+            auto dx = std::abs(cx - bx);
+            if (dx > bHalfWidth + cr) return false;
+
+            auto dy = std::abs(cy - by);
+            if (dy > bHalfHeight + cr) return false;
+
+            if (dx <= bHalfWidth || dy <= bHalfHeight) {
+                if constexpr (canUp && canRight && canDown && canLeft) {
+                    if (bHalfWidth - dx > bHalfHeight - dy) {
+                        if (by > cy) {
+                            cy = by - bHalfHeight - cr - 1;	// top
+                        } else {
+                            cy = by + bHalfHeight + cr + 1;	// bottom
+                        }
+                    } else {
+                        if (bx > cx) {
+                            cx = bx - bHalfWidth - cr - 1;	// left
+                        } else {
+                            cx = bx + bHalfWidth + cr + 1;	// right
+                        }
+                    }
+                } else if constexpr (canUp && canRight && canDown) {
+                    if (bHalfWidth - dx > bHalfHeight - dy) {
+                        if (by > cy) {
+                            cy = by - bHalfHeight - cr - 1;	// top
+                        } else {
+                            cy = by + bHalfHeight + cr + 1;	// bottom
+                        }
+                    } else {
+                        cx = bx + bHalfWidth + cr + 1;	// right
+                    }
+                } else if constexpr (canRight && canDown && canLeft) {
+                    if (bHalfWidth - dx > bHalfHeight - dy) {
+                        cy = by + bHalfHeight + cr + 1;	// bottom
+                    } else {
+                        if (bx > cx) {
+                            cx = bx - bHalfWidth - cr - 1;	// left
+                        } else {
+                            cx = bx + bHalfWidth + cr + 1;	// right
+                        }
+                    }
+                } else if constexpr (canDown && canLeft && canUp) {
+                    if (bHalfWidth - dx > bHalfHeight - dy) {
+                        if (by > cy) {
+                            cy = by - bHalfHeight - cr - 1;	// top
+                        } else {
+                            cy = by + bHalfHeight + cr + 1;	// bottom
+                        }
+                    } else {
+                        cx = bx - bHalfWidth - cr - 1;	// left
+                    }
+                } else if constexpr (canLeft && canUp && canRight) {
+                    if (bHalfWidth - dx > bHalfHeight - dy) {
+                        cy = by - bHalfHeight - cr - 1;	// top
+                    } else {
+                        if (bx > cx) {
+                            cx = bx - bHalfWidth - cr - 1;	// left
+                        } else {
+                            cx = bx + bHalfWidth + cr + 1;	// right
+                        }
+                    }
+                } else if constexpr (canLeft && canRight) {
+                    if (bx > cx) {
+                        cx = bx - bHalfWidth - cr - 1;	// left
+                    } else {
+                        cx = bx + bHalfWidth + cr + 1;	// right
+                    }
+                } else if constexpr (canUp && canDown) {
+                    if (by > cy) {
+                        cy = by - bHalfHeight - cr - 1;	// top
+                    } else {
+                        cy = by + bHalfHeight + cr + 1;	// bottom
+                    }
+                } else if constexpr (canUp) {
+                    cy = by - bHalfHeight - cr - 1;	// top
+                } else if constexpr (canRight) {
+                    cx = bx + bHalfWidth + cr + 1;	// right
+                } else if constexpr (canDown) {
+                    cy = by + bHalfHeight + cr + 1;	// bottom
+                } else if constexpr (canLeft) {
+                    cx = bx - bHalfWidth - cr - 1;	// left
+                }
+                return true;
+            }
+
+            auto dx2 = dx - bHalfWidth;
+            auto dy2 = dy - bHalfHeight;
+            if (dx2 * dx2 + dy2 * dy2 <= cr * cr) {
+                // change cx & cy
+                auto incX = dx2, incY = dy2;
+                auto dSeq = dx2 * dx2 + dy2 * dy2;
+                if (dSeq == T{}) {
+                    if constexpr (std::is_integral_v<T>) {
+                        incX = bHalfWidth + T(cr * 7071 / 10000 + 1);
+                        incY = bHalfHeight + T(cr * 7071 / 10000 + 1);
+                    } else {
+                        incX = bHalfWidth + T(cr * 0.7071 + 1);
+                        incY = bHalfHeight + T(cr * 0.7071 + 1);
+                    }
+                } else {
+                    auto d = std::sqrt(dSeq);
+                    incX = bHalfWidth + T(cr * dx2 / d) + 1;
+                    incY = bHalfHeight + T(cr * dy2 / d) + 1;
+                }
+
+                if constexpr (canUp && canRight && canDown && canLeft) {
+                    if (cx < bx) {
+                        incX = -incX;
+                    }
+                    if (cy < by) {
+                        incY = -incY;
+                    }
+                    cx = bx + incX;
+                    cy = by + incY;
+                } else if constexpr (canUp && canRight && canDown) {
+                    if (cx < bx) {
+                        incX = 0;
+                    }
+                    if (cy < by) {
+                        incY = -incY;
+                    }
+                    cx = bx + incX;
+                    cy = by + incY;
+                } else if constexpr (canRight && canDown && canLeft) {
+                    if (cx < bx) {
+                        incX = -incX;
+                    }
+                    if (cy < by) {
+                        incY = 0;
+                    }
+                    cx = bx + incX;
+                    cy = by + incY;
+                } else if constexpr (canDown && canLeft && canUp) {
+                    if (cx < bx) {
+                        incX = -incX;
+                    } else {
+                        incX = 0;
+                    }
+                    if (cy < by) {
+                        incY = -incY;
+                    }
+                    cx = bx + incX;
+                    cy = by + incY;
+                } else if constexpr (canLeft && canUp && canRight) {
+                    if (cx < bx) {
+                        incX = -incX;
+                    }
+                    if (cy < by) {
+                        incY = -incY;
+                    } else {
+                        incY = 0;
+                    }
+                    cx = bx + incX;
+                    cy = by + incY;
+                } else if constexpr (canLeft && canRight) {
+                    if (bx > cx) {
+                        cx = bx - bHalfWidth - cr - 1;	// left
+                    } else {
+                        cx = bx + bHalfWidth + cr + 1;	// right
+                    }
+                } else if constexpr (canUp && canDown) {
+                    if (by > cy) {
+                        cy = by - bHalfHeight - cr - 1;	// top
+                    } else {
+                        cy = by + bHalfHeight + cr + 1;	// bottom
+                    }
+                } else if constexpr (canUp) {
+                    cy = by - bHalfHeight - cr - 1;	// top
+                } else if constexpr (canRight) {
+                    cx = bx + bHalfWidth + cr + 1;	// right
+                } else if constexpr (canDown) {
+                    cy = by + bHalfHeight + cr + 1;	// bottom
+                } else if constexpr (canLeft) {
+                    cx = bx - bHalfWidth - cr - 1;	// left
+                }
+
+                return true;
+            }
+            return false;
+        }
+
+        // up
+        template<typename T> void PushOut1(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, false, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        }
+        // right
+        template<typename T> void PushOut2(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, true, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        }
+        // up + right
+        template<typename T> void PushOut3(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, true, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        }
+        // down
+        template<typename T> void PushOut4(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, false, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        }
+        // up + down
+        template<typename T> void PushOut5(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, false, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        }
+        // right + down
+        template<typename T> void PushOut6(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, true, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        }
+        // up + right + down
+        template<typename T> void PushOut7(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, true, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        }
+        // left
+        template<typename T> void PushOut8(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, false, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        }
+        // up + left
+        template<typename T> void PushOut9(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, false, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        }
+        // right + left
+        template<typename T> void PushOut10(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, true, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        }
+        // up + right + left
+        template<typename T> void PushOut11(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, true, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        }
+        // down + left
+        template<typename T> void PushOut12(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, false, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        }
+        // up + down + left
+        template<typename T> void PushOut13(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, false, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        }
+        // right + down + left
+        template<typename T> void PushOut14(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, true, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        }
+        // up + right + down + left
+        template<typename T> void PushOut15(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+            xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, true, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        }
+
+        typedef void(*PushOutFuncInt32)(int32_t bx, int32_t by, int32_t bHalfWidth, int32_t bHalfHeight, int32_t& cx, int32_t& cy, int32_t cr);
+        inline static PushOutFuncInt32 pushOutFuncsInt32[] = {
+            PushOut15<int32_t>,
+            PushOut1<int32_t>,
+            PushOut2<int32_t>,
+            PushOut3<int32_t>,
+            PushOut4<int32_t>,
+            PushOut5<int32_t>,
+            PushOut6<int32_t>,
+            PushOut7<int32_t>,
+            PushOut8<int32_t>,
+            PushOut9<int32_t>,
+            PushOut10<int32_t>,
+            PushOut11<int32_t>,
+            PushOut12<int32_t>,
+            PushOut13<int32_t>,
+            PushOut14<int32_t>,
+            PushOut15<int32_t>,
+        };
+
+        typedef void(*PushOutFuncFloat)(float bx, float by, float bHalfWidth, float bHalfHeight, float& cx, float& cy, float cr);
+        inline static PushOutFuncFloat pushOutFuncsFloat[] = {
+            PushOut15<float>,
+            PushOut1<float>,
+            PushOut2<float>,
+            PushOut3<float>,
+            PushOut4<float>,
+            PushOut5<float>,
+            PushOut6<float>,
+            PushOut7<float>,
+            PushOut8<float>,
+            PushOut9<float>,
+            PushOut10<float>,
+            PushOut11<float>,
+            PushOut12<float>,
+            PushOut13<float>,
+            PushOut14<float>,
+            PushOut15<float>,
+        };
+
+
     }
 
     /*******************************************************************************************************************************************/
@@ -296,23 +588,23 @@ namespace xx {
 
     namespace Calc {
 
-        inline XX_FORCE_INLINE float DistancePow2(float x1, float y1, float x2, float y2) {
+        inline XX_INLINE float DistancePow2(float x1, float y1, float x2, float y2) {
             return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
         }
 
-        inline XX_FORCE_INLINE float Distance(float x1, float y1, float x2, float y2) {
+        inline XX_INLINE float Distance(float x1, float y1, float x2, float y2) {
             return std::sqrt(DistancePow2(x1, y1, x2, y2));
         }
 
-        inline XX_FORCE_INLINE float DistancePow2(XY const& p1, XY const& p2) {
+        inline XX_INLINE float DistancePow2(XY const& p1, XY const& p2) {
             return DistancePow2(p1.x, p1.y, p2.x, p2.y);
         }
 
-        inline XX_FORCE_INLINE float Distance(XY const& p1, XY const& p2) {
+        inline XX_INLINE float Distance(XY const& p1, XY const& p2) {
             return Distance(p1.x, p1.y, p2.x, p2.y);
         }
 
-        inline XX_FORCE_INLINE float DistanceLimit(float d, float from, float to) {
+        inline XX_INLINE float DistanceLimit(float d, float from, float to) {
             if (d < from) return from;
             else if (d > to) return to;
             else return d;
@@ -323,7 +615,7 @@ namespace xx {
             ...
             p2 = RotatePoint(c - p, 1.23) + c;
         */
-        inline XX_FORCE_INLINE XY RotatePoint(XY const& d, float radians) {
+        inline XX_INLINE XY RotatePoint(XY const& d, float radians) {
             auto c = std::cos(radians);
             auto s = std::sin(radians);
             return { d.x * c - d.y * s, d.x * s + d.y * c };
@@ -334,7 +626,7 @@ namespace xx {
         //    ((1 - t) + t)3 = 1 
         // Expands to ...
         //   (1 - t)3 + 3t(1-t)2 + 3t2(1 - t) + t3 = 1 
-        inline XX_FORCE_INLINE float Bezierat(float a, float b, float c, float d, float t) {
+        inline XX_INLINE float Bezierat(float a, float b, float c, float d, float t) {
             return (std::pow(1.f - t, 3.f) * a +
                 3.f * t * (std::pow(1.f - t, 2.f)) * b +
                 3.f * std::pow(t, 2.f) * (1.f - t) * c +
@@ -345,13 +637,13 @@ namespace xx {
 
             // b: box
             template<typename XY1, typename XY2>
-            XX_FORCE_INLINE bool BoxPoint(XY1 const& b1minXY, XY1 const& b1maxXY, XY2 const& p) {
+            XX_INLINE bool BoxPoint(XY1 const& b1minXY, XY1 const& b1maxXY, XY2 const& p) {
                 return !(b1maxXY.x < p.x || p.x < b1minXY.x || b1maxXY.y < p.y || p.y < b1minXY.y);
             }
 
             // b: box
             template<typename XY1, typename XY2>
-            XX_FORCE_INLINE bool BoxBox(XY1 const& b1minXY, XY1 const& b1maxXY, XY2 const& b2minXY, XY2 const& b2maxXY) {
+            XX_INLINE bool BoxBox(XY1 const& b1minXY, XY1 const& b1maxXY, XY2 const& b2minXY, XY2 const& b2maxXY) {
                 return !(b1maxXY.x < b2minXY.x || b2maxXY.x < b1minXY.x || b1maxXY.y < b2minXY.y || b2maxXY.y < b1minXY.y);
             }
 
@@ -376,7 +668,7 @@ namespace xx {
             // http://www.jeffreythompson.org/collision-detection/poly-circle.php
 
             template<typename T = float>
-            XX_FORCE_INLINE bool CircleCircle(T c1x, T c1y, T c1r, T c2x, T c2y, T c2r) {
+            XX_INLINE bool CircleCircle(T c1x, T c1y, T c1r, T c2x, T c2y, T c2r) {
                 auto dx = c1x - c2x;
                 auto dy = c1y - c2y;
                 auto rr = c1r + c2r;
@@ -384,13 +676,13 @@ namespace xx {
             }
 
             template<typename T = float>
-            XX_FORCE_INLINE bool PointCircle(T px, T py, T cx, T cy, T r) {
+            XX_INLINE bool PointCircle(T px, T py, T cx, T cy, T r) {
                 auto dx = px - cx;
                 auto dy = py - cy;
                 return (dx * dx) + (dy * dy) <= r * r;
             }
 
-            inline XX_FORCE_INLINE bool LinePoint(float x1, float y1, float x2, float y2, float px, float py) {
+            inline XX_INLINE bool LinePoint(float x1, float y1, float x2, float y2, float px, float py) {
                 float d1 = Calc::Distance(px, py, x1, y1);
                 float d2 = Calc::Distance(px, py, x2, y2);
                 float lineLen = Calc::Distance(x1, y1, x2, y2);

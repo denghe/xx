@@ -9,7 +9,7 @@ namespace xx {
         GLuint texId{};   // cache: == *frame->tex
 
         template<bool forceOverrideTexRectId = false>
-        XX_FORCE_INLINE Quad& SetFrame(Ref<Frame> f) {
+        XX_INLINE Quad& SetFrame(Ref<Frame> f) {
             assert(f);
             assert(f->tex);
             if constexpr (!forceOverrideTexRectId) {
@@ -28,7 +28,7 @@ namespace xx {
             return *this;
         }
 
-        XX_FORCE_INLINE Quad& ClearFrame() {
+        XX_INLINE Quad& ClearFrame() {
             frame.Reset();
             texId = 0;
             return *this;
@@ -38,90 +38,90 @@ namespace xx {
             return !!texId;
         }
 
-        XX_FORCE_INLINE XY Size() const {
+        XX_INLINE XY Size() const {
             assert(frame);
             return { (float)texRect.w, (float)texRect.h };
         }
 
-        XX_FORCE_INLINE XY GetSize() const {
+        XX_INLINE XY GetSize() const {
             return Size();
         }
 
-        XX_FORCE_INLINE XY GetSizeScaled() const {
+        XX_INLINE XY GetSizeScaled() const {
             return Size() * scale;
         }
 
         // tp support: .SetAnchor( anchor - (f->spriteOffset / f->spriteSize) )     // todo: fix
-        XX_FORCE_INLINE Quad& SetAnchor(XY const& a) {
+        XX_INLINE Quad& SetAnchor(XY const& a) {
             anchor = a;
             return *this;
         }
         // tp support: .SetRotate( radians + (f->textureRotated ? gNPI / 2 : 0.f) )
-        XX_FORCE_INLINE Quad& SetRotate(float r) {
+        XX_INLINE Quad& SetRotate(float r) {
             radians = r;
             return *this;
         }
-        XX_FORCE_INLINE Quad& AddRotate(float r) {
+        XX_INLINE Quad& AddRotate(float r) {
             radians += r;
             return *this;
         }
-        XX_FORCE_INLINE Quad& SetScale(XY const& s) {
+        XX_INLINE Quad& SetScale(XY const& s) {
             scale = s;
             return *this;
         }
-        XX_FORCE_INLINE Quad& SetScale(float s) {
+        XX_INLINE Quad& SetScale(float s) {
             scale = { s, s };
             return *this;
         }
-        XX_FORCE_INLINE Quad& AddScale(XY const& s) {
+        XX_INLINE Quad& AddScale(XY const& s) {
             scale += s;
             return *this;
         }
-        XX_FORCE_INLINE Quad& AddScale(float s) {
+        XX_INLINE Quad& AddScale(float s) {
             scale += XY{ s, s };
             return *this;
         }
-        XX_FORCE_INLINE Quad& SetPosition(XY const& p) {
+        XX_INLINE Quad& SetPosition(XY const& p) {
             pos = p;
             return *this;
         }
-        XX_FORCE_INLINE Quad& SetPositionX(float x) {
+        XX_INLINE Quad& SetPositionX(float x) {
             pos.x = x;
             return *this;
         }
-        XX_FORCE_INLINE Quad& SetPositionY(float y) {
+        XX_INLINE Quad& SetPositionY(float y) {
             pos.y = y;
             return *this;
         }
-        XX_FORCE_INLINE Quad& AddPosition(XY const& p) {
+        XX_INLINE Quad& AddPosition(XY const& p) {
             pos += p;
             return *this;
         }
-        XX_FORCE_INLINE Quad& AddPositionX(float x) {
+        XX_INLINE Quad& AddPositionX(float x) {
             pos.x += x;
             return *this;
         }
-        XX_FORCE_INLINE Quad& AddPositionY(float y) {
+        XX_INLINE Quad& AddPositionY(float y) {
             pos.y += y;
             return *this;
         }
-        XX_FORCE_INLINE Quad& SetColor(RGBA8 c) {
+        XX_INLINE Quad& SetColor(RGBA8 c) {
             color = c;
             return *this;
         }
-        XX_FORCE_INLINE Quad& SetColorA(uint8_t a) {
+        XX_INLINE Quad& SetColorA(uint8_t a) {
             color.a = a;
             return *this;
         }
-        XX_FORCE_INLINE Quad& SetColorAf(float a) {
+        XX_INLINE Quad& SetColorAf(float a) {
             color.a = uint8_t(255 * a);
             return *this;
         }
-        XX_FORCE_INLINE Quad& SetColorplus(float v) {
+        XX_INLINE Quad& SetColorplus(float v) {
             colorplus = v;
             return *this;
         }
-        XX_FORCE_INLINE Quad& Draw() const {
+        XX_INLINE Quad& Draw() const {
             assert(texId);
             auto& eg = EngineBase1::Instance();
             eg.ShaderBegin(eg.shaderQuadInstance).Draw(texId, *this);
@@ -139,7 +139,7 @@ namespace xx {
         q.colorplus = 1;
         q.color = {255, 255, 255, 255};
         */
-        inline XX_FORCE_INLINE static QuadInstanceData& DrawOnce(Ref<Frame> const& f) {
+        inline XX_INLINE static QuadInstanceData& DrawOnce(Ref<Frame> const& f) {
             auto& eg = EngineBase1::Instance();
             auto& r = *eg.ShaderBegin(eg.shaderQuadInstance).Draw(f->tex->GetValue(), 1);
             if (f->textureRotated) {
@@ -153,7 +153,7 @@ namespace xx {
             return r;
         }
 
-        inline XX_FORCE_INLINE static QuadInstanceData* DrawMore(Ref<Frame> const& f, int32_t count) {
+        inline XX_INLINE static QuadInstanceData* DrawMore(Ref<Frame> const& f, int32_t count) {
             assert(count > 0);
             auto& eg = EngineBase1::Instance();
             auto r = eg.ShaderBegin(eg.shaderQuadInstance).Draw(f->tex->GetValue(), count);

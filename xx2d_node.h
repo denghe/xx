@@ -8,9 +8,9 @@ namespace xx {
 		Weak<Node> parent;										// fill by MakeChildren
 		Weak<Node> scissor;										// fill by scroll view MakeContent
 
-        XX_FORCE_INLINE SimpleAffineTransform& trans(){ return (SimpleAffineTransform&)worldScale; }
+        XX_INLINE SimpleAffineTransform& trans(){ return (SimpleAffineTransform&)worldScale; }
         XY worldScale, worldMinXY;
-        XX_FORCE_INLINE SimpleAffineTransform const& trans() const { return (SimpleAffineTransform&)worldScale; }
+        XX_INLINE SimpleAffineTransform const& trans() const { return (SimpleAffineTransform&)worldScale; }
 
 		XY position{}, scale{ 1, 1 }, anchor{ 0.5, 0.5 }, size{};
 		XY worldMaxXY{}, worldSize{};								// boundingBox. world coordinate. fill by FillTrans()
@@ -20,7 +20,7 @@ namespace xx {
 
 
 		// for init
-		XX_FORCE_INLINE void FillTrans() {
+		XX_INLINE void FillTrans() {
 			if (parent) {
 				trans() = SimpleAffineTransform::MakePosScaleAnchorSize(position, scale, anchor * size).MakeConcat(parent->trans());
 			} else {
@@ -34,24 +34,24 @@ namespace xx {
 		}
 
 		// for draw FillZNodes
-		XX_FORCE_INLINE bool IsVisible() const {
+		XX_INLINE bool IsVisible() const {
 			if (scissor && !Calc::Intersects::BoxBox(worldMinXY, worldMaxXY, scissor->worldMinXY, scissor->worldMaxXY)) return false;
 			if (inParentArea && parent) return Calc::Intersects::BoxBox(worldMinXY, worldMaxXY, parent->worldMinXY, parent->worldMaxXY);
 			return Calc::Intersects::BoxBox(worldMinXY, worldMaxXY, gEngine->worldMinXY, gEngine->worldMaxXY);
 		}
 
-		XX_FORCE_INLINE bool PosInArea(XY const& pos) const {
+		XX_INLINE bool PosInArea(XY const& pos) const {
 			if (scissor && !Calc::Intersects::BoxPoint(scissor->worldMinXY, scissor->worldMaxXY, pos)) return false;
 			return Calc::Intersects::BoxPoint(worldMinXY, worldMaxXY, pos);
 		}
 
-		XX_FORCE_INLINE bool PosInScissor(XY const& pos) const {
+		XX_INLINE bool PosInScissor(XY const& pos) const {
 			if (!scissor) return true;
 			return Calc::Intersects::BoxPoint(scissor->worldMinXY, scissor->worldMaxXY, pos);
 		}
 
 		// for draw bg
-		XX_FORCE_INLINE XY CalcBorderSize(XY const& padding = {}) const {
+		XX_INLINE XY CalcBorderSize(XY const& padding = {}) const {
 			return size * scale + padding;
 		}
 
@@ -78,7 +78,7 @@ namespace xx {
 		}
 
 		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Node, T>>>
-		XX_FORCE_INLINE Shared<T>& MakeChildren() {
+		XX_INLINE Shared<T>& MakeChildren() {
 			auto& r = children.Emplace().Emplace<T>();
 			r->parent = WeakFromThis(this);
 			r->scissor = scissor;
@@ -86,7 +86,7 @@ namespace xx {
 			return r;
 		}
 
-		XX_FORCE_INLINE void Init(int z_ = 0, XY const& position_ = {}, XY const& scale_ = { 1,1 }, XY const& anchor_ = {}, XY const& size_ = {}) {
+		XX_INLINE void Init(int z_ = 0, XY const& position_ = {}, XY const& scale_ = { 1,1 }, XY const& anchor_ = {}, XY const& size_ = {}) {
 			z = z_;
 			position = position_;
 			scale = scale_;
@@ -95,7 +95,7 @@ namespace xx {
 			FillTrans();
 		}
 
-		XX_FORCE_INLINE void Init_Root() {
+		XX_INLINE void Init_Root() {
 			Init(0, -gEngine->windowSize_2, { 1,1 }, {}, gEngine->windowSize);
 		}
 
@@ -110,11 +110,11 @@ namespace xx {
 	struct ZNode {
 		decltype(Node::z) z;
 		Node* n;
-		XX_FORCE_INLINE Node* operator->() { return n; }
-		inline XX_FORCE_INLINE static bool LessThanComparer(ZNode const& a, ZNode const& b) {
+		XX_INLINE Node* operator->() { return n; }
+		inline XX_INLINE static bool LessThanComparer(ZNode const& a, ZNode const& b) {
 			return a.z < b.z;
 		}
-		inline XX_FORCE_INLINE static bool GreaterThanComparer(ZNode const& a, ZNode const& b) {
+		inline XX_INLINE static bool GreaterThanComparer(ZNode const& a, ZNode const& b) {
 			return a.z > b.z;
 		}
 	};

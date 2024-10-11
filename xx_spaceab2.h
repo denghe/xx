@@ -26,14 +26,14 @@ namespace xx {
 		std::vector<SGABCoveredCellInfo> _sgabCoveredCellInfos;	// todo: change to custom single buf container ?
 		size_t _sgabFlag{};	// avoid duplication when Foreach
 
-		XX_FORCE_INLINE void SGABSetPosSiz(XY_t const& pos, XY_t const& siz) {
+		XX_INLINE void SGABSetPosSiz(XY_t const& pos, XY_t const& siz) {
 			_sgabPos = pos;
 			_sgabRadius = siz / 2;
 			_sgabMin = pos - _sgabRadius;
 			_sgabMax = pos + _sgabRadius;
 		}
 
-		XX_FORCE_INLINE void SGABAdd(SpaceGridAB2<Derived, XY_t>& sgab, XY_t const& pos, XY_t const& siz) {
+		XX_INLINE void SGABAdd(SpaceGridAB2<Derived, XY_t>& sgab, XY_t const& pos, XY_t const& siz) {
 			assert(!_sgab);
 			assert(!_sgabFlag);
 			assert(_sgabCoveredCellInfos.empty());
@@ -42,13 +42,13 @@ namespace xx {
 			_sgab->Add(((Derived*)(this)));
 		}
 
-		XX_FORCE_INLINE void SGABUpdate(XY_t const& pos, XY_t const& siz) {
+		XX_INLINE void SGABUpdate(XY_t const& pos, XY_t const& siz) {
 			assert(_sgab);
 			SGABSetPosSiz(pos, siz);
 			_sgab->Update(((Derived*)(this)));
 		}
 
-		XX_FORCE_INLINE void SGABAddOrUpdate(SpaceGridAB2<Derived, XY_t>& sgab, XY_t const& pos, XY_t const& siz) {
+		XX_INLINE void SGABAddOrUpdate(SpaceGridAB2<Derived, XY_t>& sgab, XY_t const& pos, XY_t const& siz) {
 			if (_sgab) {
 				assert(_sgab == &sgab);
 				SGABUpdate(pos, siz);
@@ -57,7 +57,7 @@ namespace xx {
 			}
 		}
 
-		XX_FORCE_INLINE void SGABRemove() {
+		XX_INLINE void SGABRemove() {
 			if (_sgab) {
 				_sgab->Remove(((Derived*)(this)));
 				_sgab = {};
@@ -238,7 +238,7 @@ namespace xx {
 		}
 
 		// return true: success( aabb in area )
-		XX_FORCE_INLINE bool TryLimitAABB(FromTo<XY_t>& aabb) {
+		XX_INLINE bool TryLimitAABB(FromTo<XY_t>& aabb) {
 			if (aabb.from.x < 0) aabb.from.x = 0;
 			if (aabb.from.y < 0) aabb.from.y = 0;
 			if (aabb.to.x >= max.x) aabb.to.x = max.x - 1;

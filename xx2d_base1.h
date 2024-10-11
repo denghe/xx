@@ -18,7 +18,7 @@
 namespace xx {
 
     struct EngineBase1 : EngineBase0 {
-        XX_FORCE_INLINE static EngineBase1& Instance() { return *(EngineBase1*)gEngine; }
+        XX_INLINE static EngineBase1& Instance() { return *(EngineBase1*)gEngine; }
 
         Shader_QuadInstance shaderQuadInstance;
         Shader_LineStrip shaderLineStrip;
@@ -182,11 +182,11 @@ namespace xx {
 #endif
         }
 
-        XX_FORCE_INLINE void GLViewport() {
+        XX_INLINE void GLViewport() {
             glViewport(0, 0, (int)windowSize.x, (int)windowSize.y);
         }
 
-        XX_FORCE_INLINE void GLClear(RGBA8 c) {
+        XX_INLINE void GLClear(RGBA8 c) {
             glClearColor(c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f);
             glClear(GL_COLOR_BUFFER_BIT);
             //glDepthMask(true);
@@ -197,7 +197,7 @@ namespace xx {
         /*****************************************************************************************************/
         /*****************************************************************************************************/
 
-        XX_FORCE_INLINE void GLUpdateBegin() {
+        XX_INLINE void GLUpdateBegin() {
 #ifdef ENABLE_ENGINE_IMGUI
             if (imguiUpdate) {
                 ImGui_ImplOpenGL3_NewFrame();
@@ -217,7 +217,7 @@ namespace xx {
             Shader::ClearCounter();
         }
 
-        XX_FORCE_INLINE void GLUpdateEnd() {
+        XX_INLINE void GLUpdateEnd() {
             ShaderEnd();
 
 #ifdef ENABLE_ENGINE_IMGUI
@@ -238,7 +238,7 @@ namespace xx {
 
         // example: EngineBase1::Instance().ShaderBegin(EngineBase1::Instance().shaderQuadInstance);
         template<typename ST>
-        XX_FORCE_INLINE ST& ShaderBegin(ST& s) {
+        XX_INLINE ST& ShaderBegin(ST& s) {
             if (shader != &s) {
                 ShaderEnd();
                 s.Begin();
@@ -247,7 +247,7 @@ namespace xx {
             return s;
         }
 
-        XX_FORCE_INLINE void ShaderEnd() {
+        XX_INLINE void ShaderEnd() {
             if (shader) {
                 shader->End();
                 shader = {};

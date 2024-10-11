@@ -49,7 +49,7 @@ namespace xx {
 
 		// func == [](auto& a, auto& b) { return a->xxx < b->xxx; }
 		template<typename F>
-		XX_FORCE_INLINE void StdSort(F&& func) {
+		XX_INLINE void StdSort(F&& func) {
 			if (!core) return;
 			std::sort(core->buf, core->buf + core->len, std::forward<F>(func));
 		}
@@ -212,7 +212,7 @@ namespace xx {
 			}
 		}
 
-		XX_FORCE_INLINE void PopBack() {
+		XX_INLINE void PopBack() {
 			assert(core && core->len);
 			--core->len;
 			if constexpr (!(std::is_standard_layout_v<T> && std::is_trivial_v<T>)) {
@@ -220,11 +220,11 @@ namespace xx {
 			}
 		}
 
-		XX_FORCE_INLINE T& Back() {
+		XX_INLINE T& Back() {
 			assert(core && core->len);
 			return core->buf[core->len - 1];
 		}
-		XX_FORCE_INLINE T const& Back() const {
+		XX_INLINE T const& Back() const {
 			assert(core && core->len);
 			return core->buf[core->len - 1];
 		}

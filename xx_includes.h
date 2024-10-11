@@ -76,16 +76,15 @@
 #ifndef XX_NOINLINE
 #   ifndef NDEBUG
 #       define XX_NOINLINE
-#       define XX_FORCE_INLINE
+#       define XX_INLINE
 #       define XX_INLINE
 #   else
 #       ifdef _MSC_VER
 #           define XX_NOINLINE __declspec(noinline)
-#           define XX_FORCE_INLINE __forceinline
 #           define XX_INLINE __forceinline
 #       else
 #           define XX_NOINLINE __attribute__((noinline))
-#           define XX_FORCE_INLINE __attribute__((always_inline))
+#           define XX_INLINE __attribute__((always_inline))
 #           define XX_INLINE __attribute__((always_inline))
 #       endif
 #   endif

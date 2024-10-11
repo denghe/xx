@@ -37,35 +37,35 @@ namespace xx {
 			return *this;
 		}
 
-		XX_FORCE_INLINE SpacesNodeBase& RefNodeBase() const {
+		XX_INLINE SpacesNodeBase& RefNodeBase() const {
 			return *(SpacesNodeBase*)((char*)pointer - offset);
 		}
 
-		XX_FORCE_INLINE bool Exists() const noexcept {
+		XX_INLINE bool Exists() const noexcept {
 			return pointer && version < -2 && version == RefNodeBase().version;
 		}
-		XX_FORCE_INLINE operator bool() const noexcept {
+		XX_INLINE operator bool() const noexcept {
 			return Exists();
 		}
 
-		XX_FORCE_INLINE BT& operator()() const {
+		XX_INLINE BT& operator()() const {
 			assert(Exists());
 			return (BT&)*pointer;
 		}
 
-		XX_FORCE_INLINE void Reset() {
+		XX_INLINE void Reset() {
 			pointer = {};
 			version = -2;
 			offset = -1;
 		}
 
-		XX_FORCE_INLINE int32_t TypeId() const {
+		XX_INLINE int32_t TypeId() const {
 			assert(Exists());
 			return RefNodeBase().typeId;
 		}
 
 		template<std::derived_from<BT> T>
-		XX_FORCE_INLINE T& As() {
+		XX_INLINE T& As() {
 			assert(Exists());
 			assert(dynamic_cast<T*>(pointer));
 			return (T&)pointer;

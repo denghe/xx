@@ -8,7 +8,7 @@ namespace xx {
 		virtual void OnMouseMove() {};
 		virtual void OnMouseUp() {};
 
-		XX_FORCE_INLINE bool MousePosInArea() const {		// virtual ?
+		XX_INLINE bool MousePosInArea() const {		// virtual ?
 			return PosInArea(gEngine->mouse.pos);
 		}
 

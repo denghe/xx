@@ -75,7 +75,7 @@ namespace xx {
 		}
 
 	protected:
-		XX_FORCE_INLINE void Free(NodeType& o) {
+		XX_INLINE void Free(NodeType& o) {
 			assert(o.pre != o.index && o.nex != o.index && o.cidx >= 0);
 
 			if (o.index == cells[o.cidx]) {
@@ -190,7 +190,7 @@ namespace xx {
 			}
 		}
 
-		XX_FORCE_INLINE int32_t PosToCIdx(XYf const& p) {
+		XX_INLINE int32_t PosToCIdx(XYf const& p) {
 			assert(p.x >= 0 && p.x < cellSize * numCols);
 			assert(p.y >= 0 && p.y < cellSize * numRows);
 			auto c = int32_t(p.x * _1_cellSize);
@@ -201,19 +201,19 @@ namespace xx {
 		}
 
 		// return x: col index   y: row index
-		XX_FORCE_INLINE XYi PosToCrIdx(XYf const& p) {
+		XX_INLINE XYi PosToCrIdx(XYf const& p) {
 			assert(p.x >= 0 && p.x < cellSize * numCols);
 			assert(p.y >= 0 && p.y < cellSize * numRows);
 			return {p.x * _1_cellSize, p.y * _1_cellSize};
 		}
 
 		// return cell's index
-		XX_FORCE_INLINE int32_t CrIdxToCIdx(XYi const& crIdx) {
+		XX_INLINE int32_t CrIdxToCIdx(XYi const& crIdx) {
 			return crIdx.y * numCols + crIdx.x;
 		}
 
 		// cell's index to pos( left top corner )
-		XX_FORCE_INLINE XYf CIdxToPos(int32_t cidx) {
+		XX_INLINE XYf CIdxToPos(int32_t cidx) {
 			assert(cidx >= 0 && cidx < cellsLen);
 			auto row = cidx / numCols;
 			auto col = cidx - row * numCols;
@@ -221,15 +221,15 @@ namespace xx {
 		}
 
 		// cell's index to cell center pos
-		XX_FORCE_INLINE XYf CIdxToCenterPos(int32_t cidx) {
+		XX_INLINE XYf CIdxToCenterPos(int32_t cidx) {
 			return CIdxToPos(cidx) + float(cellSize) * 0.5f;
 		}
 
-		XX_FORCE_INLINE XYf CrIdxToPos(int32_t colIdx, int32_t rowIdx) {
+		XX_INLINE XYf CrIdxToPos(int32_t colIdx, int32_t rowIdx) {
 			return CIdxToPos(rowIdx * numCols + colIdx);
 		}
 
-		XX_FORCE_INLINE XYf CrIdxToCenterPos(int32_t colIdx, int32_t rowIdx) {
+		XX_INLINE XYf CrIdxToCenterPos(int32_t colIdx, int32_t rowIdx) {
 			return CIdxToCenterPos(rowIdx * numCols + colIdx);
 		}
 
@@ -251,7 +251,7 @@ namespace xx {
 		// .ForeachCell([](T& o)->xx::ForeachResult {    });
 		// return is Break or RemoveAndBreak
 		template <typename F, typename R = std::invoke_result_t<F, T&>>
-		XX_FORCE_INLINE bool ForeachCell(int32_t cidx, F&& func) {
+		XX_INLINE bool ForeachCell(int32_t cidx, F&& func) {
 			auto idx = cells[cidx];
 			while (idx >= 0) {
 		 		auto& o = ST::RefNode(idx);
@@ -1030,7 +1030,7 @@ namespace xx {
 		}
 
 		// sort result_FindNearestN
-		XX_FORCE_INLINE int32_t Partition(int32_t left, int32_t right) {
+		XX_INLINE int32_t Partition(int32_t left, int32_t right) {
 			auto& arr = result_FindNearestN;
 			auto pivot = arr[left];
 			while (true) {

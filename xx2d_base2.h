@@ -21,7 +21,7 @@ namespace xx {
     template<typename T> concept Has_AsyncInit = requires(T t) { { t.AsyncInit() } -> std::same_as<Task<>>; };
 
     struct EngineBase2 : EngineBase1 {
-        XX_FORCE_INLINE static EngineBase2& Instance() { return *(EngineBase2*)gEngine; }
+        XX_INLINE static EngineBase2& Instance() { return *(EngineBase2*)gEngine; }
 
         // default font cache
         CharTexCache<24> ctcDefault;

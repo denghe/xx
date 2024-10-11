@@ -106,7 +106,7 @@ namespace xx {
         YieldType& YieldValue() { return coro.promise().y; }
 
         template<bool runOnce = false>
-        XX_FORCE_INLINE void Run() {
+        XX_INLINE void Run() {
             auto& p = coro.promise();
             auto& c = p.last;
             while(c && !c.done()) {
@@ -193,7 +193,7 @@ namespace xx {
             return *this;
         }
 
-        XX_FORCE_INLINE void Clear() {
+        XX_INLINE void Clear() {
             if (ptr) {
                 ptr->tasks.Remove(vi);
                 ptr = {};
@@ -359,7 +359,7 @@ namespace xx {
         }
 
     protected:
-        XX_FORCE_INLINE ptrdiff_t Resume(int i, Tuple& tuple) {
+        XX_INLINE ptrdiff_t Resume(int i, Tuple& tuple) {
             auto& task = std::get<3>(tuple);
             if (task()) {
                 eventTasks.SwapRemoveAt(i);  // done

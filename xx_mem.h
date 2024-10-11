@@ -86,7 +86,7 @@ namespace xx {
 
     // 数字字节序交换
     template<typename T>
-    XX_FORCE_INLINE T BSwap(T i) {
+    XX_INLINE T BSwap(T i) {
         T r;
 #ifdef _WIN32
         if constexpr (sizeof(T) == 2) *(uint16_t*)&r = _byteswap_ushort(*(uint16_t*)&i);
@@ -101,19 +101,19 @@ namespace xx {
     }
 
     // 带符号整数 解码 return (in 为单数) ? -(in + 1) / 2 : in / 2
-    inline XX_FORCE_INLINE int16_t ZigZagDecode(uint16_t in) {
+    inline XX_INLINE int16_t ZigZagDecode(uint16_t in) {
         return (int16_t)((int16_t)(in >> 1) ^ (-(int16_t)(in & 1)));
     }
-    inline XX_FORCE_INLINE int32_t ZigZagDecode(uint32_t in) {
+    inline XX_INLINE int32_t ZigZagDecode(uint32_t in) {
         return (int32_t)(in >> 1) ^ (-(int32_t)(in & 1));
     }
-    inline XX_FORCE_INLINE int64_t ZigZagDecode(uint64_t in) {
+    inline XX_INLINE int64_t ZigZagDecode(uint64_t in) {
         return (int64_t)(in >> 1) ^ (-(int64_t)(in & 1));
     }
 
     // 返回首个出现 1 的 bit 的下标
     template<typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
-    XX_FORCE_INLINE size_t Calc2n(T n) {
+    XX_INLINE size_t Calc2n(T n) {
 //#ifdef _MSC_VER
         return (sizeof(size_t) * 8 - 1) - std::countl_zero(n);
 //#else
@@ -127,7 +127,7 @@ namespace xx {
 
     // 返回一个刚好大于 n 的 2^x 对齐数
     template<typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
-    XX_FORCE_INLINE T Round2n(T n) {
+    XX_INLINE T Round2n(T n) {
         auto shift = Calc2n(n);
         auto rtv = T(1) << shift;
         if (rtv == n) return n;
@@ -135,13 +135,13 @@ namespace xx {
     }
 
     // 带符号整数 编码  return in < 0 ? (-in * 2 - 1) : (in * 2)
-    inline XX_FORCE_INLINE uint16_t ZigZagEncode(int16_t in) {
+    inline XX_INLINE uint16_t ZigZagEncode(int16_t in) {
         return (uint16_t)((in << 1) ^ (in >> 15));
     }
-    inline XX_FORCE_INLINE uint32_t ZigZagEncode(int32_t in) {
+    inline XX_INLINE uint32_t ZigZagEncode(int32_t in) {
         return (in << 1) ^ (in >> 31);
     }
-    inline XX_FORCE_INLINE uint64_t ZigZagEncode(int64_t in) {
+    inline XX_INLINE uint64_t ZigZagEncode(int64_t in) {
         return (in << 1) ^ (in >> 63);
     }
 }

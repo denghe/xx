@@ -35,7 +35,7 @@ namespace xx {
     template <typename T> concept Has_OnTouchCancel = requires(T t) { { t.OnTouchCancel(std::declval<EmscriptenTouchEvent const&>()) } -> std::same_as<EM_BOOL>; };
 
     struct EngineBase3 : EngineBase2 {
-        XX_FORCE_INLINE static EngineBase3& Instance() { return *(EngineBase3*)gEngine; }
+        XX_INLINE static EngineBase3& Instance() { return *(EngineBase3*)gEngine; }
 
         // task utils
         Task<> AsyncSleep(double secs) {

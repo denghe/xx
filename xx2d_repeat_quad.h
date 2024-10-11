@@ -9,33 +9,33 @@ namespace xx {
 		float texOffsetXPercentage{};
 
 		template<bool forceOverrideTexRectId = false>
-		XX_FORCE_INLINE RepeatQuad& SetFrame(Ref<Frame> f) {
+		XX_INLINE RepeatQuad& SetFrame(Ref<Frame> f) {
 			q.SetFrame<forceOverrideTexRectId>(std::move(f));
 			return *this;
 		}
 
-		XX_FORCE_INLINE RepeatQuad& SetScale(XY const& s) {
+		XX_INLINE RepeatQuad& SetScale(XY const& s) {
 			q.scale = s;
 			return *this;
 		}
 
-		XX_FORCE_INLINE RepeatQuad& SetFrom(XY const& p) {
+		XX_INLINE RepeatQuad& SetFrom(XY const& p) {
 			from = p;
 			return *this;
 		}
 
-		XX_FORCE_INLINE RepeatQuad& SetTo(XY const& p) {
+		XX_INLINE RepeatQuad& SetTo(XY const& p) {
 			to = p;
 			return *this;
 		}
 
-		XX_FORCE_INLINE RepeatQuad& SetFromTo(XY const& p1, XY const& p2) {
+		XX_INLINE RepeatQuad& SetFromTo(XY const& p1, XY const& p2) {
 			from = p1;
 			to = p2;
 			return *this;
 		}
 
-		XX_FORCE_INLINE RepeatQuad& SetTexOffsetXPercentage(float p) {
+		XX_INLINE RepeatQuad& SetTexOffsetXPercentage(float p) {
 			texOffsetXPercentage = p;
 			return *this;
 		}
