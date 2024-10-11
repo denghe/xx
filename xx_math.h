@@ -392,21 +392,21 @@ namespace xx {
                 auto dSeq = dx2 * dx2 + dy2 * dy2;
                 if (dSeq == T{}) {
                     if constexpr (std::is_integral_v<T>) {
-                        incX = bHalfWidth + cr * 7071 / 10000 + 1;
-                        incY = bHalfHeight + cr * 7071 / 10000 + 1;
+                        incX = bHalfWidth + cr * 7071 / 10000 + 2;
+                        incY = bHalfHeight + cr * 7071 / 10000 + 2;
                     } else {
-                        incX = bHalfWidth + cr * T{ 0.7071 } + 1;
-                        incY = bHalfHeight + cr * T{ 0.7071 } + 1;
+                        incX = bHalfWidth + cr * T{ 0.7071 } + 2;
+                        incY = bHalfHeight + cr * T{ 0.7071 } + 2;
                     }
                 } else {
                     if constexpr (std::is_integral_v<T>) {
                         auto d = FX64{ dSeq }.RSqrtFastest();
-                        incX = bHalfWidth + (FX64{ cr * dx2 } * d).ToInt() + 1;
-                        incY = bHalfHeight + (FX64{ cr * dy2 } * d).ToInt() + 1;
+                        incX = bHalfWidth + (FX64{ cr * dx2 } * d).ToInt() + 2;
+                        incY = bHalfHeight + (FX64{ cr * dy2 } * d).ToInt() + 2;
                     } else {
                         auto d = std::sqrt(dSeq);
-                        incX = bHalfWidth + cr * dx2 / d + 1;
-                        incY = bHalfHeight + cr * dy2 / d + 1;
+                        incX = bHalfWidth + cr * dx2 / d + 2;
+                        incY = bHalfHeight + cr * dy2 / d + 2;
                     }
                 }
 

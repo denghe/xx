@@ -58,7 +58,7 @@ namespace xx {
 			memset(cells.get(), 0, sizeof(Cell) * cellsLen);
 		}
 
-		void Init(int32_t numRows_, int32_t numCols_, XYi cellSize_) {
+		void Init(int32_t numRows_, int32_t numCols_, XYi const& cellSize_) {
 			assert(!cells);
 			assert(numRows_ > 0 && numCols_ > 0 && cellSize_.x > 0 && cellSize_.y > 0);
 			numRows = numRows_;
@@ -198,7 +198,7 @@ namespace xx {
 		}
 
 		// 0 mean empty, 1 exists, 2 out of range
-		int ExistsPoint(XYi p) {
+		int ExistsPoint(XYi const& p) {
 			if (p.x < 0 || p.y < 0 || p.x >= max.x || p.y >= max.y) return 2;
 			auto crIdx = p / cellSize;
 			auto c = cells[crIdx.y * numCols + crIdx.x].item;
