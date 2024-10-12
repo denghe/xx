@@ -292,11 +292,10 @@ namespace xx {
 
 
 
-
         // b: box    c: circle    w: width    h: height    r: radius
         // if intersect, cx & cy will be changed & return true
         template<typename T, bool canUp, bool canRight, bool canDown, bool canLeft>
-        XX_INLINE bool MoveCircleIfIntersectsBoxEx(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
+        XX_INLINE bool MoveCircleIfIntersectsBoxEx(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner = false) {
             static_assert(canUp || canRight || canDown || canLeft);
 
             auto dx = std::abs(cx - bx);
@@ -321,74 +320,164 @@ namespace xx {
                         }
                     }
                 } else if constexpr (canUp && canRight && canDown) {
-                    if (bHalfWidth - dx > bHalfHeight - dy) {
-                        if (by > cy) {
-                            cy = by - bHalfHeight - cr - 2;	// top
+                    if (cx > bx) {
+                        if (cy > by) {
+                            if ((bx + bHalfWidth) - cx > (by + bHalfHeight) - cy) {
+                                cy = by + bHalfHeight + cr + 2;	// bottom
+                            } else {
+                                cx = bx + bHalfWidth + cr + 2;	// right
+                            }
                         } else {
-                            cy = by + bHalfHeight + cr + 2;	// bottom
+                            if ((bx + bHalfWidth) - cx > cy - (by - bHalfHeight)) {
+                                cy = by - bHalfHeight - cr - 2;	// top
+                            } else {
+                                cx = bx + bHalfWidth + cr + 2;	// right
+                            }
                         }
+                    } else if (by > cy) {
+                        cy = by - bHalfHeight - cr - 2;	// top
+                    } else {
+                        cy = by + bHalfHeight + cr + 2;	// bottom
+                    }
+                } else if constexpr (canRight && canDown && canLeft) {
+                    if (cy > by) {
+                        if (cx > bx) {
+                            if ((bx + bHalfWidth) - cx > (by + bHalfHeight) - cy) {
+                                cy = by + bHalfHeight + cr + 2;	// bottom
+                            } else {
+                                cx = bx + bHalfWidth + cr + 2;	// right
+                            }
+                        } else {
+                            if (cx - (bx - bHalfWidth) > (by + bHalfHeight) - cy) {
+                                cy = by + bHalfHeight + cr + 2;	// bottom
+                            } else {
+                                cx = bx - bHalfWidth - cr - 2;	// left
+                            }
+                        }
+                    } else if (cx < bx) {
+                        cx = bx - bHalfWidth - cr - 2;	// left
                     } else {
                         cx = bx + bHalfWidth + cr + 2;	// right
                     }
-                } else if constexpr (canRight && canDown && canLeft) {
-                    if (bHalfWidth - dx > bHalfHeight - dy) {
-                        cy = by + bHalfHeight + cr + 2;	// bottom
-                    } else {
-                        if (bx > cx) {
-                            cx = bx - bHalfWidth - cr - 2;	// left
-                        } else {
-                            cx = bx + bHalfWidth + cr + 2;	// right
-                        }
-                    }
                 } else if constexpr (canDown && canLeft && canUp) {
-                    if (bHalfWidth - dx > bHalfHeight - dy) {
-                        if (by > cy) {
-                            cy = by - bHalfHeight - cr - 2;	// top
+                    if (cx < bx) {
+                        if (cy > by) {
+                            if (cx - (bx - bHalfWidth) > (by + bHalfHeight) - cy) {
+                                cy = by + bHalfHeight + cr + 2;	// bottom
+                            } else {
+                                cx = bx - bHalfWidth - cr - 2;	// left
+                            }
                         } else {
-                            cy = by + bHalfHeight + cr + 2;	// bottom
+                            if (cx - (bx - bHalfWidth) > cy - (by - bHalfHeight)) {
+                                cy = by - bHalfHeight - cr - 2;	// top
+                            } else {
+                                cx = bx - bHalfWidth - cr - 2;	// left
+                            }
                         }
-                    } else {
-                        cx = bx - bHalfWidth - cr - 2;	// left
-                    }
-                } else if constexpr (canLeft && canUp && canRight) {
-                    if (bHalfWidth - dx > bHalfHeight - dy) {
+                    } else if (by > cy) {
                         cy = by - bHalfHeight - cr - 2;	// top
                     } else {
-                        if (bx > cx) {
-                            cx = bx - bHalfWidth - cr - 2;	// left
+                        cy = by + bHalfHeight + cr + 2;	// bottom
+                    }
+                } else if constexpr (canLeft && canUp && canRight) {
+                    if (cy < by) {
+                        if (cx > bx) {
+                            if ((bx + bHalfWidth) - cx > cy - (by - bHalfHeight)) {
+                                cy = by - bHalfHeight - cr - 2;	// top
+                            } else {
+                                cx = bx + bHalfWidth + cr + 2;	// right
+                            }
                         } else {
-                            cx = bx + bHalfWidth + cr + 2;	// right
+                            if (cx - (bx - bHalfWidth) > cy - (by - bHalfHeight)) {
+                                cy = by - bHalfHeight - cr - 2;	// top
+                            } else {
+                                cx = bx - bHalfWidth - cr - 2;	// left
+                            }
                         }
+                    } else if (cx < bx) {
+                        cx = bx - bHalfWidth - cr - 2;	// left
+                    } else {
+                        cx = bx + bHalfWidth + cr + 2;	// right
                     }
                 } else if constexpr (canLeft && canUp) {
-                    if (cx < bx && cy < by) {
+                    if (isMapCorner) {
                         if (cx - (bx - bHalfWidth) > cy - (by - bHalfHeight)) {
                             cy = by - bHalfHeight - cr - 2;	// top
                         } else {
                             cx = bx - bHalfWidth - cr - 2;	// left
                         }
-                    } else if (cx < bx) {
-                        cx = bx - bHalfWidth - cr - 2;	// left
-                    } else if (cy < by) {
-                        cy = by - bHalfHeight - cr - 2;	// top
+                    } else {
+                        if (cx <= bx && cy <= by) {
+                            if (cx - (bx - bHalfWidth) > cy - (by - bHalfHeight)) {
+                                cy = by - bHalfHeight - cr - 2;	// top
+                            } else {
+                                cx = bx - bHalfWidth - cr - 2;	// left
+                            }
+                        } else if (cx <= bx) {
+                            cx = bx - bHalfWidth - cr - 2;	// left
+                        } else if (cy <= by) {
+                            cy = by - bHalfHeight - cr - 2;	// top
+                        }
                     }
                 } else if constexpr (canUp && canRight) {
-                    if (bx + bHalfWidth - cx > cy - (by - bHalfHeight)) {
-                        cy = by - bHalfHeight - cr - 2;	// top
+                    if (isMapCorner) {
+                        if ((bx + bHalfWidth) - cx > cy - (by - bHalfHeight)) {
+                            cy = by - bHalfHeight - cr - 2;	// top
+                        } else {
+                            cx = bx + bHalfWidth + cr + 2;	// right
+                        }
                     } else {
-                        cx = bx + bHalfWidth + cr + 2;	// right
+                        if (cx >= bx && cy <= by) {
+                            if ((bx + bHalfWidth) - cx > cy - (by - bHalfHeight)) {
+                                cy = by - bHalfHeight - cr - 2;	// top
+                            } else {
+                                cx = bx + bHalfWidth + cr + 2;	// right
+                            }
+                        } else if (cx >= bx) {
+                            cx = bx + bHalfWidth + cr + 2;	// right
+                        } else if (cy <= by) {
+                            cy = by - bHalfHeight - cr - 2;	// top
+                        }
                     }
                 } else if constexpr (canRight && canDown) {
-                    if (bHalfWidth - dx > bHalfHeight - dy) {
-                        cy = by + bHalfHeight + cr + 2;	// bottom
+                    if (isMapCorner) {
+                        if ((bx + bHalfWidth) - cx > (by + bHalfHeight) - cy) {
+                            cy = by + bHalfHeight + cr + 2;	// bottom
+                        } else {
+                            cx = bx + bHalfWidth + cr + 2;	// right
+                        }
                     } else {
-                        cx = bx + bHalfWidth + cr + 2;	// right
+                        if (cx >= bx && cy >= by) {
+                            if ((bx + bHalfWidth) - cx > (by + bHalfHeight) - cy) {
+                                cy = by + bHalfHeight + cr + 2;	// bottom
+                            } else {
+                                cx = bx + bHalfWidth + cr + 2;	// right
+                            }
+                        } else if (cx >= bx) {
+                            cx = bx + bHalfWidth + cr + 2;	// right
+                        } else if (cy >= by) {
+                            cy = by + bHalfHeight + cr + 2;	// bottom
+                        }
                     }
                 } else if constexpr (canDown && canLeft) {
-                    if (bHalfWidth - dx > bHalfHeight - dy) {
-                        cy = by + bHalfHeight + cr + 2;	// bottom
+                    if (isMapCorner) {
+                        if (cx - (bx - bHalfWidth) > (by + bHalfHeight) - cy) {
+                            cy = by + bHalfHeight + cr + 2;	// bottom
+                        } else {
+                            cx = bx - bHalfWidth - cr - 2;	// left
+                        }
                     } else {
-                        cx = bx - bHalfWidth - cr - 2;	// left
+                        if (cx <= bx && cy >= by) {
+                            if (cx - (bx - bHalfWidth) > (by + bHalfHeight) - cy) {
+                                cy = by + bHalfHeight + cr + 2;	// bottom
+                            } else {
+                                cx = bx - bHalfWidth - cr - 2;	// left
+                            }
+                        } else if (cx <= bx) {
+                            cx = bx - bHalfWidth - cr - 2;	// left
+                        } else if (cy >= by) {
+                            cy = by + bHalfHeight + cr + 2;	// bottom
+                        }
                     }
                 } else if constexpr (canLeft && canRight) {
                     if (bx > cx) {
@@ -490,48 +579,16 @@ namespace xx {
                     cx = bx + incX;
                     cy = by + incY;
                 } else if constexpr (canLeft && canUp) {
-                    if (cx < bx) {
-                        incX = -incX;
-                    } else {
-                        incX = 0;
-                    }
-                    if (cy < by) {
-                        incY = -incY;
-                    } else {
-                        incY = 0;
-                    }
-                    cx = bx + incX;
-                    cy = by + incY;
+                    cx = bx - incX;
+                    cy = by - incY;
                 } else if constexpr (canUp && canRight) {
-                    if (cx < bx) {
-                        incX = 0;
-                    }
-                    if (cy < by) {
-                        incY = -incY;
-                    } else {
-                        incY = 0;
-                    }
                     cx = bx + incX;
-                    cy = by + incY;
+                    cy = by - incY;
                 } else if constexpr (canRight && canDown) {
-                    if (cx < bx) {
-                        incX = 0;
-                    }
-                    if (cy < by) {
-                        incY = 0;
-                    }
                     cx = bx + incX;
                     cy = by + incY;
                 } else if constexpr (canDown && canLeft) {
-                    if (cx < bx) {
-                        incX = 0;
-                    }
-                    if (cy < by) {
-                        incY = -incY;
-                    } else {
-                        incY = 0;
-                    }
-                    cx = bx + incX;
+                    cx = bx - incX;
                     cy = by + incY;
                 } else if constexpr (canLeft && canRight) {
                     if (bx > cx) {
@@ -561,67 +618,67 @@ namespace xx {
         }
 
         // up
-        template<typename T> bool PushOut1(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, false, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut1(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, false, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
         }
         // right
-        template<typename T> bool PushOut2(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, true, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut2(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, true, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
         }
         // up + right
-        template<typename T> bool PushOut3(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, true, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut3(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, true, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
         }
         // down
-        template<typename T> bool PushOut4(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, false, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut4(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, false, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
         }
         // up + down
-        template<typename T> bool PushOut5(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, false, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut5(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, false, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
         }
         // right + down
-        template<typename T> bool PushOut6(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, true, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut6(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, true, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
         }
         // up + right + down
-        template<typename T> bool PushOut7(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, true, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut7(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, true, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
         }
         // left
-        template<typename T> bool PushOut8(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, false, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut8(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, false, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
         }
         // up + left
-        template<typename T> bool PushOut9(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, false, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut9(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, false, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
         }
         // right + left
-        template<typename T> bool PushOut10(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, true, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut10(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, true, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
         }
         // up + right + left
-        template<typename T> bool PushOut11(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, true, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut11(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, true, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
         }
         // down + left
-        template<typename T> bool PushOut12(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, false, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut12(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, false, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
         }
         // up + down + left
-        template<typename T> bool PushOut13(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, false, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut13(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, false, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
         }
         // right + down + left
-        template<typename T> bool PushOut14(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, true, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut14(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, false, true, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
         }
         // up + right + down + left
-        template<typename T> bool PushOut15(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr) {
-            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, true, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr);
+        template<typename T> bool PushOut15(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
+            return xx::TranslateControl::MoveCircleIfIntersectsBoxEx<T, true, true, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
         }
 
-        typedef bool(*PushOutFuncInt32)(int32_t bx, int32_t by, int32_t bHalfWidth, int32_t bHalfHeight, int32_t& cx, int32_t& cy, int32_t cr);
+        typedef bool(*PushOutFuncInt32)(int32_t bx, int32_t by, int32_t bHalfWidth, int32_t bHalfHeight, int32_t& cx, int32_t& cy, int32_t cr, bool isMapCorner);
         inline static PushOutFuncInt32 pushOutFuncsInt32[] = {
             PushOut15<int32_t>,
             PushOut1<int32_t>,
@@ -641,7 +698,7 @@ namespace xx {
             PushOut15<int32_t>,
         };
 
-        typedef bool(*PushOutFuncFloat)(float bx, float by, float bHalfWidth, float bHalfHeight, float& cx, float& cy, float cr);
+        typedef bool(*PushOutFuncFloat)(float bx, float by, float bHalfWidth, float bHalfHeight, float& cx, float& cy, float cr, bool isMapCorner);
         inline static PushOutFuncFloat pushOutFuncsFloat[] = {
             PushOut15<float>,
             PushOut1<float>,
