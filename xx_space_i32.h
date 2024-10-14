@@ -57,6 +57,7 @@ namespace xx {
 			assert(!c->_sgcNext);
 			assert(c->_x >= 0 && c->_x < max.x);
 			assert(c->_y >= 0 && c->_y < max.y);
+			assert(c->_radius * 2 <= cellSize);
 			c->_sgc = this;
 
 			// calc rIdx & cIdx
@@ -119,6 +120,7 @@ namespace xx {
 			assert(c->_sgcIdx > -1);
 			assert(c->_sgcNext != c);
 			assert(c->_sgcPrev != c);
+			assert(c->_radius * 2 <= cellSize);
 			//assert(cells[c->_sgcIdx].item include c);
 
 			auto idx = PosToCIdx(c->_x, c->_y);

@@ -214,8 +214,15 @@ namespace xx {
 			if (p.x < 0 || p.y < 0 || p.x >= max.x || p.y >= max.y) return 2;
 			auto crIdx = (XYi)p / cellSize;
 			assert(crIdx.x >= 0 && crIdx.x < numCols && crIdx.y >= 0 && crIdx.y < numRows);
-			if (cells[crIdx.y * numCols + crIdx.x] != nullptr) return 1;
-			else return 0;
+			auto c = cells[crIdx.y * numCols + crIdx.x];
+			while (c) {
+				auto s = c->self;
+				auto& v = s->value;
+				auto& sab = v.aabb;
+				if (!(sab.to.x < p.x || p.x < sab.from.x || sab.to.y < p.y || p.y < sab.from.y)) return 1;
+				c = c->next;
+			}
+			return 0;
 		}
 
 		// foreach by flags ( copy ForeachFlags to here )
