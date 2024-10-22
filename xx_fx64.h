@@ -12,6 +12,7 @@ namespace xx {
         using FP_INT = Fixed64::FP_INT;
 
         /********************************************************************************************/
+        // following code is copy from Fixed64.h && FixedUtil.h
 
         static constexpr auto Shift = Fixed64::Shift;
         static constexpr auto FractionMask = Fixed64::FractionMask;

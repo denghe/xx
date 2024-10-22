@@ -1,13 +1,12 @@
 ﻿#pragma once
-#include "xx_string.h"
-#include "xx_data.h"
+#include "xx_fx64.h"
 
 namespace xx {
     template<typename T>
     concept HasField_XY = requires { T::x; T::y; };
 
     template<typename T>
-    concept IsArithmetic = std::is_arithmetic_v<T>;
+    concept IsArithmetic = std::is_arithmetic_v<T> || std::is_base_of_v<FX64, T>;
 
     template<typename T>
     struct X_Y {
@@ -57,7 +56,17 @@ namespace xx {
 
         template<typename U>
         constexpr auto As() const -> X_Y<U> {
-            return { (U)x, (U)y };
+            if constexpr (std::is_base_of_v<FX64, T>) {
+                if constexpr (std::is_same_v<float, T>) {
+                    return { x.ToFloat(), y.ToFloat() };
+                } else if constexpr (std::is_same_v<double, T>) {
+                    return { x.ToDouble(), y.ToDouble() };
+                } else if constexpr (std::is_same_v<int32_t, T>) {
+                    return { x.ToInt(), y.ToInt() };
+                } else static_assert(false);
+            } else {
+                return { (U)x, (U)y };
+            }
         }
 
         constexpr bool IsZero() const {
@@ -81,21 +90,21 @@ namespace xx {
             return { R(x), R(-y) };
         }
 
-        template<typename R = T, typename U = float>
-        constexpr auto Mag2() const -> R {
-            return R(x) * R(x) + R(y) * R(y);
-        }
+        //template<typename R = T, typename U = float>
+        //constexpr auto Mag2() const -> R {
+        //    return R(x) * R(x) + R(y) * R(y);
+        //}
 
-        template<typename R = T>
-        constexpr auto Mag() const -> R {
-            return (R)std::sqrt(Mag2<R>());
-        }
+        //template<typename R = T>
+        //constexpr auto Mag() const -> R {
+        //    return (R)std::sqrt(Mag2<R>());
+        //}
 
-        template<typename R = T>
-        constexpr auto Normalize() const -> X_Y<R> {
-            auto mag = Mag<R>();
-            return { R(x) / mag, R(y) / mag };
-        }
+        //template<typename R = T>
+        //constexpr auto Normalize() const -> X_Y<R> {
+        //    auto mag = Mag<R>();
+        //    return { R(x) / mag, R(y) / mag };
+        //}
 
         // ...
     };
@@ -110,6 +119,7 @@ namespace xx {
     using XYu = X_Y<uint32_t>;
     using XYf = X_Y<float>;
     using XYd = X_Y<double>;
+    using XYx = X_Y<FX64>;
     using XY = XYf;
 
 
