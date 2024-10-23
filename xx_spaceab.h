@@ -198,16 +198,16 @@ namespace xx {
 			}
 		}
 
-		//template<typename F>
-		//void ForeachCell(XYi crIdx, F&& func) {
-		//	if (crIdx.x < 0 || crIdx.x >= numCols || crIdx.y < 0 || crIdx.y >= numRows) return;
-		//	auto c = cells[crIdx.y * numCols + crIdx.x];
-		//	while (c) {
-		//		auto next = c->next;
-		//		func(c->self->value);
-		//		c = next;
-		//	}
-		//}
+		template<typename F>
+		void ForeachCell(XYi crIdx, F&& func) {
+			if (crIdx.x < 0 || crIdx.x >= numCols || crIdx.y < 0 || crIdx.y >= numRows) return;
+			auto c = cells[crIdx.y * numCols + crIdx.x];
+			while (c) {
+				auto next = c->next;
+				func(c->self->value);
+				c = next;
+			}
+		}
 
 		// 0 mean empty, 1 exists, 2 out of range
 		int ExistsPoint(XYf p) {
