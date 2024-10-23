@@ -50,18 +50,23 @@ namespace xx {
         constexpr bool operator!=(HasField_XY auto const& v) const { return memcmp(this, &v, sizeof(v)) != 0; }
 
         constexpr void Reset() {
-            x = {};
-            y = {};
+            if constexpr (std::is_base_of_v<FX64, T>) {
+                x.SetZero();
+                y.SetZero();
+            } else {
+                x = {};
+                y = {};
+            }
         }
 
         template<typename U>
         constexpr auto As() const -> X_Y<U> {
             if constexpr (std::is_base_of_v<FX64, T>) {
-                if constexpr (std::is_same_v<float, T>) {
+                if constexpr (std::is_same_v<float, U>) {
                     return { x.ToFloat(), y.ToFloat() };
-                } else if constexpr (std::is_same_v<double, T>) {
+                } else if constexpr (std::is_same_v<double, U>) {
                     return { x.ToDouble(), y.ToDouble() };
-                } else if constexpr (std::is_same_v<int32_t, T>) {
+                } else if constexpr (std::is_same_v<int32_t, U>) {
                     return { x.ToInt(), y.ToInt() };
                 } else static_assert(false);
             } else {
@@ -119,7 +124,7 @@ namespace xx {
     using XYu = X_Y<uint32_t>;
     using XYf = X_Y<float>;
     using XYd = X_Y<double>;
-    using XYx = X_Y<FX64>;
+    using XYp = X_Y<FX64>;
     using XY = XYf;
 
 

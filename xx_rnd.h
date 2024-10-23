@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "xx_time.h"
-#include "xx_data.h"
+#include "xx_fx64.h"
 
 namespace xx {
 
@@ -128,6 +128,20 @@ namespace xx {
         template<typename V>
         V Next(std::pair<V, V> const& fromTo) {
             return Next(fromTo.first, fromTo.second);
+        }
+
+        template<typename V>
+        V NextRadians() {
+            if constexpr (std::is_floating_point_v<V>) {
+                return (V)Next<float>(-M_PI, M_PI);
+            } else if constexpr (std::is_base_of_v<FX64, V>) {
+                FX64 v;
+                v.value = Next<int32_t>((int32_t)FX64_PI_DIV_10_NEG.value, (int32_t)FX64_PI_DIV_10.value);
+                return v * FX64_10;
+            } else {
+                static_assert(false, "unsupported type");
+            }
+
         }
     };
 

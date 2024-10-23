@@ -14,6 +14,7 @@ namespace xx {
         /********************************************************************************************/
         // following code is copy from Fixed64.h && FixedUtil.h
 
+    protected:
         static constexpr auto Shift = Fixed64::Shift;
         static constexpr auto FractionMask = Fixed64::FractionMask;
         static constexpr auto IntegerMask = Fixed64::IntegerMask;
@@ -132,6 +133,7 @@ namespace xx {
         }
 
         /********************************************************************************************/
+    public:
 
         XX_INLINE FX64 Sqrt() const { return Fixed64::Sqrt(value); }
         XX_INLINE FX64 SqrtFast() const { return Fixed64::SqrtFast(value); }
@@ -211,6 +213,16 @@ namespace xx {
         constexpr double ToDouble() const { return ToDouble(value); }
         constexpr float ToFloat() const { return ToFloat(value); }
     };
+
+    static constexpr FX64 FX64_0{ 0 };
+    static constexpr FX64 FX64_1{ 1 };
+    static constexpr FX64 FX64_10{ 10 };
+    static constexpr FX64 FX64_0d1{ 0.1 };
+    static constexpr FX64 FX64_PI{ 3.14159 };
+    static constexpr FX64 FX64_PI_NEG{ -FX64_PI };
+    static constexpr FX64 FX64_PI_DIV_10{ 0.314159 };
+    static constexpr FX64 FX64_PI_DIV_10_NEG{ -FX64_PI_DIV_10 };
+    // ...
 
     template<typename T>
     struct DataFuncs<T, std::enable_if_t<std::is_base_of_v<FX64, T>>> {

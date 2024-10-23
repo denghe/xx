@@ -21,7 +21,13 @@
 #include <xx_fx64.h>
 using XY = xx::XY;
 using XYi = xx::XYi;
+using XYp = xx::XYp;
 using FX64 = xx::FX64;
+static constexpr auto FX64_0 = xx::FX64_0;
+static constexpr auto FX64_1 = xx::FX64_1;
+static constexpr auto FX64_10 = xx::FX64_10;
+static constexpr auto FX64_PI_DIV_10 = xx::FX64_PI_DIV_10;
+static constexpr auto FX64_PI_DIV_10_NEG = xx::FX64_PI_DIV_10_NEG;
 
 
 #include <nameof.hpp>
