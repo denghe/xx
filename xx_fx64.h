@@ -164,6 +164,12 @@ namespace xx {
             return Div(value, s);
         }
 
+        XX_INLINE FX64 Clamp(FX64 const& min, FX64 const& max) const {
+            return { (value > max.value) ? max.value : (value < min.value) ? min.value : value };
+        }
+        XX_INLINE FX64 Clamp01() const {
+            return { (value > One) ? One : (value < Zero) ? Zero : value };
+        }
         // ... 
 
         /********************************************************************************************/

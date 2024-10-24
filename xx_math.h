@@ -874,4 +874,117 @@ namespace xx {
         }
     }
 
+
+
+
+    /*******************************************************************************************************************************************/
+    /*******************************************************************************************************************************************/
+
+    namespace Math {
+
+        template<typename T = XYp, class = std::enable_if_t<xx::IsX_Y_v<T>>>
+        XX_INLINE auto SqrMagnitude(T const& p) -> decltype(T::x) {
+            return p.x * p.x + p.y * p.y;
+        }
+
+        template<typename T = XYp, class = std::enable_if_t<xx::IsX_Y_v<T>>>
+        XX_INLINE  auto Dot(T const& a, T const& b) -> decltype(T::x) {
+            return a.x * b.x + a.y * b.y;
+        }
+
+        template<typename T = FX64>
+        XX_INLINE T Clamp01(T const& v) {
+            if constexpr (std::is_base_of_v<FX64, T>) {
+                return v.Clamp01();
+            } else {
+                return { (v > (T)1) ? (T)1 : (v < (T)0) ? (T)0 : v };
+            }
+        }
+
+        template<typename T = XYp, class = std::enable_if_t<xx::IsX_Y_v<T>>>
+        XX_INLINE auto SegmentPointSqrDistance(T const& u, T const& x) -> decltype(T::x) {
+            auto t = Dot(x, u) / SqrMagnitude(u);
+            return SqrMagnitude(x - (Clamp01(t) * u));
+        }
+
+        template<typename T = FX64>
+        XX_INLINE T Abs(T const& v) {
+            if constexpr (std::is_base_of_v<FX64, T>) {
+                return v.Abs();
+            } else {
+                return std::abs(v);
+            }
+        }
+
+        template<typename T = FX64>
+        XX_INLINE T Sqrt(T const& v) {
+            if constexpr (std::is_base_of_v<FX64, T>) {
+                return v.Sqrt();
+            } else {
+                return std::sqrt(v);
+            }
+        }
+
+        template<typename T = FX64>
+        XX_INLINE T Sin(T const& v) {
+            if constexpr (std::is_base_of_v<FX64, T>) {
+                return v.Sin();
+            } else {
+                return std::sin(v);
+            }
+        }
+
+        template<typename T = FX64>
+        XX_INLINE T Cos(T const& v) {
+            if constexpr (std::is_base_of_v<FX64, T>) {
+                return v.Cos();
+            } else {
+                return std::cos(v);
+            }
+        }
+
+        template<typename T = FX64>
+        XX_INLINE T Atan2(T const& v) {
+            if constexpr (std::is_base_of_v<FX64, T>) {
+                return v.Atan2();
+            } else {
+                return std::atan2(v);
+            }
+        }
+
+        // ...
+
+        // https://github.com/CharlesFeng207/Unity-Math-Utils/blob/main/Unity-Math-Utils/Assets/MathUtils.cs
+
+        // sector -- circle cross check
+        // a sector center
+        // u sector direction (normalized vector)
+        // theta sector 1/2 angle ( radians )
+        // l sector length
+        // c circle center
+        // r circle radius
+        template<typename T = XYp, typename U = decltype(T::x), class = std::enable_if_t<xx::IsX_Y_v<T>>>
+        bool IsSectorDiskIntersect(T const& a, T const& u, U theta, U l, T const& c, U r) {
+            // 1. circle circle check
+            auto d = c - a;
+            auto rr = l + r;
+            auto d_sm = SqrMagnitude(d);
+            if (d_sm > rr * rr) return false;
+
+            // 2. calc local space p
+            auto px = Dot(d, u);
+            auto py = Abs(Dot(d, T{ -u.y, u.x }));
+
+            // 3. if p_x > ||p|| cos theta: cross
+            auto theta_cos = Cos(theta);
+            if (px > Sqrt(d_sm) * theta_cos) return true;
+
+            // 4. check segment circle cross
+            auto q = T{ theta_cos, Sin(theta) } *l;
+            return SegmentPointSqrDistance(q, T{ px, py }) <= r * r;
+        }
+
+    }
+
+
 }
