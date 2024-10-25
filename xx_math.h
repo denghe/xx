@@ -956,35 +956,29 @@ namespace xx {
 
         // https://github.com/CharlesFeng207/Unity-Math-Utils/blob/main/Unity-Math-Utils/Assets/MathUtils.cs
 
-        // sector -- circle cross check
-        // a sector center
-        // u sector direction (normalized vector)
-        // theta sector 1/2 angle ( radians )
-        // l sector length
-        // c circle center
-        // r circle radius
+        // sRadiansCosSin == T{ Cos(sRadians), Sin(sRadians) }
+
         template<typename T = XYp, typename U = decltype(T::x), class = std::enable_if_t<xx::IsX_Y_v<T>>>
-        bool IsSectorDiskIntersect(T const& a, T const& u, U theta, U l, T const& c, U r) {
+        bool IsSectorCircleIntersect(T const& sPos, U sRadius, T const& sRadiansCosSin, U sTheta, T const& cPos, U cRadius) {
             // 1. circle circle check
-            auto d = c - a;
-            auto rr = l + r;
+            auto d = cPos - sPos;
+            auto rr = sRadius + cRadius;
             auto d_sm = SqrMagnitude(d);
             if (d_sm > rr * rr) return false;
 
             // 2. calc local space p
-            auto px = Dot(d, u);
-            auto py = Abs(Dot(d, T{ -u.y, u.x }));
+            auto px = Dot(d, sRadiansCosSin);
+            auto py = Abs(Dot(d, T{ -sRadiansCosSin.y, sRadiansCosSin.x }));
 
-            // 3. if p_x > ||p|| cos theta: cross
-            auto theta_cos = Cos(theta);
+            // 3. if p_x > ||p|| cos sTheta: cross
+            auto theta_cos = Cos(sTheta);
             if (px > Sqrt(d_sm) * theta_cos) return true;
 
             // 4. check segment circle cross
-            auto q = T{ theta_cos, Sin(theta) } *l;
-            return SegmentPointSqrDistance(q, T{ px, py }) <= r * r;
+            auto q = T{ theta_cos, Sin(sTheta) } * sRadius;
+            return SegmentPointSqrDistance(q, T{ px, py }) <= cRadius * cRadius;
         }
 
     }
-
 
 }

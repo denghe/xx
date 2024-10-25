@@ -35,6 +35,19 @@ namespace xx {
 			return *this;
 		}
 
+		LineStrip& FillSectorPoints(XY const& center, float radius, float radians, float theta, int segments = 20, XY const& scale = { 1,1 }) {
+			dirty = true;
+			points.resize(segments + 3);
+			points[0] = center;
+			points[segments + 2] = center;
+			auto coef = theta * 2 / segments;
+			for (int i = 0; i <= segments; ++i) {
+				auto rads = i * coef - theta;
+				points[i + 1] = XY{ cosf(rads), sinf(rads) } * radius * scale + center;
+			}
+			return *this;
+		}
+
 		LineStrip& FillCirclePoints(XY const& center, float radius, std::optional<float> const& radians = {}, int segments = 20, XY const& scale = { 1,1 }) {
 			dirty = true;
 			points.reserve(segments + 2);
