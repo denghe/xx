@@ -446,11 +446,9 @@ namespace xx {
         }
     }
 
-
-
-
     /*******************************************************************************************************************************************/
     /*******************************************************************************************************************************************/
+    // new code here
 
     namespace Math {
 
@@ -524,12 +522,26 @@ namespace xx {
             }
         }
 
+        template<typename T = FX64>
+        XX_INLINE T Max(T const& a, T const& b) {
+            if constexpr (xx::IsX_Y_v<T>) {
+                return T{ Max(a.x, b.x), Max(a.y, b.y) };
+            } else return (a > b) ? a : b;
+        }
+
+        template<typename T = FX64>
+        XX_INLINE T Min(T const& a, T const& b) {
+            if constexpr (xx::IsX_Y_v<T>) {
+                return T{ Min(a.x, b.x), Min(a.y, b.y) };
+            } else return (a < b) ? a : b;
+        }
+
         // ...
 
         // https://github.com/CharlesFeng207/Unity-Math-Utils/blob/main/Unity-Math-Utils/Assets/MathUtils.cs
 
-        // sRadiansCosSin == T{ Cos(sRadians), Sin(sRadians) }
 
+        // sRadiansCosSin == T{ Cos(sRadians), Sin(sRadians) }
         template<typename T = XYp, typename U = decltype(T::x), class = std::enable_if_t<xx::IsX_Y_v<T>>>
         bool IsSectorCircleIntersect(T const& sPos, U sRadius, T const& sRadiansCosSin, U sTheta, T const& cPos, U cRadius) {
             // 1. circle circle check
@@ -551,19 +563,30 @@ namespace xx {
             return SegmentPointSqrDistance(q, T{ px, py }) <= cRadius * cRadius;
         }
 
+        // aabb mean upright box
+        template<typename T = XYp, typename U = decltype(T::x), class = std::enable_if_t<xx::IsX_Y_v<T>>>
+        XX_INLINE bool IsAabbCircleIntersect(T const& aabbPos, T const& aabbSiz, T const& circlePos, U circleRadius) {
+            auto h = aabbSiz * T{ 0.5 };    // calculate half size
+            auto v = Max(circlePos - aabbPos, aabbPos - circlePos); // = Abs(circlePos - aabbPos);
+            auto u = Max(v - h, T{});
+            return SqrMagnitude(u) <= circleRadius * circleRadius;
+        }
 
-
-
-
-
-
+        template<typename T = XYp, typename U = decltype(T::x), class = std::enable_if_t<xx::IsX_Y_v<T>>>
+        bool IsBoxCircleIntersect(T const& boxPos, T const& boxSiz, T const& boxDir, T const& circlePos, U circleRadius) {
+            // calculate circlePos's local pos ( with box )
+            auto d = circlePos - boxPos;
+            auto px = Dot(d, boxDir);
+            auto py = Dot(d, T{ -boxDir.y, boxDir.x });
+            return IsAabbCircleIntersect({}, boxSiz, T{ px, py }, circleRadius);
+        }
 
 
 
         // b: box    c: circle    w: width    h: height    r: radius
         // if intersect, cx & cy will be changed & return true
         template<typename T, bool canUp, bool canRight, bool canDown, bool canLeft>
-        XX_INLINE bool MoveCircleIfIntersectsBox_core(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner = false) {
+        XX_INLINE bool MoveCircleIfIntersectsBox_core(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool atMapEdge = false) {
             static_assert(canUp || canRight || canDown || canLeft);
 
             auto dx = std::abs(cx - bx);
@@ -668,7 +691,7 @@ namespace xx {
                         cx = bx + bHalfWidth + cr + 2;	// right
                     }
                 } else if constexpr (canLeft && canUp) {
-                    if (isMapCorner) {
+                    if (atMapEdge) {
                         if (cx - (bx - bHalfWidth) > cy - (by - bHalfHeight)) {
                             cy = by - bHalfHeight - cr - 2;	// top
                         } else {
@@ -688,7 +711,7 @@ namespace xx {
                         }
                     }
                 } else if constexpr (canUp && canRight) {
-                    if (isMapCorner) {
+                    if (atMapEdge) {
                         if ((bx + bHalfWidth) - cx > cy - (by - bHalfHeight)) {
                             cy = by - bHalfHeight - cr - 2;	// top
                         } else {
@@ -708,7 +731,7 @@ namespace xx {
                         }
                     }
                 } else if constexpr (canRight && canDown) {
-                    if (isMapCorner) {
+                    if (atMapEdge) {
                         if ((bx + bHalfWidth) - cx > (by + bHalfHeight) - cy) {
                             cy = by + bHalfHeight + cr + 2;	// bottom
                         } else {
@@ -728,7 +751,7 @@ namespace xx {
                         }
                     }
                 } else if constexpr (canDown && canLeft) {
-                    if (isMapCorner) {
+                    if (atMapEdge) {
                         if (cx - (bx - bHalfWidth) > (by + bHalfHeight) - cy) {
                             cy = by + bHalfHeight + cr + 2;	// bottom
                         } else {
@@ -886,67 +909,67 @@ namespace xx {
         }
 
         // up
-        template<typename T> bool MoveCircleIfIntersectsBox1(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
-            return MoveCircleIfIntersectsBox_core<T, true, false, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
+        template<typename T> bool MoveCircleIfIntersectsBox1(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool atMapEdge) {
+            return MoveCircleIfIntersectsBox_core<T, true, false, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, atMapEdge);
         }
         // right
-        template<typename T> bool MoveCircleIfIntersectsBox2(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
-            return MoveCircleIfIntersectsBox_core<T, false, true, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
+        template<typename T> bool MoveCircleIfIntersectsBox2(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool atMapEdge) {
+            return MoveCircleIfIntersectsBox_core<T, false, true, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, atMapEdge);
         }
         // up + right
-        template<typename T> bool MoveCircleIfIntersectsBox3(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
-            return MoveCircleIfIntersectsBox_core<T, true, true, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
+        template<typename T> bool MoveCircleIfIntersectsBox3(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool atMapEdge) {
+            return MoveCircleIfIntersectsBox_core<T, true, true, false, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, atMapEdge);
         }
         // down
-        template<typename T> bool MoveCircleIfIntersectsBox4(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
-            return MoveCircleIfIntersectsBox_core<T, false, false, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
+        template<typename T> bool MoveCircleIfIntersectsBox4(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool atMapEdge) {
+            return MoveCircleIfIntersectsBox_core<T, false, false, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, atMapEdge);
         }
         // up + down
-        template<typename T> bool MoveCircleIfIntersectsBox5(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
-            return MoveCircleIfIntersectsBox_core<T, true, false, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
+        template<typename T> bool MoveCircleIfIntersectsBox5(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool atMapEdge) {
+            return MoveCircleIfIntersectsBox_core<T, true, false, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, atMapEdge);
         }
         // right + down
-        template<typename T> bool MoveCircleIfIntersectsBox6(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
-            return MoveCircleIfIntersectsBox_core<T, false, true, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
+        template<typename T> bool MoveCircleIfIntersectsBox6(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool atMapEdge) {
+            return MoveCircleIfIntersectsBox_core<T, false, true, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, atMapEdge);
         }
         // up + right + down
-        template<typename T> bool MoveCircleIfIntersectsBox7(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
-            return MoveCircleIfIntersectsBox_core<T, true, true, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
+        template<typename T> bool MoveCircleIfIntersectsBox7(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool atMapEdge) {
+            return MoveCircleIfIntersectsBox_core<T, true, true, true, false>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, atMapEdge);
         }
         // left
-        template<typename T> bool MoveCircleIfIntersectsBox8(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
-            return MoveCircleIfIntersectsBox_core<T, false, false, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
+        template<typename T> bool MoveCircleIfIntersectsBox8(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool atMapEdge) {
+            return MoveCircleIfIntersectsBox_core<T, false, false, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, atMapEdge);
         }
         // up + left
-        template<typename T> bool MoveCircleIfIntersectsBox9(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
-            return MoveCircleIfIntersectsBox_core<T, true, false, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
+        template<typename T> bool MoveCircleIfIntersectsBox9(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool atMapEdge) {
+            return MoveCircleIfIntersectsBox_core<T, true, false, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, atMapEdge);
         }
         // right + left
-        template<typename T> bool MoveCircleIfIntersectsBox10(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
-            return MoveCircleIfIntersectsBox_core<T, false, true, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
+        template<typename T> bool MoveCircleIfIntersectsBox10(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool atMapEdge) {
+            return MoveCircleIfIntersectsBox_core<T, false, true, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, atMapEdge);
         }
         // up + right + left
-        template<typename T> bool MoveCircleIfIntersectsBox11(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
-            return MoveCircleIfIntersectsBox_core<T, true, true, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
+        template<typename T> bool MoveCircleIfIntersectsBox11(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool atMapEdge) {
+            return MoveCircleIfIntersectsBox_core<T, true, true, false, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, atMapEdge);
         }
         // down + left
-        template<typename T> bool MoveCircleIfIntersectsBox12(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
-            return MoveCircleIfIntersectsBox_core<T, false, false, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
+        template<typename T> bool MoveCircleIfIntersectsBox12(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool atMapEdge) {
+            return MoveCircleIfIntersectsBox_core<T, false, false, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, atMapEdge);
         }
         // up + down + left
-        template<typename T> bool MoveCircleIfIntersectsBox13(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
-            return MoveCircleIfIntersectsBox_core<T, true, false, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
+        template<typename T> bool MoveCircleIfIntersectsBox13(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool atMapEdge) {
+            return MoveCircleIfIntersectsBox_core<T, true, false, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, atMapEdge);
         }
         // right + down + left
-        template<typename T> bool MoveCircleIfIntersectsBox14(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
-            return MoveCircleIfIntersectsBox_core<T, false, true, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
+        template<typename T> bool MoveCircleIfIntersectsBox14(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool atMapEdge) {
+            return MoveCircleIfIntersectsBox_core<T, false, true, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, atMapEdge);
         }
         // up + right + down + left
-        template<typename T> bool MoveCircleIfIntersectsBox15(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
-            return MoveCircleIfIntersectsBox_core<T, true, true, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
+        template<typename T> bool MoveCircleIfIntersectsBox15(T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool atMapEdge) {
+            return MoveCircleIfIntersectsBox_core<T, true, true, true, true>(bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, atMapEdge);
         }
 
-        typedef bool(*MoveCircleIfIntersectsBoxFuncInt32)(int32_t bx, int32_t by, int32_t bHalfWidth, int32_t bHalfHeight, int32_t& cx, int32_t& cy, int32_t cr, bool isMapCorner);
+        typedef bool(*MoveCircleIfIntersectsBoxFuncInt32)(int32_t bx, int32_t by, int32_t bHalfWidth, int32_t bHalfHeight, int32_t& cx, int32_t& cy, int32_t cr, bool atMapEdge);
         inline static MoveCircleIfIntersectsBoxFuncInt32 moveCircleIfIntersectsBoxFuncs_int32[] = {
             MoveCircleIfIntersectsBox15<int32_t>,
             MoveCircleIfIntersectsBox1<int32_t>,
@@ -966,7 +989,7 @@ namespace xx {
             MoveCircleIfIntersectsBox15<int32_t>,
         };
 
-        typedef bool(*MoveCircleIfIntersectsBoxFuncFloat)(float bx, float by, float bHalfWidth, float bHalfHeight, float& cx, float& cy, float cr, bool isMapCorner);
+        typedef bool(*MoveCircleIfIntersectsBoxFuncFloat)(float bx, float by, float bHalfWidth, float bHalfHeight, float& cx, float& cy, float cr, bool atMapEdge);
         inline static MoveCircleIfIntersectsBoxFuncFloat moveCircleIfIntersectsBoxFuncs_float[] = {
             MoveCircleIfIntersectsBox15<float>,
             MoveCircleIfIntersectsBox1<float>,
@@ -994,15 +1017,15 @@ namespace xx {
         };
 
         template<typename T>
-        bool MoveCircleIfIntersectsBox(BlockWayout bw, T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool isMapCorner) {
+        bool MoveCircleIfIntersectsBox(BlockWayout bw, T bx, T by, T bHalfWidth, T bHalfHeight, T& cx, T& cy, T cr, bool atMapEdge) {
             static_assert(std::is_same_v<T, int32_t> || std::is_same_v<T, float>);
             auto idx = (uint8_t&)bw;
             if constexpr (std::is_same_v<T, int32_t>) {
                 assert(idx < _countof(moveCircleIfIntersectsBoxFuncs_int32));
-                return moveCircleIfIntersectsBoxFuncs_int32[idx](bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
+                return moveCircleIfIntersectsBoxFuncs_int32[idx](bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, atMapEdge);
             } else {
                 assert(idx < _countof(moveCircleIfIntersectsBoxFuncs_float));
-                return moveCircleIfIntersectsBoxFuncs_float[idx](bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, isMapCorner);
+                return moveCircleIfIntersectsBoxFuncs_float[idx](bx, by, bHalfWidth, bHalfHeight, cx, cy, cr, atMapEdge);
             }
         }
 

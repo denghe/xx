@@ -225,6 +225,9 @@ namespace xx {
     static constexpr FX64 FX64_10{ 10 };
     static constexpr FX64 FX64_0d1{ 0.1 };
     static constexpr FX64 FX64_PI{ 3.14159 };
+    static constexpr FX64 FX64_NPI{ -3.14159 };
+    static constexpr FX64 FX64_2PI{ FX64_PI * 2 };
+    static constexpr FX64 FX64_N2PI{ -FX64_2PI };
     static constexpr FX64 FX64_PI_NEG{ -FX64_PI };
     static constexpr FX64 FX64_PI_DIV_10{ 0.314159 };
     static constexpr FX64 FX64_PI_DIV_10_NEG{ -FX64_PI_DIV_10 };

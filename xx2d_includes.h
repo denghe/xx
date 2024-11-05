@@ -26,6 +26,10 @@ using FX64 = xx::FX64;
 static constexpr auto FX64_0 = xx::FX64_0;
 static constexpr auto FX64_1 = xx::FX64_1;
 static constexpr auto FX64_10 = xx::FX64_10;
+static constexpr auto FX64_PI = xx::FX64_PI;
+static constexpr auto FX64_NPI = xx::FX64_NPI;
+static constexpr auto FX64_2PI = xx::FX64_2PI;
+static constexpr auto FX64_N2PI = xx::FX64_N2PI;
 static constexpr auto FX64_PI_DIV_10 = xx::FX64_PI_DIV_10;
 static constexpr auto FX64_PI_DIV_10_NEG = xx::FX64_PI_DIV_10_NEG;
 
