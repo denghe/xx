@@ -23,14 +23,14 @@ namespace xx {
             Forward(frameIndex, inc, 0, to);
         }
 
-        inline XX_INLINE	void Backward(float& frameIndex, float inc, float from, float to) {
+        inline XX_INLINE void Backward(float& frameIndex, float inc, float from, float to) {
             frameIndex -= inc;
             if (frameIndex <= from) {
                 frameIndex = to - (from - frameIndex);
             }
         }
 
-        inline XX_INLINE	void Backward(float& frameIndex, float inc, float to) {
+        inline XX_INLINE void Backward(float& frameIndex, float inc, float to) {
             Backward(frameIndex, inc, 0, to);
         }
 
@@ -452,6 +452,9 @@ namespace xx {
 
     namespace Math {
 
+        /******************************************************************************************/
+        // base functions
+
         template<typename T = XYp, class = std::enable_if_t<xx::IsX_Y_v<T>>>
         XX_INLINE auto SqrMagnitude(T const& p) -> decltype(T::x) {
             return p.x * p.x + p.y * p.y;
@@ -538,6 +541,45 @@ namespace xx {
 
         // ...
 
+        /******************************************************************************************/
+        // frame index controls
+
+        template<typename T = FX64>
+        inline XX_INLINE void FrameIndexForward(T& frameIndex, T inc, T from, T to) {
+            frameIndex += inc;
+            if (frameIndex >= to) {
+                frameIndex = from + (frameIndex - to);
+            }
+        }
+
+        template<typename T = FX64>
+        inline XX_INLINE void FrameIndexForward(T& frameIndex, T inc, T to) {
+            FrameIndexForward(frameIndex, inc, T{}, to);
+        }
+
+        template<typename T = FX64>
+        inline XX_INLINE void FrameIndexBackward(T& frameIndex, T inc, T from, T to) {
+            frameIndex -= inc;
+            if (frameIndex <= from) {
+                frameIndex = to - (from - frameIndex);
+            }
+        }
+
+        template<typename T = FX64>
+        inline XX_INLINE void FrameIndexBackward(T& frameIndex, T inc, T to) {
+            FrameIndexBackward(frameIndex, inc, T{}, to);
+        }
+
+
+        /******************************************************************************************/
+        // rotate controls
+
+        // todo
+
+
+        /******************************************************************************************/
+        // intersect checks
+
         // https://github.com/CharlesFeng207/Unity-Math-Utils/blob/main/Unity-Math-Utils/Assets/MathUtils.cs
 
 
@@ -581,6 +623,8 @@ namespace xx {
             return IsAabbCircleIntersect({}, boxSiz, T{ px, py }, circleRadius);
         }
 
+        /******************************************************************************************/
+        // intersect check + move
 
 
         // b: box    c: circle    w: width    h: height    r: radius
