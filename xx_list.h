@@ -1,7 +1,6 @@
 ﻿#pragma once
-#include "xx_typetraits.h"
+#include "xx_data.h"
 #include "xx_string.h"
-#include "xx_mem.h"
 
 namespace xx {
 
@@ -291,9 +290,6 @@ namespace xx {
 	template<typename T>
 	using Listi32 = List<T, int32_t>;
 
-	template<typename T>
-	using Listi = List<T, ptrdiff_t>;
-
 
 	template<typename T>
 	struct IsXxList : std::false_type {};
@@ -306,6 +302,8 @@ namespace xx {
 	template<typename T>
 	constexpr bool IsXxList_v = IsXxList<T>::value;
 
+
+	// tostring
 	template<typename T>
 	struct StringFuncs<T, std::enable_if_t<IsXxList_v<T>>> {
 		static inline void Append(std::string& s, T const& in) {
@@ -321,4 +319,49 @@ namespace xx {
 			}
 		}
 	};
+
+	// serde
+	template<typename T>
+	struct DataFuncs<T, std::enable_if_t< (IsXxList_v<T>)>> {
+		using U = typename T::ChildType;
+		template<bool needReserve = true>
+		static inline void Write(Data& d, T const& in) {
+			d.WriteVarInteger<needReserve>((size_t)in.len);
+			if (!in.len) return;
+			if constexpr (sizeof(U) == 1 || std::is_floating_point_v<U>) {
+				d.WriteFixedArray<needReserve>(in.buf, in.len);
+			} else if constexpr (std::is_integral_v<U>) {
+				if constexpr (needReserve) {
+					auto cap = in.len * (sizeof(U) + 2);
+					if (d.cap < cap) {
+						d.Reserve<false>(cap);
+					}
+				}
+				for (auto&& o : in) {
+					d.WriteVarInteger<false>(o);
+				}
+			} else {
+				for (auto&& o : in) {
+					d.Write<needReserve>(o);
+				}
+			}
+		}
+		static inline int Read(Data_r& d, T& out) {
+			size_t siz = 0;
+			if (int r = d.ReadVarInteger(siz)) return r;
+			if (d.offset + siz > d.len) return __LINE__;
+			out.Resize(decltype(out.len)(siz));
+			if (siz == 0) return 0;
+			auto buf = out.buf;
+			if constexpr (sizeof(U) == 1 || std::is_floating_point_v<U>) {
+				if (int r = d.ReadFixedArray(buf, siz)) return r;
+			} else {
+				for (size_t i = 0; i < siz; ++i) {
+					if (int r = d.Read(buf[i])) return r;
+				}
+			}
+			return 0;
+		}
+	};
+
 }

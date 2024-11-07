@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "xx_typetraits.h"
-#include "xx_list.h"
+#include "xx_mem.h"
 
 namespace xx {
 
@@ -1029,50 +1029,6 @@ namespace xx {
                 siz = out.size();
             }
             auto buf = out.data();
-            if constexpr (sizeof(U) == 1 || std::is_floating_point_v<U>) {
-                if (int r = d.ReadFixedArray(buf, siz)) return r;
-            } else {
-                for (size_t i = 0; i < siz; ++i) {
-                    if (int r = d.Read(buf[i])) return r;
-                }
-            }
-            return 0;
-        }
-    };
-
-    // 适配 xx::List
-    template<typename T>
-    struct DataFuncs<T, std::enable_if_t< (IsXxList_v<T>)>> {
-        using U = typename T::ChildType;
-        template<bool needReserve = true>
-        static inline void Write(Data& d, T const& in) {
-            d.WriteVarInteger<needReserve>((size_t)in.len);
-            if (!in.len) return;
-            if constexpr (sizeof(U) == 1 || std::is_floating_point_v<U>) {
-                d.WriteFixedArray<needReserve>(in.buf, in.len);
-            } else if constexpr (std::is_integral_v<U>) {
-                if constexpr (needReserve) {
-                    auto cap = in.len * (sizeof(U) + 2);
-                    if (d.cap < cap) {
-                        d.Reserve<false>(cap);
-                    }
-                }
-                for (auto&& o : in) {
-                    d.WriteVarInteger<false>(o);
-                }
-            } else {
-                for (auto&& o : in) {
-                    d.Write<needReserve>(o);
-                }
-            }
-        }
-        static inline int Read(Data_r& d, T& out) {
-            size_t siz = 0;
-            if (int r = d.ReadVarInteger(siz)) return r;
-            if (d.offset + siz > d.len) return __LINE__;
-            out.Resize(decltype(out.len)(siz));
-            if (siz == 0) return 0;
-            auto buf = out.buf;
             if constexpr (sizeof(U) == 1 || std::is_floating_point_v<U>) {
                 if (int r = d.ReadFixedArray(buf, siz)) return r;
             } else {

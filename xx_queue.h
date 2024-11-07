@@ -1,345 +1,325 @@
 ﻿#pragma once
-#include "xx_mem.h"
-#include "xx_typetraits.h"
+#include "xx_data.h"
+#include "xx_string.h"
 
 namespace xx {
 
-	// ring buffer FIFO 队列, 能随机检索...能批量 pop. 简单测试 windows + msvc 下比 std::queue 快 70% 左右
+	// ring buffer FIFO queue, support random index visit, batch pop. performance better than std
 
 	//...............FR...............					// Head == Tail
 	//......Head+++++++++++Tail.......					// DataLen = Tail - Head
 	//++++++Tail...........Head+++++++					// DataLen = BufLen - Head + Tail
-	template <typename T>
+	template <typename T, typename SizeType = ptrdiff_t>
 	struct Queue {
 		typedef T ChildType;
+		using S = SizeType;
 		T*			buf;
-		size_t		cap;
-		size_t		head = 0, tail = 0;					// TH..............................
+		SizeType	cap;
+		SizeType	head{}, tail{};						// TH..............................
 
-		// 因为该队列似乎没办法令 buf 为空, 故移动操作也会创建 buf
-		explicit Queue(size_t capacity = 8) noexcept;
-		Queue(Queue && o) noexcept;
-		~Queue() noexcept;
+		explicit Queue(SizeType capacity = 8) noexcept {
+			if (capacity < 8) {
+				capacity = 8;
+			}
+			auto bufByteLen = Round2n(capacity * sizeof(T));
+			buf = AlignedAlloc<T>((size_t)bufByteLen);				// buf can't be null
+			assert(buf);
+			cap = SizeType(bufByteLen / sizeof(T));
+		}
+
+		Queue(Queue&& o) noexcept : Queue() {
+			std::swap(buf, o.buf);
+			std::swap(cap, o.cap);
+			std::swap(head, o.head);
+			std::swap(tail, o.tail);
+		}
+
+		~Queue() noexcept {
+			assert(buf);
+			Clear();
+			AlignedFree<T>(buf);
+			buf = nullptr;
+		}
 
 		Queue(Queue const& o) = delete;
 		Queue& operator=(Queue const& o) = delete;
 
-		T const& operator[](size_t idx) const noexcept;	// [0] = [ head ]
-		T& operator[](size_t idx) noexcept;
-		T const& At(size_t idx) const noexcept;			// []
-		T& At(size_t idx) noexcept;
+		T& operator[](SizeType idx) const noexcept {
+			return At(idx);
+		}
 
-		size_t Count() const noexcept;
-		bool Empty() const noexcept;
-		void Clear() noexcept;
-		void Reserve(size_t capacity, bool afterPush = false) noexcept;
+		T& At(SizeType idx) const noexcept {
+			assert(idx < Count());
+			if (head + idx < cap) {
+				return (T&)buf[head + idx];
+			} else {
+				return (T&)buf[head + idx - cap];
+			}
+		}
+
+		SizeType Count() const noexcept {
+			//......Head+++++++++++Tail.......
+			//...............FR...............
+			if (head <= tail) return tail - head;
+			// ++++++Tail...........Head++++++
+			else return tail + (cap - head);
+		}
+
+		bool Empty() const noexcept {
+			return head == tail;
+		}
+
+		void Clear() noexcept {
+			//........HT......................
+			if (head == tail) return;
+
+			if constexpr (!(std::is_standard_layout_v<T> && std::is_trivial_v<T>)) {
+				//......Head+++++++++++Tail......
+				if (head < tail) {
+					for (auto i = head; i < tail; ++i) {
+						buf[i].~T();
+					}
+				}
+				// ++++++Tail...........Head++++++
+				else {
+					for (SizeType i = 0; i < tail; ++i) {
+						buf[i].~T();
+					}
+					for (auto i = head; i < cap; ++i) {
+						buf[i].~T();
+					}
+				}
+			}
+
+			//........HT......................
+			head = tail = 0;
+		}
+
+		template<bool callByEmplace = false>
+		void Reserve(SizeType capacity) noexcept {
+			assert(capacity > 0);
+			if (capacity <= cap) return;
+
+			auto newBufByteLen = Round2n(capacity * sizeof(T));
+			auto newBuf = AlignedAlloc<T>((size_t)newBufByteLen);
+			assert(newBuf);
+			auto newBufLen = SizeType(newBufByteLen / sizeof(T));
+
+			// callByEmplace == true: ++++++++++++++TH++++++++++++++++
+			auto dataLen = callByEmplace ? cap : Count();
+
+			//......Head+++++++++++Tail.......
+			if (head < tail) {
+				if constexpr (xx::IsPod_v<T>) {
+					memcpy((void*)newBuf, buf + head, dataLen * sizeof(T));
+				} else {
+					for (size_t i = 0; i < dataLen; ++i) {
+						new (newBuf + i) T((T&&)buf[head + i]);
+						buf[head + i].~T();
+					}
+				}
+			}
+			// ++++++Tail...........Head+++++++
+			// ++++++++++++++TH++++++++++++++++
+			else {
+				//...Head++++++
+				auto frontDataLen = cap - head;
+				if constexpr (xx::IsPod_v<T>) {
+					memcpy((void*)newBuf, buf + head, frontDataLen * sizeof(T));
+				} else {
+					for (size_t i = 0; i < frontDataLen; ++i) {
+						new (newBuf + i) T((T&&)buf[head + i]);
+						buf[head + i].~T();
+					}
+				}
+
+				// ++++++Tail...
+				if constexpr (xx::IsPod_v<T>) {
+					memcpy((void*)(newBuf + frontDataLen), buf, tail * sizeof(T));
+				} else {
+					for (size_t i = 0; i < tail; ++i) {
+						new (newBuf + frontDataLen + i) T((T&&)buf[i]);
+						buf[i].~T();
+					}
+				}
+			}
+
+			// Head+++++++++++Tail.............
+			head = 0;
+			tail = dataLen;
+
+			AlignedFree<T>(buf);
+			buf = newBuf;
+			cap = newBufLen;
+		}
 
 		template<typename...Args>
-		T& Emplace(Args&&...ps) noexcept;				// [ tail++ ] = T( ps )
+		T& Emplace(Args&&...args) noexcept {
+			auto idx = tail;
+			new (buf + tail++) T(std::forward<Args>(args)...);
+			if (tail == cap) {			// cycle
+				tail = 0;
+			}
+			if (tail == head) {			// no more space
+				idx = cap - 1;
+				Reserve<true>(cap * 2);
+			}
+			return buf[idx];
+		}
 
 		template<typename ...TS>
-		void Push(TS&& ...vs) noexcept;
-
-		bool TryPop(T& outVal) noexcept;
-
-		T const& Top() const noexcept;					// [ head ]
-		T& Top() noexcept;
-		void Pop() noexcept;							// ++head
-		size_t PopMulti(size_t count) noexcept;			// head += count
-
-		T const& Last() const noexcept;					// [ tail-1 ]
-		T& Last() noexcept;
-		void PopLast() noexcept;						// --tail
-	};
-
-    // mem moveable tag
-    template<typename T>
-    struct IsPod<Queue<T>, void> : std::true_type {};
-}
-
-// impls
-namespace xx
-{
-	template <class T>
-	Queue<T>::Queue(size_t capacity) noexcept {
-		if (capacity < 8) {
-			capacity = 8;
+		void Push(TS&& ...vs) noexcept {
+			(Emplace(std::forward<TS>(vs)), ...);
 		}
-		auto bufByteLen = Round2n(capacity * sizeof(T));
-		buf = AlignedAlloc<T>((size_t)bufByteLen);
-		assert(buf);
-		cap = size_t(bufByteLen / sizeof(T));
-	}
 
-	template <class T>
-	Queue<T>::Queue(Queue&& o) noexcept
-		: Queue() {
-		std::swap(buf, o.buf);
-		std::swap(cap, o.cap);
-		std::swap(head, o.head);
-		std::swap(tail, o.tail);
-	}
-
-	template <class T>
-	Queue<T>::~Queue() noexcept {
-		assert(buf);
-		Clear();
-		AlignedFree<T>(buf);
-		buf = nullptr;
-	}
-
-	template <class T>
-	XX_INLINE size_t Queue<T>::Count() const noexcept {
-		//......Head+++++++++++Tail.......
-		//...............FR...............
-		if (head <= tail) return tail - head;
-		// ++++++Tail...........Head++++++
-		else return tail + (cap - head);
-	}
-
-	template <class T>
-	bool Queue<T>::Empty() const noexcept {
-		return head == tail;
-	}
-
-	template <class T>
-	void Queue<T>::Pop() noexcept {
-		assert(head != tail);
-		if constexpr (!(std::is_standard_layout_v<T> && std::is_trivial_v<T>)) {
-            buf[head].~T();
+		bool TryPop(T& outVal) noexcept {
+			if (head == tail) return false;
+			outVal = std::move(buf[head]);
+			Pop();
+			return true;
 		}
-        ++head;
-		if (head == cap) {
-			head = 0;
+
+		T& Top() const noexcept {
+			assert(head != tail);
+			return (T&)buf[head];
 		}
-	}
 
-	template <class T>
-	void Queue<T>::PopLast() noexcept {
-		assert(head != tail);
-        if constexpr (!(std::is_standard_layout_v<T> && std::is_trivial_v<T>)) {
-            buf[tail].~T();
-        }
-        --tail;
-		if (tail == (size_t)-1) {
-			tail = cap - 1;
+		// ++head
+		void Pop() noexcept {
+			assert(head != tail);
+			if constexpr (!(std::is_standard_layout_v<T> && std::is_trivial_v<T>)) {
+				buf[head].~T();
+			}
+			++head;
+			if (head == cap) {
+				head = 0;
+			}
 		}
-	}
 
-	template <class T>
-	template<typename...Args>
-	T& Queue<T>::Emplace(Args&& ...args) noexcept {
-		auto idx = tail;
-		new (buf + tail++) T(std::forward<Args>(args)...);
-		if (tail == cap) {			// cycle
-			tail = 0;
-		}
-		if (tail == head) {			// no more space
-			idx = cap - 1;
-			Reserve(cap * 2, true);
-		}
-		return buf[idx];
-	}
+		SizeType PopMulti(SizeType count) noexcept {
+			if (count <= 0) return 0;
 
-	template<typename T>
-	template<typename ...TS>
-	XX_INLINE void Queue<T>::Push(TS&& ...vs) noexcept {
-		std::initializer_list<int> n{ (Emplace(std::forward<TS>(vs)), 0)... };
-		(void)n;
-	}
+			auto dataLen = Count();
+			if (count >= dataLen) {
+				Clear();
+				return dataLen;
+			}
+			// count < dataLen
 
-	template <class T>
-	void Queue<T>::Clear() noexcept {
-		//........HT......................
-		if (head == tail) return;
-
-		if constexpr (!(std::is_standard_layout_v<T> && std::is_trivial_v<T>)) {
 			//......Head+++++++++++Tail......
 			if (head < tail) {
-				for (auto i = head; i < tail; ++i) {
-					buf[i].~T();
-				}
-			}
-			// ++++++Tail...........Head++++++
-			else {
-				for (size_t i = 0; i < tail; ++i) {
-					buf[i].~T();
-				}
-				for (auto i = head; i < cap; ++i) {
-					buf[i].~T();
-				}
-			}
-		}
-
-		//........HT......................
-		head = tail = 0;
-	}
-
-	template <typename T>
-	size_t Queue<T>::PopMulti(size_t count) noexcept {
-		if (count <= 0) return 0;
-
-		auto dataLen = Count();
-		if (count >= dataLen) {
-			Clear();
-			return dataLen;
-		}
-		// count < dataLen
-
-		//......Head+++++++++++Tail......
-		if (head < tail) {
-			if constexpr (!(std::is_standard_layout_v<T> && std::is_trivial_v<T>)) {
-				//......Head+++++++++++count......
-				for (auto i = head; i < head + count; ++i) buf[i].~T();
-			}
-			head += count;
-		}
-		// ++++++Tail...........Head++++++
-		else {
-			auto frontDataLen = cap - head;
-			//...Head+++
-			if (count < frontDataLen) {
 				if constexpr (!(std::is_standard_layout_v<T> && std::is_trivial_v<T>)) {
+					//......Head+++++++++++count......
 					for (auto i = head; i < head + count; ++i) buf[i].~T();
 				}
 				head += count;
 			}
+			// ++++++Tail...........Head++++++
 			else {
-				if constexpr (!(std::is_standard_layout_v<T> && std::is_trivial_v<T>)) {
-					//...Head++++++
-					for (auto i = head; i < cap; ++i) buf[i].~T();
-				}
+				auto frontDataLen = cap - head;
+				//...Head+++
+				if (count < frontDataLen) {
+					if constexpr (!(std::is_standard_layout_v<T> && std::is_trivial_v<T>)) {
+						for (auto i = head; i < head + count; ++i) buf[i].~T();
+					}
+					head += count;
+				} else {
+					if constexpr (!(std::is_standard_layout_v<T> && std::is_trivial_v<T>)) {
+						//...Head++++++
+						for (auto i = head; i < cap; ++i) buf[i].~T();
+					}
 
-				// <-Head
-				head = count - frontDataLen;
+					// <-Head
+					head = count - frontDataLen;
 
-				if constexpr (!(std::is_standard_layout_v<T> && std::is_trivial_v<T>)) {
-					// ++++++Head...
-					for (size_t i = 0; i < head; ++i) buf[i].~T();
-				}
-			}
-		}
-		return count;
-	}
-
-	template <class T>
-	void Queue<T>::Reserve(size_t capacity, bool afterPush) noexcept {
-		assert(capacity > 0);
-		if (capacity <= cap) return;
-
-		auto newBufByteLen = Round2n(capacity * sizeof(T));
-		auto newBuf = AlignedAlloc<T>((size_t)newBufByteLen);
-		assert(newBuf);
-		auto newBufLen = size_t(newBufByteLen / sizeof(T));
-
-		// afterPush: ++++++++++++++TH++++++++++++++++
-		auto dataLen = afterPush ? cap : Count();
-
-		//......Head+++++++++++Tail.......
-		if (head < tail) {
-			if constexpr (xx::IsPod_v<T>) {
-				memcpy((void*)newBuf, buf + head, dataLen * sizeof(T));
-			}
-			else {
-				for (size_t i = 0; i < dataLen; ++i) {
-					new (newBuf + i) T((T&&)buf[head + i]);
-					buf[head + i].~T();
+					if constexpr (!(std::is_standard_layout_v<T> && std::is_trivial_v<T>)) {
+						// ++++++Head...
+						for (SizeType i = 0; i < head; ++i) buf[i].~T();
+					}
 				}
 			}
+			return count;
 		}
-		// ++++++Tail...........Head+++++++
-		// ++++++++++++++TH++++++++++++++++
-		else
-		{
-			//...Head++++++
-			auto frontDataLen = cap - head;
-			if constexpr (xx::IsPod_v<T>) {
-				memcpy((void*)newBuf, buf + head, frontDataLen * sizeof(T));
+
+		// [ tail-1 ]
+		T& Last() const noexcept {
+			assert(head != tail);
+			return (T&)buf[tail - 1 == (size_t)-1 ? cap - 1 : tail - 1];
+		}
+
+		void PopLast() noexcept {
+			assert(head != tail);
+			if constexpr (!(std::is_standard_layout_v<T> && std::is_trivial_v<T>)) {
+				buf[tail].~T();
 			}
-			else {
-				for (size_t i = 0; i < frontDataLen; ++i) {
-					new (newBuf + i) T((T&&)buf[head + i]);
-					buf[head + i].~T();
+			--tail;
+			if (tail == (SizeType)-1) {
+				tail = cap - 1;
+			}
+		}
+	};
+
+    // mem moveable tag
+    template <typename T, typename SizeType>
+    struct IsPod<Queue<T, SizeType>, void> : std::true_type {};
+
+	template<typename T>
+	using Queuei32 = List<T, int32_t>;
+
+	template<typename T>
+	struct IsXxQueue : std::false_type {};
+	template<typename T, typename S>
+	struct IsXxQueue<Queue<T, S>> : std::true_type {};
+	template<typename T, typename S>
+	struct IsXxQueue<Queue<T, S>&> : std::true_type {};
+	template<typename T, typename S>
+	struct IsXxQueue<Queue<T, S> const&> : std::true_type {};
+	template<typename T>
+	constexpr bool IsXxQueue_v = IsXxQueue<T>::value;
+
+	// tostring
+	template<typename T>
+	struct StringFuncs<T, std::enable_if_t<IsXxQueue_v<T>>> {
+		static inline void Append(std::string& s, T const& in) {
+			s.push_back('[');
+			if (auto inLen = in.Count()) {
+				for (typename T::S i = 0; i < inLen; ++i) {
+					::xx::Append(s, in[i]);
+					s.push_back(',');
 				}
-			}
-
-			// ++++++Tail...
-			if constexpr (xx::IsPod_v<T>) {
-				memcpy((void*)(newBuf + frontDataLen), buf, tail * sizeof(T));
-			}
-			else {
-				for (size_t i = 0; i < tail; ++i) {
-					new (newBuf + frontDataLen + i) T((T&&)buf[i]);
-					buf[i].~T();
-				}
+				s[s.size() - 1] = ']';
+			} else {
+				s.push_back(']');
 			}
 		}
+	};
 
-		// Head+++++++++++Tail.............
-		head = 0;
-		tail = dataLen;
-
-		AlignedFree<T>(buf);
-		buf = newBuf;
-		cap = newBufLen;
-	}
-
-
+	// serde
 	template<typename T>
-	XX_INLINE T const& Queue<T>::operator[](size_t idx) const noexcept {
-		return At(idx);
-	}
-
-	template<typename T>
-	XX_INLINE T& Queue<T>::operator[](size_t idx) noexcept {
-		return At(idx);
-	}
-
-	template<typename T>
-	XX_INLINE T const& Queue<T>::At(size_t idx) const noexcept {
-		return const_cast<Queue<T>*>(this)->At(idx);
-	}
-
-	template<typename T>
-	XX_INLINE T const& Queue<T>::Top() const noexcept {
-		assert(head != tail);
-		return buf[head];
-	}
-
-	template<typename T>
-	XX_INLINE T& Queue<T>::Top() noexcept {
-		assert(head != tail);
-		return buf[head];
-	}
-
-	template<typename T>
-	XX_INLINE T& Queue<T>::At(size_t idx) noexcept {
-		assert(idx < Count());
-		if (head + idx < cap) {
-			return buf[head + idx];
+	struct DataFuncs<T, std::enable_if_t< (IsXxQueue_v<T>)>> {
+		using U = typename T::ChildType;
+		template<bool needReserve = true>
+		static inline void Write(Data& d, T const& in) {
+			auto siz = (size_t)in.Count();
+			d.WriteVarInteger<needReserve>(siz);
+			if (!siz) return;
+			for (size_t i = 0; i < siz; ++i) {
+				d.Write<needReserve>(in[i]);
+			}
 		}
-		else {
-			return buf[head + idx - cap];
+		static inline int Read(Data_r& d, T& out) {
+			size_t siz = 0;
+			if (int r = d.ReadVarInteger(siz)) return r;
+			if (d.offset + siz > d.len) return __LINE__;
+			out.Clear();
+			if (siz == 0) return 0;
+			out.Reserve((typename T::S)siz);
+			for (size_t i = 0; i < siz; ++i) {
+				auto&& o = out.Emplace();
+				if (int r = d.Read(o)) return r;
+			}
+			return 0;
 		}
-	}
-
-	template<typename T>
-	XX_INLINE T const& Queue<T>::Last() const noexcept {
-		assert(head != tail);
-		return buf[tail - 1 == (size_t)-1 ? cap - 1 : tail - 1];
-	}
-	template<typename T>
-	XX_INLINE T& Queue<T>::Last() noexcept {
-		assert(head != tail);
-		return buf[tail - 1 == (size_t)-1 ? cap - 1 : tail - 1];
-	}
-
-	template <typename T>
-	XX_INLINE bool Queue<T>::TryPop(T& outVal) noexcept {
-		if (head == tail) return false;
-		outVal = std::move(buf[head]);
-		Pop();
-		return true;
-	}
+	};
 
 }
