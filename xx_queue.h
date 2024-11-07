@@ -264,7 +264,7 @@ namespace xx {
     struct IsPod<Queue<T, SizeType>, void> : std::true_type {};
 
 	template<typename T>
-	using Queuei32 = List<T, int32_t>;
+	using Queuei32 = Queue<T, int32_t>;
 
 	template<typename T>
 	struct IsXxQueue : std::false_type {};
@@ -304,7 +304,7 @@ namespace xx {
 			d.WriteVarInteger<needReserve>(siz);
 			if (!siz) return;
 			for (size_t i = 0; i < siz; ++i) {
-				d.Write<needReserve>(in[i]);
+				d.Write<needReserve>(in[(typename T::S)i]);
 			}
 		}
 		static inline int Read(Data_r& d, T& out) {
