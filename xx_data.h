@@ -889,7 +889,7 @@ namespace xx {
 
     // 适配 std::optional<T>
     template<typename T>
-    struct DataFuncs<T, std::enable_if_t<IsStdOptional_v<T>/* && IsBaseDataType_v<T>*/>> {
+    struct DataFuncs<T, std::enable_if_t<IsStdOptional_v<T>>> {
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
             if (in.has_value()) {
@@ -911,7 +911,7 @@ namespace xx {
 
     // 适配 std::pair<K, V>
     template<typename T>
-    struct DataFuncs<T, std::enable_if_t<IsStdPair_v<T>/* && IsBaseDataType_v<T>*/>> {
+    struct DataFuncs<T, std::enable_if_t<IsStdPair_v<T>>> {
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
             d.Write<needReserve>(in.first, in.second);
@@ -923,7 +923,7 @@ namespace xx {
 
     // 适配 std::tuple<......>
     template<typename T>
-    struct DataFuncs<T, std::enable_if_t<IsStdTuple_v<T>/* && IsBaseDataType_v<T>*/>> {
+    struct DataFuncs<T, std::enable_if_t<IsStdTuple_v<T>>> {
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
             std::apply([&](auto const &... args) {
@@ -992,7 +992,7 @@ namespace xx {
 
     // 适配 std::vector, std::array   // todo: queue / deque
     template<typename T>
-    struct DataFuncs<T, std::enable_if_t< (IsStdVector_v<T> || IsStdArray_v<T>)/* && IsBaseDataType_v<T>*/>> {
+    struct DataFuncs<T, std::enable_if_t< (IsStdVector_v<T> || IsStdArray_v<T>)>> {
         using U = typename T::value_type;
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
@@ -1042,7 +1042,7 @@ namespace xx {
 
     // 适配 std::set, unordered_set
     template<typename T>
-    struct DataFuncs<T, std::enable_if_t< IsStdSetLike_v<T>/* && IsBaseDataType_v<T>*/>> {
+    struct DataFuncs<T, std::enable_if_t< IsStdSetLike_v<T>>> {
         using U = typename T::value_type;
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
@@ -1152,7 +1152,17 @@ namespace xx {
         }
     };
 
-    // 适配 BufLenRef
+    // 适配 BufLenRef( 针对类似 std::array<char, ?> buf; int len;  这种组合 )
+    // example: xx::BufLenRef blr{ in.buf.data(), &in.len }; d.Read/Write( blr
+    template<typename T, typename SizeType>
+    struct BufLenRef {
+        using ChildType = T;
+        using S = SizeType;
+        T* buf;
+        S* len;
+    };
+    template<typename T> constexpr bool IsBufLenRef_v = TemplateIsSame_v<std::remove_cvref_t<T>, BufLenRef<AnyType, AnyType>>;
+
     template<typename T>
     struct DataFuncs<T, std::enable_if_t< IsBufLenRef_v<T> >> {
         using U = std::make_unsigned_t<typename T::S>;
@@ -1176,6 +1186,7 @@ namespace xx {
     struct RWFloatUInt16 {
         float v;
     };
+
     template<typename T>
     struct DataFuncs<T, std::enable_if_t< std::is_base_of_v<RWFloatUInt16, T> >> {
         template<bool needReserve = true>
@@ -1195,6 +1206,7 @@ namespace xx {
     struct RWFloatInt16 {
         float v;
     };
+
     template<typename T>
     struct DataFuncs<T, std::enable_if_t< std::is_base_of_v<RWFloatInt16, T> >> {
         template<bool needReserve = true>

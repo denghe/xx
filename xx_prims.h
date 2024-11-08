@@ -8,6 +8,25 @@ namespace xx {
         uint16_t u, v;
     };
 
+    template<typename T>
+    struct StringFuncs<T, std::enable_if_t<std::is_same_v<UV, std::remove_cvref_t<T>>>> {
+        static inline void Append(std::string& s, T const& in) {
+            ::xx::Append(s, in.u, ", ", in.v);
+        }
+    };
+
+    template<typename T>
+    struct DataFuncs<T, std::enable_if_t<std::is_same_v<UV, std::remove_cvref_t<T>>>> {
+        template<bool needReserve = true>
+        static inline void Write(Data& d, T const& in) {
+            d.Write<needReserve>(in.u, in.v);
+        }
+        static inline int Read(Data_r& d, T& out) {
+            return d.Read(out.u, out.v);
+        }
+    };
+
+
     // 3 bytes color
     struct RGB8 {
         uint8_t r, g, b;
@@ -21,6 +40,25 @@ namespace xx {
     constexpr static RGB8 RGB8_White{ 255,255,255 };
     constexpr static RGB8 RGB8_Black{ 0,0,0 };
     constexpr static RGB8 RGB8_Yellow{ 255,255,0 };
+
+    template<typename T>
+    struct StringFuncs<T, std::enable_if_t<std::is_same_v<RGB8, std::remove_cvref_t<T>>>> {
+        static inline void Append(std::string& s, T const& in) {
+            ::xx::Append(s, in.r, ", ", in.g, ", ", in.b);
+        }
+    };
+
+    template<typename T>
+    struct DataFuncs<T, std::enable_if_t<std::is_same_v<RGB8, std::remove_cvref_t<T>>>> {
+        template<bool needReserve = true>
+        static inline void Write(Data& d, T const& in) {
+            d.WriteBuf<needReserve>(&in, 3);
+        }
+        static inline int Read(Data_r& d, T& out) {
+            return d.ReadBuf(&out, 3);
+        }
+    };
+
 
     // 4 bytes color
     struct RGBA8 {
@@ -37,11 +75,23 @@ namespace xx {
     constexpr static RGBA8 RGBA8_Yellow{ 255,255,0,255 };
 
     template<typename T>
-    struct StringFuncs<T, std::enable_if_t<std::is_base_of_v<RGBA8, T>>> {
-        static inline void Append(std::string& s, RGBA8 const& in) {
+    struct StringFuncs<T, std::enable_if_t<std::is_same_v<RGBA8, std::remove_cvref_t<T>>>> {
+        static inline void Append(std::string& s, T const& in) {
             ::xx::Append(s, in.r, ", ", in.g, ", ", in.b, ", ", in.a);
         }
     };
+
+    template<typename T>
+    struct DataFuncs<T, std::enable_if_t<std::is_same_v<RGBA8, std::remove_cvref_t<T>>>> {
+        template<bool needReserve = true>
+        static inline void Write(Data& d, T const& in) {
+            d.WriteBuf<needReserve>(&in, 4);
+        }
+        static inline int Read(Data_r& d, T& out) {
+            return d.ReadBuf(&out, 4);
+        }
+    };
+
 
     // 4 floats color
     struct RGBA {
@@ -74,17 +124,70 @@ namespace xx {
         }
     };
 
+    template<typename T>
+    struct StringFuncs<T, std::enable_if_t<std::is_same_v<RGBA, std::remove_cvref_t<T>>>> {
+        static inline void Append(std::string& s, T const& in) {
+            ::xx::Append(s, in.r, ", ", in.g, ", ", in.b, ", ", in.a);
+        }
+    };
+
+    template<typename T>
+    struct DataFuncs<T, std::enable_if_t<std::is_same_v<RGBA, std::remove_cvref_t<T>>>> {
+        template<bool needReserve = true>
+        static inline void Write(Data& d, T const& in) {
+            d.WriteFixedArray<needReserve>((float*)&in, 4);
+        }
+        static inline int Read(Data_r& d, T& out) {
+            return d.ReadFixedArray((float*)&out, 4);
+        }
+    };
+
+
     // pos + size
     struct Rect : XY {
         XY wh;
     };
 
+    template<typename T>
+    struct StringFuncs<T, std::enable_if_t<std::is_same_v<Rect, std::remove_cvref_t<T>>>> {
+        static inline void Append(std::string& s, T const& in) {
+            ::xx::Append(s, in.x, ", ", in.y, ", ", in.w, ", ", in.h);
+        }
+    };
+
+    template<typename T>
+    struct DataFuncs<T, std::enable_if_t<std::is_same_v<Rect, std::remove_cvref_t<T>>>> {
+        template<bool needReserve = true>
+        static inline void Write(Data& d, T const& in) {
+            d.WriteFixedArray<needReserve>((float*)&in, 4);
+        }
+        static inline int Read(Data_r& d, T& out) {
+            return d.ReadFixedArray((float*)&out, 4);
+        }
+    };
 
     struct PosRadius {
         XY pos;
         float radius;
     };
 
+    template<typename T>
+    struct StringFuncs<T, std::enable_if_t<std::is_same_v<PosRadius, std::remove_cvref_t<T>>>> {
+        static inline void Append(std::string& s, T const& in) {
+            ::xx::Append(s, in.pos.x, ", ", in.pos.y, ", ", in.radius);
+        }
+    };
+
+    template<typename T>
+    struct DataFuncs<T, std::enable_if_t<std::is_same_v<PosRadius, std::remove_cvref_t<T>>>> {
+        template<bool needReserve = true>
+        static inline void Write(Data& d, T const& in) {
+            d.WriteFixedArray<needReserve>((float*)&in, 3);
+        }
+        static inline int Read(Data_r& d, T& out) {
+            return d.ReadFixedArray((float*)&out, 3);
+        }
+    };
 
     union UVRect {
         struct {
@@ -94,9 +197,20 @@ namespace xx {
     };
 
     template<typename T>
-    struct StringFuncs<T, std::enable_if_t<std::is_same_v<UVRect, std::decay_t<T>>>> {
-        static inline void Append(std::string& s, UVRect const& in) {
+    struct StringFuncs<T, std::enable_if_t<std::is_same_v<UVRect, std::remove_cvref_t<T>>>> {
+        static inline void Append(std::string& s, T const& in) {
             ::xx::Append(s, in.x, ", ", in.y, ", ", in.w, ", ", in.h);
+        }
+    };
+
+    template<typename T>
+    struct DataFuncs<T, std::enable_if_t<std::is_same_v<UVRect, std::remove_cvref_t<T>>>> {
+        template<bool needReserve = true>
+        static inline void Write(Data& d, T const& in) {
+            d.Write<needReserve>(in.x, in.y, in.w, in.h);
+        }
+        static inline int Read(Data_r& d, T& out) {
+            return d.Read(out.x, out.y, out.w, out.h);
         }
     };
 
@@ -231,11 +345,23 @@ namespace xx {
     };
 
     template<typename T>
-    struct StringFuncs<T, std::enable_if_t<std::is_base_of_v<AffineTransform, T>>> {
-        static inline void Append(std::string& s, AffineTransform const& in) {
+    struct StringFuncs<T, std::enable_if_t<std::is_same_v<AffineTransform, std::remove_cvref_t<T>>>> {
+        static inline void Append(std::string& s, T const& in) {
             ::xx::Append(s, in.a, ", ", in.b, ", ", in.c, ", ", in.d, ", ", in.tx, ", ", in.ty);
         }
     };
+
+    template<typename T>
+    struct DataFuncs<T, std::enable_if_t<std::is_same_v<AffineTransform, std::remove_cvref_t<T>>>> {
+        template<bool needReserve = true>
+        static inline void Write(Data& d, T const& in) {
+            d.WriteFixedArray<needReserve>((float*)&in, 6);
+        }
+        static inline int Read(Data_r& d, T& out) {
+            return d.ReadFixedArray((float*)&out, 6);
+        }
+    };
+
 
 
     // without rotation support
@@ -295,9 +421,20 @@ namespace xx {
     };
 
     template<typename T>
-    struct StringFuncs<T, std::enable_if_t<std::is_base_of_v<SimpleAffineTransform, T>>> {
-        static inline void Append(std::string& s, SimpleAffineTransform const& in) {
+    struct StringFuncs<T, std::enable_if_t<std::is_same_v<SimpleAffineTransform, std::remove_cvref_t<T>>>> {
+        static inline void Append(std::string& s, T const& in) {
             ::xx::Append(s, in.a, ", ", in.d, ", ", in.tx, ", ", in.ty);
+        }
+    };
+
+    template<typename T>
+    struct DataFuncs<T, std::enable_if_t<std::is_same_v<SimpleAffineTransform, std::remove_cvref_t<T>>>> {
+        template<bool needReserve = true>
+        static inline void Write(Data& d, T const& in) {
+            d.WriteFixedArray<needReserve>((float*)&in, 4);
+        }
+        static inline int Read(Data_r& d, T& out) {
+            return d.ReadFixedArray((float*)&out, 4);
         }
     };
 

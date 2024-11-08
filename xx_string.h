@@ -1,6 +1,5 @@
 ﻿#pragma once
-#include "xx_includes.h"
-#include "xx_typetraits.h"
+#include "xx_data.h"
 
 namespace xx {
     // 各种 string 辅助( 主要针对基础数据类型或简单自定义结构 )
@@ -395,9 +394,9 @@ namespace xx {
     };
 
     // 适配 type_info     typeid(T)
-    template<>
-    struct StringFuncs<std::type_info, void> {
-        static inline void Append(std::string& s, std::type_info const& in) {
+    template<typename T>
+    struct StringFuncs<T, std::enable_if_t<std::is_base_of_v<std::type_info, T>>> {
+        static inline void Append(std::string& s, T const& in) {
             //s.push_back('\"');
             s.append(in.name());
             //s.push_back('\"');
@@ -475,17 +474,17 @@ namespace xx {
     };
 
     // 适配 TimePoint
-    template<typename C, typename D>
-    struct StringFuncs<std::chrono::time_point<C, D>, void> {
-        static inline void Append(std::string& s, std::chrono::time_point<C, D> const& in) {
+    template<typename T>
+    struct StringFuncs<T, std::enable_if_t<IsStdTimepoint_v<T>>> {
+        static inline void Append(std::string& s, T const& in) {
             AppendTimePoint_Local(s, in);
         }
     };
 
-    // 适配 std::optional<T>
+    // 适配 std::optional
     template<typename T>
-    struct StringFuncs<std::optional<T>, void> {
-        static inline void Append(std::string &s, std::optional<T> const &in) {
+    struct StringFuncs<T, std::enable_if_t<IsStdOptional_v<T>>> {
+        static inline void Append(std::string &s, T const &in) {
             if (in.has_value()) {
                 ::xx::Append(s, in.value());
             } else {
@@ -494,28 +493,10 @@ namespace xx {
         }
     };
 
-    // 适配 std::vector<T> std::array<T, ?>
+    // 适配 std::????set list std::vector std::array
     template<typename T>
-    struct StringFuncs<T, std::enable_if_t<IsStdVector_v<T> || IsStdArray_v<T>>> {
+    struct StringFuncs<T, std::enable_if_t<IsStdSetLike_v<T> || IsStdArray_v<T> || IsStdList_v<T> || IsStdVector_v<T>>> {
         static inline void Append(std::string& s, T const& in) {
-            s.push_back('[');
-            if (auto inLen = in.size()) {
-                for(size_t i = 0; i < inLen; ++i) {
-                    ::xx::Append(s, in[i]);
-                    s.push_back(',');
-                }
-                s[s.size() - 1] = ']';
-            }
-            else {
-                s.push_back(']');
-            }
-        }
-    };
-
-    // 适配 std::unordered_set<T>
-    template<typename T>
-    struct StringFuncs<std::unordered_set<T>, void> {
-        static inline void Append(std::string& s, std::unordered_set<T> const& in) {
             s.push_back('[');
             if (!in.empty()) {
                 for(auto&& o : in) {
@@ -530,10 +511,10 @@ namespace xx {
         }
     };
 
-    // 适配 std::unordered_map<K, V>
-    template<typename K, typename V>
-    struct StringFuncs<std::unordered_map<K, V>, void> {
-        static inline void Append(std::string& s, std::unordered_map<K, V> const& in) {
+    // 适配 std::????map
+    template<typename T>
+    struct StringFuncs<T, std::enable_if_t<IsStdMapLike_v<T>>> {
+        static inline void Append(std::string& s, T const& in) {
             s.push_back('[');
             if (!in.empty()) {
                 for (auto &kv : in) {
@@ -550,30 +531,10 @@ namespace xx {
         }
     };
 
-    // 适配 std::map<K, V>
-    template<typename K, typename V>
-    struct StringFuncs<std::map<K, V>, void> {
-        static inline void Append(std::string& s, std::map<K, V> const& in) {
-            s.push_back('[');
-            if (!in.empty()) {
-                for (auto &kv : in) {
-                    ::xx::Append(s, kv.first);
-                    s.push_back(',');
-                    ::xx::Append(s, kv.second);
-                    s.push_back(',');
-                }
-                s[s.size() - 1] = ']';
-            }
-            else {
-                s.push_back(']');
-            }
-        }
-    };
-
-    // 适配 std::pair<K, V>
-    template<typename K, typename V>
-    struct StringFuncs<std::pair<K, V>, void> {
-        static inline void Append(std::string& s, std::pair<K, V> const& in) {
+    // 适配 std::pair
+    template<typename T>
+    struct StringFuncs<T, std::enable_if_t<IsStdPair_v<T>>> {
+        static inline void Append(std::string& s, T const& in) {
             s.push_back('[');
             ::xx::Append(s, in.first);
             s.push_back(',');
@@ -582,11 +543,10 @@ namespace xx {
         }
     };
 	
-	
-    // 适配 std::tuple<......>
-    template<typename...T>
-    struct StringFuncs<std::tuple<T...>, void> {
-        static inline void Append(std::string &s, std::tuple<T...> const &in) {
+    // 适配 std::tuple
+    template<typename T>
+    struct StringFuncs<T, std::enable_if_t<IsStdTuple_v<T>>> {
+        static inline void Append(std::string &s, T const &in) {
             s.push_back('[');
             std::apply([&](auto const &... args) {
                 (::xx::Append(s, args, ','), ...);
@@ -598,10 +558,10 @@ namespace xx {
         }
     };
 
-    // 适配 std::variant<......>
-    template<typename...T>
-    struct StringFuncs<std::variant<T...>, void> {
-        static inline void Append(std::string& s, std::variant<T...> const& in) {
+    // 适配 std::variant
+    template<typename T>
+    struct StringFuncs<T, std::enable_if_t<IsStdVariant_v<T>>> {
+        static inline void Append(std::string& s, T const& in) {
             std::visit([&](auto const& v) {
                 ::xx::Append(s, v);
             }, in);
@@ -623,6 +583,22 @@ namespace xx {
             else {
                 s.push_back(']');
             }
+        }
+    };
+
+    // 适配 FromTo
+    template<typename T>
+    struct StringFuncs<T, std::enable_if_t<IsFromTo_v<T>>> {
+        static inline void Append(std::string& s, T const& in) {
+            ::xx::Append(s, '[', in.from, ", ", in.to, ']');
+        }
+    };
+
+    // 适配 CurrentMax
+    template<typename T>
+    struct StringFuncs<T, std::enable_if_t<IsCurrentMax_v<T>>> {
+        static inline void Append(std::string& s, T const& in) {
+            ::xx::Append(s, '[', in.current, ", ", in.max, ']');
         }
     };
 

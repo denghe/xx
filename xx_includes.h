@@ -215,6 +215,25 @@ inline void Sleep(int const& ms) {
 
 
 namespace xx {
+    /************************************************************************************/
+    // util types
+
+    enum class ForeachResult {
+        Continue,
+        RemoveAndContinue,
+        Break,
+        RemoveAndBreak
+    };
+
+    template<typename T>
+    struct FromTo {
+        T from, to;
+    };
+
+    template<typename T>
+    struct CurrentMax {
+        T current, max;
+    };
 
     /************************************************************************************/
     // scope guards
@@ -333,7 +352,9 @@ namespace xx {
 
 }
 
+/************************************************************************************/
 // stackless simulate
+
 /* example:
 
     int lineNumber = 0;

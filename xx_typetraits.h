@@ -41,6 +41,7 @@ namespace xx {
     template<typename T> constexpr bool IsStdUnorderedMap_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::unordered_map<AnyType, AnyType>>;
     template<typename T> constexpr bool IsStdQueue_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::queue<AnyType>>;
     template<typename T> constexpr bool IsStdDeque_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::deque<AnyType>>;
+    template<typename T> constexpr bool IsStdTimepoint_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::chrono::time_point<AnyType, AnyType>>;
     template<typename T> constexpr bool IsStdArray_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::array<AnyType, 1>>;
     // ...
 
@@ -49,6 +50,9 @@ namespace xx {
     template<typename T> constexpr bool IsStdQueueLike_v = IsStdQueue_v<T> || IsStdDeque_v<T>;
     // ...
 
+    template<typename T> constexpr bool IsFromTo_v = TemplateIsSame_v<std::remove_cvref_t<T>, FromTo<AnyType>>;
+    template<typename T> constexpr bool IsCurrentMax_v = TemplateIsSame_v<std::remove_cvref_t<T>, CurrentMax<AnyType>>;
+    // ...
 
     /************************************************************************************/
     // std::is_pod like, flag container can memcpy or memmove
@@ -334,36 +338,5 @@ namespace xx {
     }
     template<typename ...T>
     constexpr bool IsLambda_v = IsLambda<T...>();
-
-    /************************************************************************************/
-    // some helper types put here
-
-    enum class ForeachResult {
-        Continue,
-        RemoveAndContinue,
-        Break,
-        RemoveAndBreak
-    };
-
-    template<typename T>
-    struct FromTo {
-        T from, to;
-    };
-    template<typename T> constexpr bool IsFromTo_v = TemplateIsSame_v<std::remove_cvref_t<T>, FromTo<AnyType>>;
-
-    template<typename T>
-    struct CurrentMax {
-        T current, max;
-    };
-    template<typename T> constexpr bool IsCurrentMax_v = TemplateIsSame_v<std::remove_cvref_t<T>, CurrentMax<AnyType>>;
-
-    template<typename T, typename SizeType>
-    struct BufLenRef {
-        using ChildType = T;
-        using S = SizeType;
-        T* buf;
-        S* len;
-    };
-    template<typename T> constexpr bool IsBufLenRef_v = TemplateIsSame_v<std::remove_cvref_t<T>, BufLenRef<AnyType, AnyType>>;
-
+    
 }

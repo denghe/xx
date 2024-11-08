@@ -130,6 +130,13 @@ namespace xx {
     template<typename T> constexpr bool IsXY_v = TemplateIsSame_v<std::remove_cvref_t<T>, X_Y<AnyType>>;
 
 	template<typename T>
+	struct StringFuncs<T, std::enable_if_t<IsXY_v<T>>> {
+		static inline void Append(std::string& s, T const& in) {
+			::xx::Append(s, in.x, ", ", in.y);
+		}
+	};
+
+	template<typename T>
 	struct DataFuncs<T, std::enable_if_t<IsXY_v<T>>> {
 		template<bool needReserve = true>
 		static inline void Write(Data& d, T const& in) {
@@ -137,13 +144,6 @@ namespace xx {
 		}
 		static inline int Read(Data_r& d, T& out) {
 			return d.Read(out.x, out.y);
-		}
-	};
-
-	template<typename T>
-	struct StringFuncs<T, std::enable_if_t<IsXY_v<T>>> {
-		static inline void Append(std::string& s, T const& in) {
-			::xx::Append(s, in.x, ", ", in.y);
 		}
 	};
 
