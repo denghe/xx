@@ -501,23 +501,9 @@ namespace xx {
     template<typename T> struct IsPod<Weak<T>, void> : std::true_type {};
     template<typename T> struct IsPod<Ref<T>, void> : std::true_type {};
 
-    template<typename T> struct IsShared : std::false_type {};
-    template<typename T> struct IsShared<Shared<T>> : std::true_type {};
-    template<typename T> struct IsShared<Shared<T> &> : std::true_type {};
-    template<typename T> struct IsShared<Shared<T> const &> : std::true_type {};
-    template<typename T> constexpr bool IsShared_v = IsShared<T>::value;
-
-    template<typename T> struct IsWeak : std::false_type {};
-    template<typename T> struct IsWeak<Weak<T>> : std::true_type {};
-    template<typename T> struct IsWeak<Weak<T> &> : std::true_type {};
-    template<typename T> struct IsWeak<Weak<T> const &> : std::true_type {};
-    template<typename T> constexpr bool IsWeak_v = IsWeak<T>::value;
-
-    template<typename T> struct IsRef : std::false_type {};
-    template<typename T> struct IsRef<Ref<T>> : std::true_type {};
-    template<typename T> struct IsRef<Ref<T>&> : std::true_type {};
-    template<typename T> struct IsRef<Ref<T> const&> : std::true_type {};
-    template<typename T> constexpr bool IsRef_v = IsRef<T>::value;
+    template<typename T> constexpr bool IsShared_v = TemplateIsSame_v<std::remove_cvref_t<T>, Shared<AnyType>>;
+    template<typename T> constexpr bool IsWeak_v = TemplateIsSame_v<std::remove_cvref_t<T>, Weak<AnyType>>;
+    template<typename T> constexpr bool IsRef_v = TemplateIsSame_v<std::remove_cvref_t<T>, Weak<AnyType>>;
 
 
     template<typename T, typename...Args>

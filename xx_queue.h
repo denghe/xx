@@ -9,7 +9,7 @@ namespace xx {
 	//...............FR...............					// Head == Tail
 	//......Head+++++++++++Tail.......					// DataLen = Tail - Head
 	//++++++Tail...........Head+++++++					// DataLen = BufLen - Head + Tail
-	template <typename T, typename SizeType = ptrdiff_t>
+	template <typename T, typename SizeType = int32_t>
 	struct Queue {
 		typedef T ChildType;
 		using S = SizeType;
@@ -263,23 +263,12 @@ namespace xx {
     template <typename T, typename SizeType>
     struct IsPod<Queue<T, SizeType>, void> : std::true_type {};
 
-	template<typename T>
-	using Queuei32 = Queue<T, int32_t>;
-
-	template<typename T>
-	struct IsXxQueue : std::false_type {};
-	template<typename T, typename S>
-	struct IsXxQueue<Queue<T, S>> : std::true_type {};
-	template<typename T, typename S>
-	struct IsXxQueue<Queue<T, S>&> : std::true_type {};
-	template<typename T, typename S>
-	struct IsXxQueue<Queue<T, S> const&> : std::true_type {};
-	template<typename T>
-	constexpr bool IsXxQueue_v = IsXxQueue<T>::value;
+	// is checks
+	template<typename T> constexpr bool IsQueue_v = TemplateIsSame_v<std::remove_cvref_t<T>, Queue<AnyType>>;
 
 	// tostring
 	template<typename T>
-	struct StringFuncs<T, std::enable_if_t<IsXxQueue_v<T>>> {
+	struct StringFuncs<T, std::enable_if_t<IsQueue_v<T>>> {
 		static inline void Append(std::string& s, T const& in) {
 			s.push_back('[');
 			if (auto inLen = in.Count()) {
@@ -296,7 +285,7 @@ namespace xx {
 
 	// serde
 	template<typename T>
-	struct DataFuncs<T, std::enable_if_t< (IsXxQueue_v<T>)>> {
+	struct DataFuncs<T, std::enable_if_t< (IsQueue_v<T>)>> {
 		using U = typename T::ChildType;
 		template<bool needReserve = true>
 		static inline void Write(Data& d, T const& in) {

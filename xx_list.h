@@ -204,18 +204,13 @@ namespace xx {
             }
         }
 
-        XX_INLINE T& Back() {
+        XX_INLINE T& Back() const {
             assert(len);
-            return buf[len-1];
+            return (T&)buf[len - 1];
         }
 
-        XX_INLINE T const& Back() const {
-            assert(len);
-            return buf[len-1];
-        }
-
-		XX_INLINE template<typename...Args>
-		T& Emplace(Args&&...args) noexcept {
+		template<typename...Args>
+		XX_INLINE T& Emplace(Args&&...args) noexcept {
 			if (auto newBuf = ReserveBegin(len + 1)) {
 				new (&newBuf[len]) T(std::forward<Args>(args)...);
 				ReserveEnd(newBuf);

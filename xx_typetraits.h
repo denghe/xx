@@ -6,28 +6,25 @@ namespace xx {
     /************************************************************************************/
     // template is same checkers
 
-    template< template<typename...>typename T>
-    struct Template_t {};
-
-    template<typename T>
-    struct TemplateExt_t {
+    template< template<typename...>typename T> struct Template_t {};
+    template<typename T> struct TemplateExt_t {
         static constexpr bool isTemplate{ false };
     };
-
-    template< template<typename...> typename T, typename...Args>
-    struct TemplateExt_t<T<Args...>> {
+    template< template<typename...> typename T, typename...Args> struct TemplateExt_t<T<Args...>> {
         static constexpr bool isTemplate{ true };
         using Type = Template_t<T>;
     };
-
-    template<typename T, typename U>
-    constexpr bool TemplateIsSame() {
+    template<typename T, typename U> constexpr bool TemplateIsSame() {
         if constexpr (TemplateExt_t<T>::isTemplate != TemplateExt_t<U>::isTemplate) return false;
         else return std::is_same_v<typename TemplateExt_t<T>::Type, typename TemplateExt_t<U>::Type>;
     }
+    template<typename T, typename U> constexpr bool TemplateIsSame_v = TemplateIsSame<T, U>();
 
-    template<typename T, typename U>
-    constexpr bool TemplateIsSame_v = TemplateIsSame<T, U>();
+    template <template <typename, auto> typename T> struct TemplateS_t {};
+    template <template <typename, auto> typename T, typename E, auto S> struct TemplateExt_t<T<E, S>> {
+        static constexpr bool isTemplate = true;
+        using Type = TemplateS_t<T>;
+    };
 
     struct AnyType {};  // helper type
 
@@ -44,6 +41,7 @@ namespace xx {
     template<typename T> constexpr bool IsStdUnorderedMap_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::unordered_map<AnyType, AnyType>>;
     template<typename T> constexpr bool IsStdQueue_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::queue<AnyType>>;
     template<typename T> constexpr bool IsStdDeque_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::deque<AnyType>>;
+    template<typename T> constexpr bool IsStdArray_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::array<AnyType, 1>>;
     // ...
 
     template<typename T> constexpr bool IsStdSetLike_v = IsStdSet_v<T> || IsStdUnorderedSet_v<T>;
@@ -51,9 +49,6 @@ namespace xx {
     template<typename T> constexpr bool IsStdQueueLike_v = IsStdQueue_v<T> || IsStdDeque_v<T>;
     // ...
 
-    template<typename> struct IsStdArray : std::false_type {};
-    template<typename T, size_t S> struct IsStdArray<std::array<T, S>> : std::true_type {};
-    template<typename T> constexpr bool IsStdArray_v = IsStdArray<std::remove_cvref_t<T>>::value;
 
     /************************************************************************************/
     // std::is_pod like, flag container can memcpy or memmove
@@ -84,8 +79,7 @@ namespace xx {
     // check T has member funcs: data() size()
 
     template<typename, typename = void> struct IsContainer : std::false_type {};
-    template<typename T> struct IsContainer<T, std::void_t<decltype(std::declval<T>().data()), decltype(std::declval<T>().size())>>
-        : std::true_type {};
+    template<typename T> struct IsContainer<T, std::void_t<decltype(std::declval<T>().data()), decltype(std::declval<T>().size())>> : std::true_type {};
     template<typename T>
     constexpr bool IsContainer_v = IsContainer<T>::value;
 
@@ -118,11 +112,11 @@ namespace xx {
     /************************************************************************************/
     // return T in tuple's index
 
-    template<class T, class Tuple> struct TupleTypeIndex;
-    template<class T, class...TS> struct TupleTypeIndex<T, std::tuple<T, TS...>> {
+    template<typename T, typename Tuple> struct TupleTypeIndex;
+    template<typename T, typename...TS> struct TupleTypeIndex<T, std::tuple<T, TS...>> {
         static const size_t value = 0;
     };
-    template<class T, class U, class... TS> struct TupleTypeIndex<T, std::tuple<U, TS...>> {
+    template<typename T, typename U, typename... TS> struct TupleTypeIndex<T, std::tuple<U, TS...>> {
         static const size_t value = 1 + TupleTypeIndex<T, std::tuple<TS...>>::value;
     };
     template<typename T, typename Tuple> constexpr size_t TupleTypeIndex_v = TupleTypeIndex<T, Tuple>::value;
@@ -200,7 +194,7 @@ namespace xx {
     /************************************************************************************/
     // mapping operator(): return T, container, args, mutable
 
-    template<typename T, class = void>
+    template<typename T, typename = void>
     struct FuncTraits;
 
     template<typename Rtv, typename...Args>
@@ -254,10 +248,10 @@ namespace xx {
     // check T is baseof Template. usage: XX_IsTemplateOf(BT, T)::value
 
     struct IsTemplateOf {
-        template <template <class> class TM, class T> static std::true_type  checkfunc(TM<T>);
-        template <template <class> class TM>          static std::false_type checkfunc(...);
-        template <template <int>   class TM, int N>   static std::true_type  checkfunc(TM<N>);
-        template <template <int>   class TM>          static std::false_type checkfunc(...);
+        template <template <typename> typename TM, typename T>  static std::true_type  checkfunc(TM<T>);
+        template <template <typename> typename TM>              static std::false_type checkfunc(...);
+        template <template <int>   typename TM, int N>          static std::true_type  checkfunc(TM<N>);
+        template <template <int>   typename TM>                 static std::false_type checkfunc(...);
     };
 #define XX_IsTemplateOf(TM, ...) decltype(::xx::IsTemplateOf::checkfunc<TM>(std::declval<__VA_ARGS__>()))
 
@@ -305,35 +299,6 @@ namespace xx {
     constexpr size_t MaxSizeof_v = MaxSizeof<T, Args...>::value;
 
     /************************************************************************************/
-    // helper types
-
-    enum class ForeachResult {
-        Continue,
-        RemoveAndContinue,
-        Break,
-        RemoveAndBreak
-    };
-
-    template<typename T>
-    struct FromTo {
-        T from{}, to{};
-    };
-    template<typename T> constexpr bool IsFromTo_v = TemplateIsSame_v<std::remove_cvref_t<T>, FromTo<AnyType>>;
-
-    template<typename T>
-    struct CurrentMax {
-        T current{}, max{};
-    };
-    template<typename T> constexpr bool IsCurrentMax_v = TemplateIsSame_v<std::remove_cvref_t<T>, CurrentMax<AnyType>>;
-
-    template<typename T, typename S>
-    struct BufLenRef {
-        T* buf;
-        S* len;
-    };
-    template<typename T> constexpr bool IsBufLenRef_v = TemplateIsSame_v<std::remove_cvref_t<T>, BufLenRef<AnyType, AnyType>>;
-
-    /************************************************************************************/
     // check T is []{} likely (lambda)( depend on compiler impl )
     // unsafe
 
@@ -369,5 +334,36 @@ namespace xx {
     }
     template<typename ...T>
     constexpr bool IsLambda_v = IsLambda<T...>();
+
+    /************************************************************************************/
+    // some helper types put here
+
+    enum class ForeachResult {
+        Continue,
+        RemoveAndContinue,
+        Break,
+        RemoveAndBreak
+    };
+
+    template<typename T>
+    struct FromTo {
+        T from, to;
+    };
+    template<typename T> constexpr bool IsFromTo_v = TemplateIsSame_v<std::remove_cvref_t<T>, FromTo<AnyType>>;
+
+    template<typename T>
+    struct CurrentMax {
+        T current, max;
+    };
+    template<typename T> constexpr bool IsCurrentMax_v = TemplateIsSame_v<std::remove_cvref_t<T>, CurrentMax<AnyType>>;
+
+    template<typename T, typename SizeType>
+    struct BufLenRef {
+        using ChildType = T;
+        using S = SizeType;
+        T* buf;
+        S* len;
+    };
+    template<typename T> constexpr bool IsBufLenRef_v = TemplateIsSame_v<std::remove_cvref_t<T>, BufLenRef<AnyType, AnyType>>;
 
 }

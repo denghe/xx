@@ -455,12 +455,12 @@ namespace xx {
         /******************************************************************************************/
         // base functions
 
-        template<typename T = XYp, class = std::enable_if_t<xx::IsX_Y_v<T>>>
+        template<typename T = XYp, class = std::enable_if_t<xx::IsXY_v<T>>>
         XX_INLINE auto SqrMagnitude(T const& p) -> decltype(T::x) {
             return p.x * p.x + p.y * p.y;
         }
 
-        template<typename T = XYp, class = std::enable_if_t<xx::IsX_Y_v<T>>>
+        template<typename T = XYp, class = std::enable_if_t<xx::IsXY_v<T>>>
         XX_INLINE  auto Dot(T const& a, T const& b) -> decltype(T::x) {
             return a.x * b.x + a.y * b.y;
         }
@@ -474,7 +474,7 @@ namespace xx {
             }
         }
 
-        template<typename T = XYp, class = std::enable_if_t<xx::IsX_Y_v<T>>>
+        template<typename T = XYp, class = std::enable_if_t<xx::IsXY_v<T>>>
         XX_INLINE auto SegmentPointSqrDistance(T const& u, T const& x) -> decltype(T::x) {
             auto t = Dot(x, u) / SqrMagnitude(u);
             return SqrMagnitude(x - (Clamp01(t) * u));
@@ -527,14 +527,14 @@ namespace xx {
 
         template<typename T = FX64>
         XX_INLINE T Max(T const& a, T const& b) {
-            if constexpr (xx::IsX_Y_v<T>) {
+            if constexpr (xx::IsXY_v<T>) {
                 return T{ Max(a.x, b.x), Max(a.y, b.y) };
             } else return (a > b) ? a : b;
         }
 
         template<typename T = FX64>
         XX_INLINE T Min(T const& a, T const& b) {
-            if constexpr (xx::IsX_Y_v<T>) {
+            if constexpr (xx::IsXY_v<T>) {
                 return T{ Min(a.x, b.x), Min(a.y, b.y) };
             } else return (a < b) ? a : b;
         }
@@ -584,7 +584,7 @@ namespace xx {
 
 
         // sRadiansCosSin == T{ Cos(sRadians), Sin(sRadians) }
-        template<typename T = XYp, typename U = decltype(T::x), class = std::enable_if_t<xx::IsX_Y_v<T>>>
+        template<typename T = XYp, typename U = decltype(T::x), class = std::enable_if_t<xx::IsXY_v<T>>>
         bool IsSectorCircleIntersect(T const& sPos, U sRadius, T const& sRadiansCosSin, U sTheta, T const& cPos, U cRadius) {
             // 1. circle circle check
             auto d = cPos - sPos;
@@ -606,7 +606,7 @@ namespace xx {
         }
 
         // aabb mean upright box
-        template<typename T = XYp, typename U = decltype(T::x), class = std::enable_if_t<xx::IsX_Y_v<T>>>
+        template<typename T = XYp, typename U = decltype(T::x), class = std::enable_if_t<xx::IsXY_v<T>>>
         XX_INLINE bool IsAabbCircleIntersect(T const& aabbPos, T const& aabbSiz, T const& circlePos, U circleRadius) {
             auto h = aabbSiz * T{ 0.5 };    // calculate half size
             auto v = Max(circlePos - aabbPos, aabbPos - circlePos); // = Abs(circlePos - aabbPos);
@@ -614,7 +614,7 @@ namespace xx {
             return SqrMagnitude(u) <= circleRadius * circleRadius;
         }
 
-        template<typename T = XYp, typename U = decltype(T::x), class = std::enable_if_t<xx::IsX_Y_v<T>>>
+        template<typename T = XYp, typename U = decltype(T::x), class = std::enable_if_t<xx::IsXY_v<T>>>
         bool IsBoxCircleIntersect(T const& boxPos, T const& boxSiz, T const& boxDir, T const& circlePos, U circleRadius) {
             // calculate circlePos's local pos ( with box )
             auto d = circlePos - boxPos;

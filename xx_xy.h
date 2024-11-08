@@ -127,21 +127,10 @@ namespace xx {
     using XYp = X_Y<FX64>;
     using XY = XYf;
 
-
-    template<typename T>
-    struct IsX_Y : std::false_type {};
-    template<typename T>
-    struct IsX_Y<X_Y<T>> : std::true_type {};
-    template<typename T>
-    struct IsX_Y<X_Y<T>&> : std::true_type {};
-    template<typename T>
-    struct IsX_Y<X_Y<T> const&> : std::true_type {};
-    template<typename T>
-    constexpr bool IsX_Y_v = IsX_Y<T>::value;
-
+    template<typename T> constexpr bool IsXY_v = TemplateIsSame_v<std::remove_cvref_t<T>, X_Y<AnyType>>;
 
 	template<typename T>
-	struct DataFuncs<T, std::enable_if_t<IsX_Y_v<T>>> {
+	struct DataFuncs<T, std::enable_if_t<IsXY_v<T>>> {
 		template<bool needReserve = true>
 		static inline void Write(Data& d, T const& in) {
 			d.Write<needReserve>(in.x, in.y);
@@ -152,8 +141,8 @@ namespace xx {
 	};
 
 	template<typename T>
-	struct StringFuncs<X_Y<T>, void> {
-		static inline void Append(std::string& s, X_Y<T> const& in) {
+	struct StringFuncs<T, std::enable_if_t<IsXY_v<T>>> {
+		static inline void Append(std::string& s, T const& in) {
 			::xx::Append(s, in.x, ", ", in.y);
 		}
 	};

@@ -730,12 +730,17 @@ namespace xx {
     template<size_t bufHeaderReserveLen>
     struct IsPod<Data_rw<bufHeaderReserveLen>, void> : std::true_type {};
 
+    template<typename> struct IsData : std::false_type {};
+    template<size_t S> struct IsData<Data_rw<S>> : std::true_type {};
+    template<typename T> constexpr bool IsData_v = IsData<std::remove_cvref_t<T>>::value;
+    //template<typename T> constexpr bool IsData_v = TemplateIsSame_v<std::remove_cvref_t<T>, Data_rw<1>>;
 
     using Data = Data_rw<sizeof(size_t)*2>;
     using DataView = Data_r;
 
     /************************************************************************************/
     // Data 序列化 / 反序列化 基础适配模板
+
     template<typename T, typename ENABLED = void>
     struct DataFuncs {
         // 整数变长写( 1字节除外 ), double 看情况, float 拷贝内存, 容器先变长写长度
@@ -766,17 +771,13 @@ namespace xx {
     void Data_rw<bufHeaderReserveLen>::Write(TS const& ...vs) {
         (DataFuncs<TS>::template Write<needReserve>(*this, vs), ...);
     }
-}
 
-
-namespace xx {
     /**********************************************************************************************************************/
     // 为 Data.Read / Write 提供简单序列化功能( 1字节整数, float/double  memcpy,   别的整数 包括长度 变长. std::string/xx::Data 写 长度 + 内容
-    // 这里只针对 “基础类型”
 
     // 适配 Data
     template<typename T>
-    struct DataFuncs<T, std::enable_if_t<std::is_base_of_v<Data, T>>> {
+    struct DataFuncs<T, std::enable_if_t<IsData_v<T>>> {
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
             d.WriteVarInteger<needReserve>(in.len);
@@ -795,7 +796,7 @@ namespace xx {
 
     // 适配 Span / Data_r ( for buf combine, does not write len )
     template<typename T>
-    struct DataFuncs<T, std::enable_if_t<std::is_base_of_v<Span, T> && !std::is_base_of_v<Data, T>>> {
+    struct DataFuncs<T, std::enable_if_t<std::is_base_of_v<Span, T> && !IsData_v<T>>> {
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
             d.WriteBuf<needReserve>(in.buf, in.len);
@@ -1126,7 +1127,51 @@ namespace xx {
         }
     };
 
-    // for read & write float ( value is uint16 )
+
+    // 适配 FromTo
+    template<typename T>
+    struct DataFuncs<T, std::enable_if_t< IsFromTo_v<T> >> {
+        template<bool needReserve = true>
+        static inline void Write(Data& d, T const& in) {
+            d.Write<needReserve>(in.from, in.to);
+        }
+        static inline int Read(Data_r& d, T& out) {
+            return d.Read(out.from, out.to);
+        }
+    };
+
+    // 适配 CurrentMax
+    template<typename T>
+    struct DataFuncs<T, std::enable_if_t< IsCurrentMax_v<T> >> {
+        template<bool needReserve = true>
+        static inline void Write(Data& d, T const& in) {
+            d.Write<needReserve>(in.current, in.max);
+        }
+        static inline int Read(Data_r& d, T& out) {
+            return d.Read(out.current, out.max);
+        }
+    };
+
+    // 适配 BufLenRef
+    template<typename T>
+    struct DataFuncs<T, std::enable_if_t< IsBufLenRef_v<T> >> {
+        using U = std::make_unsigned_t<typename T::S>;
+        template<bool needReserve = true>
+        static inline void Write(Data& d, T const& in) {
+            assert(in.buf);
+            assert(in.len);
+            d.Write((U)*in.len);
+            d.WriteFixedArray<needReserve>(in.buf, (U)*in.len);
+        }
+        static inline int Read(Data_r& d, T& out) {
+            assert(out.buf);
+            assert(out.len);
+            if (auto r = d.Read(*(U*)out.len)) return r;
+            return d.ReadFixedArray(out.buf, (U)*out.len);
+        }
+    };
+
+    // 适配 存有 uint16 范围值的 float
     // example: d.Read( (xx::RWFloatUInt16&)x )
     struct RWFloatUInt16 {
         float v;
@@ -1145,6 +1190,8 @@ namespace xx {
         }
     };
 
+    // 适配 存有 int16 范围值的 float
+    // example: d.Read( (xx::RWFloatInt16&)x )
     struct RWFloatInt16 {
         float v;
     };
@@ -1159,47 +1206,6 @@ namespace xx {
             auto r = d.ReadFixed(tmp);
             out.v = tmp;
             return r;
-        }
-    };
-
-    template<typename T>
-    struct DataFuncs<T, std::enable_if_t< IsFromTo_v<T> >> {
-        template<bool needReserve = true>
-        static inline void Write(Data& d, T const& in) {
-            d.Write<needReserve>(in.from, in.to);
-        }
-        static inline int Read(Data_r& d, T& out) {
-            return d.Read(out.from, out.to);
-        }
-    };
-
-    template<typename T>
-    struct DataFuncs<T, std::enable_if_t< IsCurrentMax_v<T> >> {
-        template<bool needReserve = true>
-        static inline void Write(Data& d, T const& in) {
-            d.Write<needReserve>(in.current, in.max);
-        }
-        static inline int Read(Data_r& d, T& out) {
-            return d.Read(out.current, out.max);
-        }
-    };
-
-    template<typename T>
-    struct DataFuncs<T, std::enable_if_t< IsBufLenRef_v<T> >> {
-        template<bool needReserve = true>
-        static inline void Write(Data& d, T const& in) {
-            assert(in.buf);
-            assert(in.len);
-            using S = std::make_unsigned_t<decltype(*in.len)>;
-            d.WriteFixed((S)*in.len);
-            d.WriteFixedArray<needReserve>(in.buf, *in.len);
-        }
-        static inline int Read(Data_r& d, T& out) {
-            assert(out.buf);
-            assert(out.len);
-            using S = std::make_unsigned_t<decltype(*out.len)>;
-            if (auto r = d.Read(*(S*)out.len)) return r;
-            return d.ReadFixedArray(out.buf, (S)*out.len);
         }
     };
 

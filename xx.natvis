@@ -1,6 +1,36 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
+	<Type Name="xx::Span">
+		<DisplayString>len = {len}</DisplayString>
+		<Expand>
+			<ArrayItems>
+				<Size>len</Size>
+				<ValuePointer>buf</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+
+	<Type Name="xx::Data_r">
+		<DisplayString>len = {len}, offset = {offset}</DisplayString>
+		<Expand>
+			<ArrayItems>
+				<Size>len</Size>
+				<ValuePointer>buf</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+
+	<Type Name="xx::Data_rw&lt;*&gt;">
+		<DisplayString>len = {len}, cap = {cap}, offset = {offset}</DisplayString>
+		<Expand>
+			<ArrayItems>
+				<Size>len</Size>
+				<ValuePointer>buf</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+
 	<Type Name="xx::FX64">
 		<DisplayString>{(double)value * (1.0 / 4294967296.0)}</DisplayString>
 		<Expand HideRawView="true">
