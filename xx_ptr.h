@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include "xx_typetraits.h"
-#include "xx_mem.h"
 
 // std::shared_ptr / weak_ptr likely but thin, no atomic( fast 4 times ), a little unsafe for easy use
 

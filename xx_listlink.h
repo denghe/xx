@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include "xx_typetraits.h"
-#include "xx_mem.h"
 
 namespace xx {
 

@@ -51,6 +51,10 @@
 #include <cstdlib>
 #include <cerrno>
 
+using namespace std::string_literals;
+using namespace std::string_view_literals;
+using namespace std::chrono_literals;
+
 
 #ifdef _WIN32
 #ifndef NOMINMAX
@@ -203,21 +207,134 @@ inline void Sleep(int const& ms) {
     #endif
 #endif
 
-#define XX_SIMPLE_STRUCT_DEFAULT_CODES(T)\
-T() = default;\
-T(T const&) = default;\
-T(T &&) = default;\
-T& operator=(T const&) = default;\
-T& operator=(T &&) = default;
+#ifdef __GNUC__
+//#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Winvalid-offsetof"
+#endif
 
-// stackless 协程相关
-// 当前主要用到这些宏。只有 lineNumber 一个特殊变量名要求
-#define COR_BEGIN	switch (lineNumber) { case 0:
-#define COR_YIELD	return __LINE__; case __LINE__:;
-#define COR_EXIT	return 0;
-#define COR_END		} return 0;
 
-/*
+namespace xx {
+
+    /************************************************************************************/
+    // scope guards
+
+    template<class F>   // F == lambda
+    [[nodiscard]] auto MakeScopeGuard(F&& f) noexcept {
+        struct ScopeGuard {
+            F f;
+            bool cancel;
+            explicit ScopeGuard(F&& f) noexcept : f(std::forward<F>(f)), cancel(false) {}
+            ~ScopeGuard() noexcept { if (!cancel) { f(); } }
+            inline void Cancel() noexcept { cancel = true; }
+            inline void operator()(bool cancel = false) {
+                f();
+                this->cancel = cancel;
+            }
+        };
+        return ScopeGuard(std::forward<F>(f));
+    }
+
+    template<class F>
+    [[nodiscard]] auto MakeSimpleScopeGuard(F&& f) noexcept {
+        struct SG { F f; SG(F&& f) noexcept : f(std::forward<F>(f)) {} ~SG() { f(); } };
+        return SG(std::forward<F>(f));
+    }
+
+    /************************************************************************************/
+    // aligned alloc free
+
+    template<typename T>
+    XX_INLINE T* AlignedAlloc(size_t siz = sizeof(T)) {
+        assert(siz >= sizeof(T));
+        if constexpr (alignof(T) <= sizeof(void*)) return (T*)malloc(siz);
+        else {
+#if defined(_MSC_VER) || defined(__MINGW32__)
+            return (T*)_aligned_malloc(siz, alignof(T));
+#else   // emscripten
+            return (T*)aligned_alloc(alignof(T), siz);
+#endif
+        }
+    }
+
+    template<typename T>
+    XX_INLINE void AlignedFree(void* p) {
+#ifdef _MSC_VER
+        if constexpr (alignof(T) <= sizeof(void*)) free(p);
+        else {
+            _aligned_free(p);
+        }
+#else
+        free(p);
+#endif
+    }
+
+    /************************************************************************************/
+    // mem utils
+
+    template<typename T>
+    XX_INLINE T BSwap(T i) {
+        T r;
+#ifdef _WIN32
+        if constexpr (sizeof(T) == 2) *(uint16_t*)&r = _byteswap_ushort(*(uint16_t*)&i);
+        if constexpr (sizeof(T) == 4) *(uint32_t*)&r = _byteswap_ulong(*(uint32_t*)&i);
+        if constexpr (sizeof(T) == 8) *(uint64_t*)&r = _byteswap_uint64(*(uint64_t*)&i);
+#else
+        if constexpr (sizeof(T) == 2) *(uint16_t*)&r = __builtin_bswap16(*(uint16_t*)&i);
+        if constexpr (sizeof(T) == 4) *(uint32_t*)&r = __builtin_bswap32(*(uint32_t*)&i);
+        if constexpr (sizeof(T) == 8) *(uint64_t*)&r = __builtin_bswap64(*(uint64_t*)&i);
+#endif
+        return r;
+    }
+
+    // signed int decode: return (in is singular: negative) ? -(in + 1) / 2 : in / 2
+    inline XX_INLINE int16_t ZigZagDecode(uint16_t in) {
+        return (int16_t)((int16_t)(in >> 1) ^ (-(int16_t)(in & 1)));
+    }
+    inline XX_INLINE int32_t ZigZagDecode(uint32_t in) {
+        return (int32_t)(in >> 1) ^ (-(int32_t)(in & 1));
+    }
+    inline XX_INLINE int64_t ZigZagDecode(uint64_t in) {
+        return (int64_t)(in >> 1) ^ (-(int64_t)(in & 1));
+    }
+
+    // return first bit '1' index
+    template<typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
+    XX_INLINE size_t Calc2n(T n) {
+        return (sizeof(size_t) * 8 - 1) - std::countl_zero(n);
+    }
+
+    // return 2^x ( >= n )
+    template<typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
+    XX_INLINE T Round2n(T n) {
+        auto shift = Calc2n(n);
+        auto rtv = T(1) << shift;
+        if (rtv == n) return n;
+        else return rtv << 1;
+    }
+
+    // signed int encode: return in < 0 ? (-in * 2 - 1) : (in * 2)
+    inline XX_INLINE uint16_t ZigZagEncode(int16_t in) {
+        return (uint16_t)((in << 1) ^ (in >> 15));
+    }
+    inline XX_INLINE uint32_t ZigZagEncode(int32_t in) {
+        return (in << 1) ^ (in >> 31);
+    }
+    inline XX_INLINE uint64_t ZigZagEncode(int64_t in) {
+        return (in << 1) ^ (in >> 63);
+    }
+
+    // flag enum bit check
+    template<typename T, class = std::enable_if_t<std::is_enum_v<T>>>
+    inline bool FlagContains(T const& a, T const& b) {
+        using U = std::underlying_type_t<T>;
+        return ((U)a & (U)b) != U{};
+    }
+
+}
+
+// stackless simulate
+/* example:
+
     int lineNumber = 0;
     int Update() {
         COR_BEGIN
@@ -225,24 +342,9 @@ T& operator=(T &&) = default;
         COR_END
     }
     ... lineNumber = Update();
+
 */
-
-using namespace std::string_literals;
-using namespace std::string_view_literals;
-using namespace std::chrono_literals;
-
-
-#ifdef __GNUC__
-//#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Winvalid-offsetof"
-#endif
-
-// helpers
-namespace xx {
-    enum class ForeachResult {
-        Continue,
-        RemoveAndContinue,
-        Break,
-        RemoveAndBreak
-    };
-}
+#define COR_BEGIN	switch (lineNumber) { case 0:
+#define COR_YIELD	return __LINE__; case __LINE__:;
+#define COR_EXIT	return 0;
+#define COR_END		} return 0;

@@ -8,6 +8,7 @@ namespace xx {
 	template<typename T, typename SizeType = ptrdiff_t>
 	struct List {
 		typedef T ChildType;
+		using S = SizeType;
 		T* buf{};
 		SizeType cap{}, len{};
 
@@ -32,14 +33,23 @@ namespace xx {
 			Clear(true);
 		}
 
-        bool Empty() const {
+        XX_INLINE bool Empty() const {
             return !len;
         }
-        SizeType Count() const {
+
+		XX_INLINE SizeType Count() const {
             return len;
         }
 
-		List Clone() const {
+		XX_INLINE T* Buf() const {
+			return buf;
+		}
+
+		XX_INLINE SizeType Len() const {
+			return len;
+		}
+
+		XX_INLINE List Clone() const {
 			List rtv;
 			rtv.Reserve(len);
 			rtv.AddRange(*this);
@@ -52,7 +62,7 @@ namespace xx {
 			std::sort(buf, buf + len, std::forward<F>(func));
 		}
 
-		void Reserve(SizeType cap_) noexcept {
+		XX_INLINE void Reserve(SizeType cap_) noexcept {
 			if (auto newBuf = ReserveBegin(cap_)) {
 				ReserveEnd(newBuf);
 			}
@@ -106,37 +116,28 @@ namespace xx {
 			len = len_;
 		}
 
-		T const& operator[](SizeType idx) const noexcept {
+		XX_INLINE T& operator[](SizeType idx) const noexcept {
 			assert(idx >= 0 && idx < len);
-			return buf[idx];
-		}
-		T& operator[](SizeType idx) noexcept {
-			assert(idx >= 0 && idx < len);
-			return buf[idx];
-		}
-		T const& At(SizeType idx) const noexcept {
-			xx_assert(idx >= 0 && idx < len);
-			return buf[idx];
-		}
-		T& At(SizeType idx) noexcept {
-			xx_assert(idx >= 0 && idx < len);
-			return buf[idx];
+			return (T&)buf[idx];
 		}
 
-		T& Top() noexcept {
-			assert(len > 0);
-			return buf[len - 1];
+		XX_INLINE T& At(SizeType idx) const noexcept {
+			xx_assert(idx >= 0 && idx < len);
+			return (T&)buf[idx];
 		}
-		void Pop() noexcept {
+
+		XX_INLINE T& Top() const noexcept {
+			assert(len > 0);
+			return (T&)buf[len - 1];
+		}
+
+		XX_INLINE void Pop() noexcept {
 			assert(len > 0);
 			--len;
 			buf[len].~T();
 		}
-		T const& Top() const noexcept {
-			assert(len > 0);
-			return buf[len - 1];
-		}
-		bool TryPop(T& output) noexcept {
+
+		XX_INLINE bool TryPop(T& output) noexcept {
 			if (!len) return false;
 			output = (T&&)buf[--len];
 			buf[len].~T();
@@ -158,7 +159,7 @@ namespace xx {
 			}
 		}
 
-		void Remove(T const& v) noexcept {
+		XX_INLINE void Remove(T const& v) noexcept {
 			for (SizeType i = 0; i < len; ++i) {
 				if (v == buf[i]) {
 					RemoveAt(i);
@@ -167,7 +168,7 @@ namespace xx {
 			}
 		}
 
-		void RemoveAt(SizeType idx) noexcept {
+		XX_INLINE void RemoveAt(SizeType idx) noexcept {
 			assert(idx >= 0 && idx < len);
 			--len;
 			if constexpr (IsPod_v<T>) {
@@ -182,7 +183,7 @@ namespace xx {
 			}
 		}
 
-        void SwapRemoveAt(SizeType idx) noexcept {
+		XX_INLINE void SwapRemoveAt(SizeType idx) noexcept {
 			assert(idx >= 0 && idx < len);
 			buf[idx].~T();
 			--len;
@@ -207,12 +208,13 @@ namespace xx {
             assert(len);
             return buf[len-1];
         }
+
         XX_INLINE T const& Back() const {
             assert(len);
             return buf[len-1];
         }
 
-		template<typename...Args>
+		XX_INLINE template<typename...Args>
 		T& Emplace(Args&&...args) noexcept {
 			if (auto newBuf = ReserveBegin(len + 1)) {
 				new (&newBuf[len]) T(std::forward<Args>(args)...);
@@ -224,7 +226,7 @@ namespace xx {
 		}
 
 		template<typename ...TS>
-		void Add(TS&&...vs) noexcept {
+		XX_INLINE void Add(TS&&...vs) noexcept {
 			(Emplace(std::forward<TS>(vs)), ...);
 		}
 
@@ -251,11 +253,11 @@ namespace xx {
 		}
 
 		template<typename L>
-		void AddRange(L const& list) noexcept {
+		XX_INLINE void AddRange(L const& list) noexcept {
 			return AddRange(list.buf, list.len);
 		}
 
-		SizeType Find(T const& v) const noexcept {
+		XX_INLINE SizeType Find(T const& v) const noexcept {
 			for (SizeType i = 0; i < len; ++i) {
 				if (v == buf[i]) return i;
 			}
@@ -263,7 +265,7 @@ namespace xx {
 		}
 
         template<typename Func>
-		bool Exists(Func&& cond) const noexcept {
+		XX_INLINE bool Exists(Func&& cond) const noexcept {
 			for (SizeType i = 0; i < len; ++i) {
 				if (cond(buf[i])) return true;
 			}
@@ -290,26 +292,18 @@ namespace xx {
 	template<typename T>
 	using Listi32 = List<T, int32_t>;
 
-
-	template<typename T>
-	struct IsXxList : std::false_type {};
-	template<typename T, typename S>
-	struct IsXxList<List<T, S>> : std::true_type {};
-	template<typename T, typename S>
-	struct IsXxList<List<T, S>&> : std::true_type {};
-	template<typename T, typename S>
-	struct IsXxList<List<T, S> const&> : std::true_type {};
-	template<typename T>
-	constexpr bool IsXxList_v = IsXxList<T>::value;
-
+	template<typename T> struct IsList : std::false_type {};
+	template<typename T, typename S> struct IsList<List<T, S>> : std::true_type {};
+	template<typename T> constexpr bool IsList_v = IsList<std::remove_cvref_t<T>>::value;
 
 	// tostring
 	template<typename T>
-	struct StringFuncs<T, std::enable_if_t<IsXxList_v<T>>> {
+	struct StringFuncs<T, std::enable_if_t<IsList_v<T>>> {
+		using S = typename T::S;
 		static inline void Append(std::string& s, T const& in) {
 			s.push_back('[');
-			if (auto inLen = in.len) {
-				for (decltype(inLen) i = 0; i < inLen; ++i) {
+			if (auto inLen = in.Len()) {
+				for (S i = 0; i < inLen; ++i) {
 					::xx::Append(s, in[i]);
 					s.push_back(',');
 				}
@@ -322,27 +316,29 @@ namespace xx {
 
 	// serde
 	template<typename T>
-	struct DataFuncs<T, std::enable_if_t< (IsXxList_v<T>)>> {
+	struct DataFuncs<T, std::enable_if_t< (IsList_v<T>)>> {
 		using U = typename T::ChildType;
+		using S = typename T::S;
 		template<bool needReserve = true>
 		static inline void Write(Data& d, T const& in) {
-			d.WriteVarInteger<needReserve>((size_t)in.len);
-			if (!in.len) return;
+			auto inLen = in.Len();
+			d.WriteVarInteger<needReserve>((size_t)inLen);
+			if (!inLen) return;
 			if constexpr (sizeof(U) == 1 || std::is_floating_point_v<U>) {
-				d.WriteFixedArray<needReserve>(in.buf, in.len);
+				d.WriteFixedArray<needReserve>(in.Buf(), inLen);
 			} else if constexpr (std::is_integral_v<U>) {
 				if constexpr (needReserve) {
-					auto cap = in.len * (sizeof(U) + 2);
+					auto cap = (size_t)inLen * (sizeof(U) + 2);
 					if (d.cap < cap) {
 						d.Reserve<false>(cap);
 					}
 				}
-				for (auto&& o : in) {
-					d.WriteVarInteger<false>(o);
+				for (S i = 0; i < inLen; ++i) {
+					d.WriteVarInteger<false>(in[i]);
 				}
 			} else {
-				for (auto&& o : in) {
-					d.Write<needReserve>(o);
+				for (S i = 0; i < inLen; ++i) {
+					d.Write<needReserve>(in[i]);
 				}
 			}
 		}
@@ -350,9 +346,9 @@ namespace xx {
 			size_t siz = 0;
 			if (int r = d.ReadVarInteger(siz)) return r;
 			if (d.offset + siz > d.len) return __LINE__;
-			out.Resize(decltype(out.len)(siz));
+			out.Resize((S)siz);
 			if (siz == 0) return 0;
-			auto buf = out.buf;
+			auto buf = out.Buf();
 			if constexpr (sizeof(U) == 1 || std::is_floating_point_v<U>) {
 				if (int r = d.ReadFixedArray(buf, siz)) return r;
 			} else {

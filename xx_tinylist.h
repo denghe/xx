@@ -1,12 +1,13 @@
 ﻿#pragma once
 #include "xx_typetraits.h"
-#include "xx_mem.h"
 #pragma warning(disable: 4200)
 
 namespace xx {
 
 	template<typename T, typename SizeType = int32_t>
 	struct TinyList {
+		typedef T ChildType;
+		using S = SizeType;
 		struct Core {
 			SizeType len, cap;
 			T buf[0];
@@ -306,6 +307,78 @@ namespace xx {
 		//Iter begin() const noexcept { assert(core); return Iter{ core->buf }; }
 		//Iter end() const noexcept { assert(core); return Iter{ core->buf + core->len }; }
 
+	};
+
+	// mem moveable tag
+	template<typename T, typename SizeType>
+	struct IsPod<TinyList<T, SizeType>, void> : std::true_type {};
+
+	template<typename T> struct IsTinyList : std::false_type {};
+	template<typename T, typename S> struct IsTinyList<TinyList<T, S>> : std::true_type {};
+	template<typename T> constexpr bool IsTinyList_v = IsTinyList<std::remove_cvref_t<T>>::value;
+
+	// tostring
+	template<typename T>
+	struct StringFuncs<T, std::enable_if_t<IsTinyList_v<T>>> {
+		using S = typename T::S;
+		static inline void Append(std::string& s, T const& in) {
+			s.push_back('[');
+			if (auto inLen = in.Len()) {
+				for (S i = 0; i < inLen; ++i) {
+					::xx::Append(s, in[i]);
+					s.push_back(',');
+				}
+				s[s.size() - 1] = ']';
+			} else {
+				s.push_back(']');
+			}
+		}
+	};
+
+	// serde
+	template<typename T>
+	struct DataFuncs<T, std::enable_if_t< (IsTinyList_v<T>)>> {
+		using U = typename T::ChildType;
+		using S = typename T::S;
+		template<bool needReserve = true>
+		static inline void Write(Data& d, T const& in) {
+			auto inLen = in.Len();
+			d.WriteVarInteger<needReserve>((size_t)inLen);
+			if (!inLen) return;
+			if constexpr (sizeof(U) == 1 || std::is_floating_point_v<U>) {
+				d.WriteFixedArray<needReserve>(in.Buf(), inLen);
+			} else if constexpr (std::is_integral_v<U>) {
+				if constexpr (needReserve) {
+					auto cap = (size_t)inLen * (sizeof(U) + 2);
+					if (d.cap < cap) {
+						d.Reserve<false>(cap);
+					}
+				}
+				for(S i = 0; i < inLen; ++i) {
+					d.WriteVarInteger<false>(in[i]);
+				}
+			} else {
+				for (S i = 0; i < inLen; ++i) {
+					d.Write<needReserve>(in[i]);
+				}
+			}
+		}
+		static inline int Read(Data_r& d, T& out) {
+			size_t siz = 0;
+			if (int r = d.ReadVarInteger(siz)) return r;
+			if (d.offset + siz > d.len) return __LINE__;
+			out.Resize((S)siz);
+			if (siz == 0) return 0;
+			auto buf = out.Buf();
+			if constexpr (sizeof(U) == 1 || std::is_floating_point_v<U>) {
+				if (int r = d.ReadFixedArray(buf, siz)) return r;
+			} else {
+				for (size_t i = 0; i < siz; ++i) {
+					if (int r = d.Read(buf[i])) return r;
+				}
+			}
+			return 0;
+		}
 	};
 
 }

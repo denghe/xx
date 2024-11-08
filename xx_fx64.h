@@ -234,6 +234,13 @@ namespace xx {
     // ...
 
     template<typename T>
+    struct StringFuncs<T, std::enable_if_t<std::is_base_of_v<FX64, T>>> {
+        static inline void Append(std::string& s, T const& in) {
+            ::xx::Append(s, in.ToDouble());
+        }
+    };
+
+    template<typename T>
     struct DataFuncs<T, std::enable_if_t<std::is_base_of_v<FX64, T>>> {
 
         template<bool needReserve = true>
@@ -243,13 +250,6 @@ namespace xx {
 
         static inline int Read(Data_r& dr, T& out) {
             return dr.ReadFixed(out.value);
-        }
-    };
-
-    template<typename T>
-    struct StringFuncs<T, std::enable_if_t<std::is_base_of_v<FX64, T>>> {
-        static inline void Append(std::string& s, T const& in) {
-            ::xx::Append(s, in.ToDouble());
         }
     };
 

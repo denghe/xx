@@ -266,7 +266,7 @@ namespace xx {
         // resume once
         int32_t operator()() {
             tasks.ForeachLink([&](std::pair<Cond, Task<>>& o)->ForeachResult {
-                if constexpr(IsOptional_v<Cond>) {
+                if constexpr(IsStdOptional_v<Cond>) {
                     if (o.first.has_value()) return (!o.first.value() || o.second()) ? ForeachResult::RemoveAndContinue : ForeachResult::Continue;
                     else return o.second() ? ForeachResult::RemoveAndContinue : ForeachResult::Continue;
                 } else if constexpr (std::is_invocable_v<Cond>) {

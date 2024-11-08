@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include "xx_typetraits.h"
-#include "xx_mem.h"
 
 namespace xx {
 
@@ -889,7 +888,7 @@ namespace xx {
 
     // 适配 std::optional<T>
     template<typename T>
-    struct DataFuncs<T, std::enable_if_t<IsOptional_v<T>/* && IsBaseDataType_v<T>*/>> {
+    struct DataFuncs<T, std::enable_if_t<IsStdOptional_v<T>/* && IsBaseDataType_v<T>*/>> {
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
             if (in.has_value()) {
@@ -911,7 +910,7 @@ namespace xx {
 
     // 适配 std::pair<K, V>
     template<typename T>
-    struct DataFuncs<T, std::enable_if_t<IsPair_v<T>/* && IsBaseDataType_v<T>*/>> {
+    struct DataFuncs<T, std::enable_if_t<IsStdPair_v<T>/* && IsBaseDataType_v<T>*/>> {
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
             d.Write<needReserve>(in.first, in.second);
@@ -923,7 +922,7 @@ namespace xx {
 
     // 适配 std::tuple<......>
     template<typename T>
-    struct DataFuncs<T, std::enable_if_t<IsTuple_v<T>/* && IsBaseDataType_v<T>*/>> {
+    struct DataFuncs<T, std::enable_if_t<IsStdTuple_v<T>/* && IsBaseDataType_v<T>*/>> {
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
             std::apply([&](auto const &... args) {
@@ -950,7 +949,7 @@ namespace xx {
 
     // 适配 std::variant<......>
     template<typename T>
-    struct DataFuncs<T, std::enable_if_t<IsVariant_v<T>>> {
+    struct DataFuncs<T, std::enable_if_t<IsStdVariant_v<T>>> {
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
             std::visit([&](auto&& v) {
@@ -992,11 +991,11 @@ namespace xx {
 
     // 适配 std::vector, std::array   // todo: queue / deque
     template<typename T>
-    struct DataFuncs<T, std::enable_if_t< (IsVector_v<T> || IsArray_v<T>)/* && IsBaseDataType_v<T>*/>> {
+    struct DataFuncs<T, std::enable_if_t< (IsStdVector_v<T> || IsStdArray_v<T>)/* && IsBaseDataType_v<T>*/>> {
         using U = typename T::value_type;
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
-            if constexpr (IsVector_v<T>) {
+            if constexpr (IsStdVector_v<T>) {
                 d.WriteVarInteger<needReserve>(in.size());
                 if (in.empty()) return;
             }
@@ -1020,7 +1019,7 @@ namespace xx {
         }
         static inline int Read(Data_r& d, T& out) {
             size_t siz = 0;
-            if constexpr (IsVector_v<T>) {
+            if constexpr (IsStdVector_v<T>) {
                 if (int r = d.ReadVarInteger(siz)) return r;
                 if (d.offset + siz > d.len) return __LINE__;
                 out.resize(siz);
@@ -1042,7 +1041,7 @@ namespace xx {
 
     // 适配 std::set, unordered_set
     template<typename T>
-    struct DataFuncs<T, std::enable_if_t< IsSetSeries_v<T>/* && IsBaseDataType_v<T>*/>> {
+    struct DataFuncs<T, std::enable_if_t< IsStdSetLike_v<T>/* && IsBaseDataType_v<T>*/>> {
         using U = typename T::value_type;
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
@@ -1079,7 +1078,7 @@ namespace xx {
 
     // 适配 std::map unordered_map
     template<typename T>
-    struct DataFuncs<T, std::enable_if_t< IsMapSeries_v<T> /*&& IsBaseDataType_v<T>*/>> {
+    struct DataFuncs<T, std::enable_if_t< IsStdMapLike_v<T> /*&& IsBaseDataType_v<T>*/>> {
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
             d.WriteVarInteger<needReserve>(in.size());
@@ -1093,7 +1092,7 @@ namespace xx {
             if (siz == 0) return 0;
             if (d.offset + siz * 2 > d.len) return __LINE__;
             for (size_t i = 0; i < siz; ++i) {
-                MapSeries_Pair_t<T> kv;
+                std::pair<typename T::key_type, typename T::value_type> kv;
                 if (int r = d.Read(kv.first, kv.second)) return r;
                 out.insert(std::move(kv));
             }
@@ -1103,7 +1102,7 @@ namespace xx {
 
     // 适配 std::unique_ptr
     template<typename T>
-    struct DataFuncs<T, std::enable_if_t< IsUniquePtr_v<T> >> {
+    struct DataFuncs<T, std::enable_if_t< IsStdUniquePtr_v<T> >> {
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
             if (in) {
@@ -1162,4 +1161,46 @@ namespace xx {
             return r;
         }
     };
+
+    template<typename T>
+    struct DataFuncs<T, std::enable_if_t< IsFromTo_v<T> >> {
+        template<bool needReserve = true>
+        static inline void Write(Data& d, T const& in) {
+            d.Write<needReserve>(in.from, in.to);
+        }
+        static inline int Read(Data_r& d, T& out) {
+            return d.Read(out.from, out.to);
+        }
+    };
+
+    template<typename T>
+    struct DataFuncs<T, std::enable_if_t< IsCurrentMax_v<T> >> {
+        template<bool needReserve = true>
+        static inline void Write(Data& d, T const& in) {
+            d.Write<needReserve>(in.current, in.max);
+        }
+        static inline int Read(Data_r& d, T& out) {
+            return d.Read(out.current, out.max);
+        }
+    };
+
+    template<typename T>
+    struct DataFuncs<T, std::enable_if_t< IsBufLenRef_v<T> >> {
+        template<bool needReserve = true>
+        static inline void Write(Data& d, T const& in) {
+            assert(in.buf);
+            assert(in.len);
+            using S = std::make_unsigned_t<decltype(*in.len)>;
+            d.WriteFixed((S)*in.len);
+            d.WriteFixedArray<needReserve>(in.buf, *in.len);
+        }
+        static inline int Read(Data_r& d, T& out) {
+            assert(out.buf);
+            assert(out.len);
+            using S = std::make_unsigned_t<decltype(*out.len)>;
+            if (auto r = d.Read(*(S*)out.len)) return r;
+            return d.ReadFixedArray(out.buf, (S)*out.len);
+        }
+    };
+
 }

@@ -4,7 +4,59 @@
 namespace xx {
 
     /************************************************************************************/
-    // std::is_pod 的自定义扩展, 用于标识一个类可以在容器中被 memcpy | memmove
+    // template is same checkers
+
+    template< template<typename...>typename T>
+    struct Template_t {};
+
+    template<typename T>
+    struct TemplateExt_t {
+        static constexpr bool isTemplate{ false };
+    };
+
+    template< template<typename...> typename T, typename...Args>
+    struct TemplateExt_t<T<Args...>> {
+        static constexpr bool isTemplate{ true };
+        using Type = Template_t<T>;
+    };
+
+    template<typename T, typename U>
+    constexpr bool TemplateIsSame() {
+        if constexpr (TemplateExt_t<T>::isTemplate != TemplateExt_t<U>::isTemplate) return false;
+        else return std::is_same_v<typename TemplateExt_t<T>::Type, typename TemplateExt_t<U>::Type>;
+    }
+
+    template<typename T, typename U>
+    constexpr bool TemplateIsSame_v = TemplateIsSame<T, U>();
+
+    struct AnyType {};  // helper type
+
+    template<typename T> constexpr bool IsStdOptional_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::optional<AnyType>>;
+    template<typename T> constexpr bool IsStdPair_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::pair<AnyType, AnyType>>;
+    template<typename T> constexpr bool IsStdTuple_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::tuple<AnyType>>;
+    template<typename T> constexpr bool IsStdVariant_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::variant<AnyType>>;
+    template<typename T> constexpr bool IsStdUniquePtr_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::unique_ptr<AnyType>>;
+    template<typename T> constexpr bool IsStdVector_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::vector<AnyType>>;
+    template<typename T> constexpr bool IsStdList_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::list<AnyType>>;
+    template<typename T> constexpr bool IsStdSet_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::set<AnyType>>;
+    template<typename T> constexpr bool IsStdUnorderedSet_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::unordered_set<AnyType>>;
+    template<typename T> constexpr bool IsStdMap_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::map<AnyType, AnyType>>;
+    template<typename T> constexpr bool IsStdUnorderedMap_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::unordered_map<AnyType, AnyType>>;
+    template<typename T> constexpr bool IsStdQueue_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::queue<AnyType>>;
+    template<typename T> constexpr bool IsStdDeque_v = TemplateIsSame_v<std::remove_cvref_t<T>, std::deque<AnyType>>;
+    // ...
+
+    template<typename T> constexpr bool IsStdSetLike_v = IsStdSet_v<T> || IsStdUnorderedSet_v<T>;
+    template<typename T> constexpr bool IsStdMapLike_v = IsStdMap_v<T> || IsStdUnorderedMap_v<T>;
+    template<typename T> constexpr bool IsStdQueueLike_v = IsStdQueue_v<T> || IsStdDeque_v<T>;
+    // ...
+
+    template<typename> struct IsStdArray : std::false_type {};
+    template<typename T, size_t S> struct IsStdArray<std::array<T, S>> : std::true_type {};
+    template<typename T> constexpr bool IsStdArray_v = IsStdArray<std::remove_cvref_t<T>>::value;
+
+    /************************************************************************************/
+    // std::is_pod like, flag container can memcpy or memmove
 
     template<typename T, typename ENABLED = void>
     struct IsPod : std::false_type {};
@@ -12,381 +64,71 @@ namespace xx {
     struct IsPod<T, std::enable_if_t<std::is_standard_layout_v<T>&& std::is_trivial_v<T>>> : std::true_type {};
     template<typename T> constexpr bool IsPod_v = IsPod<T>::value;
 
-
     /************************************************************************************/
-    // 检测 T 是否为 代码内的明文 "xxxxx" 字串
+    // check T is literal "xxxxx" strings
 
-    template<typename T, typename = void>
-    struct IsLiteral : std::false_type {};
-    template<size_t L>
-    struct IsLiteral<char[L], void> : std::true_type {
+    template<typename T, typename = void> struct IsLiteral : std::false_type {};
+    template<size_t L> struct IsLiteral<char[L], void> : std::true_type {
         static const size_t len = L;
     };
-    template<size_t L>
-    struct IsLiteral<char const [L], void> : std::true_type {
+    template<size_t L> struct IsLiteral<char const [L], void> : std::true_type {
         static const size_t len = L;
     };
-    template<size_t L>
-    struct IsLiteral<char const (&)[L], void> : std::true_type {
+    template<size_t L> struct IsLiteral<char const (&)[L], void> : std::true_type {
         static const size_t len = L;
     };
-    template<typename T>
-    constexpr bool IsLiteral_v = IsLiteral<T>::value;
-    template<typename T>
-    constexpr size_t LiteralLen = IsLiteral<T>::len;
+    template<typename T> constexpr bool IsLiteral_v = IsLiteral<T>::value;
+    template<typename T> constexpr size_t LiteralLen = IsLiteral<T>::len;
 
     /************************************************************************************/
-    // 检测 T 是否为 std::optional
+    // check T has member funcs: data() size()
 
-    template<typename T>
-    struct IsOptional : std::false_type {};
-    template<typename T>
-    struct IsOptional<std::optional<T>> : std::true_type {};
-    template<typename T>
-    struct IsOptional<std::optional<T>&> : std::true_type {};
-    template<typename T>
-    struct IsOptional<std::optional<T> const&> : std::true_type {};
-    template<typename T>
-    constexpr bool IsOptional_v = IsOptional<T>::value;
-
-    /************************************************************************************/
-    // 检测 T 是否为 std::vector
-
-    template<typename T>
-    struct IsVector : std::false_type {};
-    template<typename T>
-    struct IsVector<std::vector<T>> : std::true_type {};
-    template<typename T>
-    struct IsVector<std::vector<T>&> : std::true_type {};
-    template<typename T>
-    struct IsVector<std::vector<T> const&> : std::true_type {};
-    template<typename T>
-    constexpr bool IsVector_v = IsVector<T>::value;
-
-    /************************************************************************************/
-    // 检测 T 是否为 std::tuple
-
-    template<typename>
-    struct IsTuple : std::false_type {};
-    template<typename ...T>
-    struct IsTuple<std::tuple<T...>> : std::true_type {};
-    template<typename ...T>
-    struct IsTuple<std::tuple<T...>&> : std::true_type {};
-    template<typename ...T>
-    struct IsTuple<std::tuple<T...> const&> : std::true_type {};
-    template<typename T>
-    constexpr bool IsTuple_v = IsTuple<T>::value;
-
-    /************************************************************************************/
-    // 检测 T 是否为 std::variant
-
-    template<typename>
-    struct IsVariant : std::false_type {};
-    template<typename ...T>
-    struct IsVariant<std::variant<T...>> : std::true_type {};
-    template<typename ...T>
-    struct IsVariant<std::variant<T...>&> : std::true_type {};
-    template<typename ...T>
-    struct IsVariant<std::variant<T...> const&> : std::true_type {};
-    template<typename T>
-    constexpr bool IsVariant_v = IsVariant<T>::value;
-
-    /************************************************************************************/
-    // 检测 T 是否为 std::unique_ptr
-
-    template<typename T>
-    struct IsUniquePtr : std::false_type {};
-    template<typename T>
-    struct IsUniquePtr<std::unique_ptr<T>> : std::true_type {};
-    template<typename T>
-    struct IsUniquePtr<std::unique_ptr<T>&> : std::true_type {};
-    template<typename T>
-    struct IsUniquePtr<std::unique_ptr<T> const&> : std::true_type {};
-    template<typename T>
-    constexpr bool IsUniquePtr_v = IsUniquePtr<T>::value;
-
-    /************************************************************************************/
-    // 检测 T 是否为 std::unordered_set
-
-    template<typename T>
-    struct IsUnorderedSet : std::false_type {};
-    template<typename T>
-    struct IsUnorderedSet<std::unordered_set<T>> : std::true_type {};
-    template<typename T>
-    struct IsUnorderedSet<std::unordered_set<T>&> : std::true_type {};
-    template<typename T>
-    struct IsUnorderedSet<std::unordered_set<T> const&> : std::true_type {};
-    template<typename T>
-    constexpr bool IsUnorderedSet_v = IsUnorderedSet<T>::value;
-
-    /************************************************************************************/
-    // 检测 T 是否为 std::set
-
-    template<typename T>
-    struct IsSet : std::false_type {};
-    template<typename T>
-    struct IsSet<std::set<T>> : std::true_type {};
-    template<typename T>
-    struct IsSet<std::set<T>&> : std::true_type {};
-    template<typename T>
-    struct IsSet<std::set<T> const&> : std::true_type {};
-    template<typename T>
-    constexpr bool IsSet_v = IsSet<T>::value;
-
-    /************************************************************************************/
-    // 检测 T 是否为 std::set 或 std::unordered_set
-
-    template<typename T>
-    constexpr bool IsSetSeries_v = IsSet_v<T> || IsUnorderedSet_v<T>;
-
-    /************************************************************************************/
-    // 检测 T 是否为 std::queue
-
-    template<typename T>
-    struct IsQueue : std::false_type {};
-    template<typename T>
-    struct IsQueue<std::queue<T>> : std::true_type {};
-    template<typename T>
-    struct IsQueue<std::queue<T>&> : std::true_type {};
-    template<typename T>
-    struct IsQueue<std::queue<T> const&> : std::true_type {};
-    template<typename T>
-    constexpr bool IsQueue_v = IsQueue<T>::value;
-
-    /************************************************************************************/
-    // 检测 T 是否为 std::deque
-
-    template<typename T>
-    struct IsDeque : std::false_type {};
-    template<typename T>
-    struct IsDeque<std::deque<T>> : std::true_type {};
-    template<typename T>
-    struct IsDeque<std::deque<T>&> : std::true_type {};
-    template<typename T>
-    struct IsDeque<std::deque<T> const&> : std::true_type {};
-    template<typename T>
-    constexpr bool IsDeque_v = IsDeque<T>::value;
-
-    /************************************************************************************/
-    // 检测 T 是否为 std::queue 或 std::deque
-
-    template<typename T>
-    constexpr bool IsQueueSeries_v = IsQueue_v<T> || IsDeque_v<T>;
-
-    /************************************************************************************/
-    // 检测 T 是否为 std::unordered_map
-
-    template<typename T>
-    struct IsUnorderedMap : std::false_type {
-        typedef void PT;
-    };
-    template<typename K, typename V>
-    struct IsUnorderedMap<std::unordered_map<K, V>> : std::true_type {
-        typedef std::pair<K, V> PT;
-    };
-    template<typename K, typename V>
-    struct IsUnorderedMap<std::unordered_map<K, V>&> : std::true_type {
-        typedef std::pair<K, V> PT;
-    };
-    template<typename K, typename V>
-    struct IsUnorderedMap<std::unordered_map<K, V> const&> : std::true_type {
-        typedef std::pair<K, V> PT;
-    };
-    template<typename T>
-    constexpr bool IsUnorderedMap_v = IsUnorderedMap<T>::value;
-    template<typename T>
-    using UnorderedMap_Pair_t = typename IsUnorderedMap<T>::PT;
-
-    /************************************************************************************/
-    // 检测 T 是否为 std::map
-
-    template<typename T>
-    struct IsMap : std::false_type {
-        typedef void PT;
-    };
-    template<typename K, typename V>
-    struct IsMap<std::map<K, V>> : std::true_type {
-        typedef std::pair<K, V> PT;
-    };
-    template<typename K, typename V>
-    struct IsMap<std::map<K, V>&> : std::true_type {
-        typedef std::pair<K, V> PT;
-    };
-    template<typename K, typename V>
-    struct IsMap<std::map<K, V> const&> : std::true_type {
-        typedef std::pair<K, V> PT;
-    };
-    template<typename T>
-    constexpr bool IsMap_v = IsMap<T>::value;
-    template<typename T>
-    using Map_Pair_t = typename IsMap<T>::PT;
-
-    /************************************************************************************/
-    // 检测 T 是否为 std::map 或 std::unordered_map
-
-    template<typename T>
-    constexpr bool IsMapSeries_v = IsUnorderedMap_v<T> || IsMap_v<T>;
-    template<typename T>
-    using MapSeries_Pair_t = std::conditional_t<IsUnorderedMap_v<T>, UnorderedMap_Pair_t<T>, Map_Pair_t<T>>;
-
-    /************************************************************************************/
-    // 检测 T 是否为 std::pair
-
-    template<typename T>
-    struct IsPair : std::false_type {};
-    template<typename F, typename S>
-    struct IsPair<std::pair<F, S>> : std::true_type {};
-    template<typename F, typename S>
-    struct IsPair<std::pair<F, S>&> : std::true_type {};
-    template<typename F, typename S>
-    struct IsPair<std::pair<F, S> const&> : std::true_type {};
-    template<typename T>
-    constexpr bool IsPair_v = IsPair<T>::value;
-
-    /************************************************************************************/
-    // 检测 T 是否为 std::array
-
-    template<typename T>
-    struct IsArray : std::false_type {};
-    template<typename T, size_t S>
-    struct IsArray<std::array<T, S>> : std::true_type {};
-    template<typename T, size_t S>
-    struct IsArray<std::array<T, S>&> : std::true_type {};
-    template<typename T, size_t S>
-    struct IsArray<std::array<T, S> const&> : std::true_type {};
-    template<typename T>
-    constexpr bool IsArray_v = IsArray<T>::value;
-
-    /************************************************************************************/
-    // 检测 T 是否为 带 data() size() 这两个函数的容器
-
-    template<typename, typename = void>
-    struct IsContainer : std::false_type {};
-    template<typename T>
-    struct IsContainer<T, std::void_t<decltype(std::declval<T>().data()), decltype(std::declval<T>().size())>>
+    template<typename, typename = void> struct IsContainer : std::false_type {};
+    template<typename T> struct IsContainer<T, std::void_t<decltype(std::declval<T>().data()), decltype(std::declval<T>().size())>>
         : std::true_type {};
     template<typename T>
     constexpr bool IsContainer_v = IsContainer<T>::value;
 
+    /************************************************************************************/
+    // check T has member func: operator()
+
+    template<typename T, typename = void> struct IsCallable : std::is_function<T> {};
+    template<typename T> struct IsCallable<T, typename std::enable_if<std::is_same<decltype(void(&T::operator())), void>::value>::type> : std::true_type {};
+    template<typename T> constexpr bool IsCallable_v = IsCallable<T>::value;
 
     /************************************************************************************/
-    // 检测 T 是否为 带 operator() 的可执行仿函数类( 含 lambda )
+	// check T is std::function
 
-    template<typename T, typename = void>
-    struct IsCallable : std::is_function<T> {};
-    template<typename T>
-    struct IsCallable<T, typename std::enable_if<std::is_same<decltype(void(&T::operator())), void>::value>::type> : std::true_type {};
-    template<typename T>
-    constexpr bool IsCallable_v = IsCallable<T>::value;
-
-
-    /************************************************************************************/
-	// 检测 T 是否为 std::function
-
-	template<typename T>
-	struct IsFunction : std::false_type {
-	};
-	template<typename T>
-	struct IsFunction<std::function<T>> : std::true_type {
+	template<typename> struct IsFunction : std::false_type {};
+	template<typename T> struct IsFunction<std::function<T>> : std::true_type {
 		using FT = T;
 	};
-	template<typename T>
-	struct IsFunction<std::function<T>&> : std::true_type {
-		using FT = T;
-	};
-	template<typename T>
-	struct IsFunction<std::function<T> const&> : std::true_type {
-		using FT = T;
-	};
-	template<typename T>
-	constexpr bool IsFunction_v = IsFunction<T>::value;
-
+	template<typename T> constexpr bool IsFunction_v = IsFunction<std::remove_cvref_t<T>>::value;
 
     /************************************************************************************/
-    // 检测 T 是否为 逻辑上的 简单 / 基础 类型( 数值, enum, string[_view], Data, 以及包裹容器的这些类型 )
+    // check tuple contains T
 
-    template<typename T, typename ENABLED = void>
-    struct IsBaseDataType : std::false_type {};
-    template<typename T> constexpr bool IsBaseDataType_v = IsBaseDataType<T>::value;
-
-    struct Span;
-    template<typename T>
-    struct IsBaseDataType<T, std::enable_if_t<std::is_arithmetic_v<T>
-        || std::is_enum_v<T>
-        || IsLiteral_v<T>
-        || std::is_same_v<std::string, std::decay_t<T>>
-        || std::is_same_v<std::string_view, std::decay_t<T>>
-        || std::is_base_of_v<Span, T>
-        >> : std::true_type{
-    };
-
-    template<typename T>
-    struct IsBaseDataType<T, std::enable_if_t<IsOptional_v<T>&& IsBaseDataType_v<typename T::value_type> >> : std::true_type {};
-    template<typename T>
-    struct IsBaseDataType<T, std::enable_if_t<IsVector_v<T>&& IsBaseDataType_v<typename T::value_type> >> : std::true_type {};
-    template<typename T>
-    struct IsBaseDataType<T, std::enable_if_t<IsSetSeries_v<T>&& IsBaseDataType_v<typename T::value_type> >> : std::true_type {};
-    template<typename T>
-    struct IsBaseDataType<T, std::enable_if_t<IsPair_v<T>&& IsBaseDataType_v<typename T::first_type>&& IsBaseDataType_v<typename T::second_type> >> : std::true_type {};
-    template<typename T>
-    struct IsBaseDataType<T, std::enable_if_t<IsMapSeries_v<T>&& IsBaseDataType_v<typename T::key_type>&& IsBaseDataType_v<typename T::value_type> >> : std::true_type {};
-
-    // tuple 得遍历每个类型来判断
-    template<typename Tuple, typename = std::enable_if_t<IsTuple_v<Tuple>>>
-    struct TupleIsBaseDataType {
-        template<std::size_t index>
-        static constexpr bool Check__() {
-            if constexpr (index == std::tuple_size_v<Tuple>) {
-                return true;
-            } else {
-                return IsBaseDataType_v<std::tuple_element_t<index, Tuple>> ? Check__<index + 1>() : false;
-            }
-        }
-
-        static constexpr bool Check() {
-            return Check__<0>();
-        }
-    };
-
-    template<typename T>
-    struct IsBaseDataType<T, std::enable_if_t<IsTuple_v<T>&& TupleIsBaseDataType<T>::Check() >> : std::true_type {};
-
+    template<typename T, typename Tuple> struct HasType;
+    template<typename T> struct HasType<T, std::tuple<>> : std::false_type {};
+    template<typename T, typename U, typename... Ts> struct HasType<T, std::tuple<U, Ts...>> : HasType<T, std::tuple<Ts...>> {};
+    template<typename T, typename... Ts> struct HasType<T, std::tuple<T, Ts...>> : std::true_type {};
+    template<typename T, typename Tuple> using TupleContainsType = typename HasType<T, Tuple>::type;
+    template<typename T, typename Tuple> constexpr bool TupleContainsType_v = TupleContainsType<T, Tuple>::value;
 
     /************************************************************************************/
-    // 判断 tuple 里是否存在某种数据类型
+    // return T in tuple's index
 
-    template<typename T, typename Tuple>
-    struct HasType;
-    template<typename T>
-    struct HasType<T, std::tuple<>> : std::false_type {};
-    template<typename T, typename U, typename... Ts>
-    struct HasType<T, std::tuple<U, Ts...>> : HasType<T, std::tuple<Ts...>> {};
-    template<typename T, typename... Ts>
-    struct HasType<T, std::tuple<T, Ts...>> : std::true_type {};
-    template<typename T, typename Tuple>
-    using TupleContainsType = typename HasType<T, Tuple>::type;
-    template<typename T, typename Tuple>
-    constexpr bool TupleContainsType_v = TupleContainsType<T, Tuple>::value;
-
-
-    /************************************************************************************/
-    // 计算某类型在 tuple 里是第几个
-
-    template<class T, class Tuple>
-    struct TupleTypeIndex;
-    template<class T, class...TS>
-    struct TupleTypeIndex<T, std::tuple<T, TS...>> {
+    template<class T, class Tuple> struct TupleTypeIndex;
+    template<class T, class...TS> struct TupleTypeIndex<T, std::tuple<T, TS...>> {
         static const size_t value = 0;
     };
-    template<class T, class U, class... TS>
-    struct TupleTypeIndex<T, std::tuple<U, TS...>> {
+    template<class T, class U, class... TS> struct TupleTypeIndex<T, std::tuple<U, TS...>> {
         static const size_t value = 1 + TupleTypeIndex<T, std::tuple<TS...>>::value;
     };
-    template<typename T, typename Tuple>
-    constexpr size_t TupleTypeIndex_v = TupleTypeIndex<T, Tuple>::value;
+    template<typename T, typename Tuple> constexpr size_t TupleTypeIndex_v = TupleTypeIndex<T, Tuple>::value;
 
     /************************************************************************************/
-    // 遍历 tuple 所有成员
+    // foreach tuple elements
 
     template <typename Tuple, typename F, std::size_t ...Indices>
     void ForEachCore(Tuple&& tuple, F&& f, std::index_sequence<Indices...>) {
@@ -401,7 +143,7 @@ namespace xx {
     }
 
     /************************************************************************************/
-    // 遍历 tuple 所有类型
+    // foreach tuple types
     /*
     	xx::ForEachType<Tup>([&]<typename T>() {
 			// ...
@@ -441,7 +183,7 @@ namespace xx {
     }
 
     /************************************************************************************/
-    // 获取指定下标参数
+    // ref args[index]
 
     template <int I, typename...Args>
     decltype(auto) GetAt(Args&&...args) {
@@ -456,7 +198,7 @@ namespace xx {
 
 
     /************************************************************************************/
-    // 拆解仿函数成员 operator() 得到它的 各种信息（返回值，所属类，参数，是否可变）
+    // mapping operator(): return T, container, args, mutable
 
     template<typename T, class = void>
     struct FuncTraits;
@@ -501,20 +243,15 @@ namespace xx {
     struct FuncTraits<T, std::void_t<decltype(&T::operator())> >
         : public FuncTraits<decltype(&T::operator())> {};
 
-    template<typename T>
-    using FuncR_t = typename FuncTraits<T>::R;
-    template<typename T>
-    using FuncA_t = typename FuncTraits<T>::A;
-    template<typename T>
-    using FuncA2_t = typename FuncTraits<T>::A2;
-    template<typename T>
-    using FuncC_t = typename FuncTraits<T>::C;
-    template<typename T>
-    constexpr bool isMutable_v = FuncTraits<T>::isMutable;
+    template<typename T> using FuncR_t = typename FuncTraits<T>::R;
+    template<typename T> using FuncA_t = typename FuncTraits<T>::A;
+    template<typename T> using FuncA2_t = typename FuncTraits<T>::A2;
+    template<typename T> using FuncC_t = typename FuncTraits<T>::C;
+    template<typename T> constexpr bool isMutable_v = FuncTraits<T>::isMutable;
 
 
     /************************************************************************************/
-    // 针对模板基类，检查某类型是否其派生类. 用法: XX_IsTemplateOf(BT, T)::value
+    // check T is baseof Template. usage: XX_IsTemplateOf(BT, T)::value
 
     struct IsTemplateOf {
         template <template <class> class TM, class T> static std::true_type  checkfunc(TM<T>);
@@ -524,10 +261,8 @@ namespace xx {
     };
 #define XX_IsTemplateOf(TM, ...) decltype(::xx::IsTemplateOf::checkfunc<TM>(std::declval<__VA_ARGS__>()))
 
-
-
     /************************************************************************************/
-    // 辅助调用构造函数的容器
+    // ctor call helper
 
     template<typename U>
     struct TCtor {
@@ -538,9 +273,8 @@ namespace xx {
         }
     };
 
-
     /************************************************************************************/
-    // literal string 的模板值容器
+    // literal string's template container
 
     template<size_t n>
     struct Str {
@@ -553,9 +287,55 @@ namespace xx {
         }
     };
 
+    /***********************************************************************************/
+    // find max size in multi types
+
+    template<typename T, typename... Args>
+    struct MaxSizeof {
+        static const size_t value = sizeof(T) > MaxSizeof<Args...>::value
+            ? sizeof(T)
+            : MaxSizeof<Args...>::value;
+    };
+    template<typename T>
+    struct MaxSizeof<T> {
+        static const size_t value = sizeof(T);
+    };
+
+    template<typename T, typename... Args>
+    constexpr size_t MaxSizeof_v = MaxSizeof<T, Args...>::value;
 
     /************************************************************************************/
-    // 判断目标类型是否为 []{} 这种 lambda( 依赖编译器具体实现 )
+    // helper types
+
+    enum class ForeachResult {
+        Continue,
+        RemoveAndContinue,
+        Break,
+        RemoveAndBreak
+    };
+
+    template<typename T>
+    struct FromTo {
+        T from{}, to{};
+    };
+    template<typename T> constexpr bool IsFromTo_v = TemplateIsSame_v<std::remove_cvref_t<T>, FromTo<AnyType>>;
+
+    template<typename T>
+    struct CurrentMax {
+        T current{}, max{};
+    };
+    template<typename T> constexpr bool IsCurrentMax_v = TemplateIsSame_v<std::remove_cvref_t<T>, CurrentMax<AnyType>>;
+
+    template<typename T, typename S>
+    struct BufLenRef {
+        T* buf;
+        S* len;
+    };
+    template<typename T> constexpr bool IsBufLenRef_v = TemplateIsSame_v<std::remove_cvref_t<T>, BufLenRef<AnyType, AnyType>>;
+
+    /************************************************************************************/
+    // check T is []{} likely (lambda)( depend on compiler impl )
+    // unsafe
 
     namespace Detail {
         template<Str s, typename T>
@@ -590,30 +370,4 @@ namespace xx {
     template<typename ...T>
     constexpr bool IsLambda_v = IsLambda<T...>();
 
-
-
-    /***********************************************************************************/
-    // 找出 多个模板类型 的 sizeof 最大值
-
-    template<typename T, typename... Args>
-    struct MaxSizeof {
-        static const size_t value = sizeof(T) > MaxSizeof<Args...>::value
-            ? sizeof(T)
-            : MaxSizeof<Args...>::value;
-    };
-    template<typename T>
-    struct MaxSizeof<T> {
-        static const size_t value = sizeof(T);
-    };
-
-    template<typename T, typename... Args>
-    constexpr size_t MaxSizeof_v = MaxSizeof<T, Args...>::value;
-
 }
-
-// 用于得到检测 T:: typename 是否存在的 constexpr. 已否决，应改用 concept
-
-#define XX_HAS_TYPEDEF( TN ) \
-template<typename, typename = void> struct HasTypedef_##TN : std::false_type {}; \
-template<typename T> struct HasTypedef_##TN<T, std::void_t<typename T::TN>> : std::true_type {}; \
-template<typename T> constexpr bool TN = HasTypedef_##TN<T>::value;
