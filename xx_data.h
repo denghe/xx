@@ -1107,9 +1107,9 @@ namespace xx {
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
             if (in) {
-                d.Write((uint8_t)1, *in);
+                d.Write<needReserve>((uint8_t)1, *in);
             } else {
-                d.Write((uint8_t)0);
+                d.Write<needReserve>((uint8_t)0);
             }
         }
         static inline int Read(Data_r& d, T& out) {
@@ -1170,7 +1170,7 @@ namespace xx {
         static inline void Write(Data& d, T const& in) {
             assert(in.buf);
             assert(in.len);
-            d.Write((U)*in.len);
+            d.Write<needReserve>((U)*in.len);
             d.WriteFixedArray<needReserve>(in.buf, (U)*in.len);
         }
         static inline int Read(Data_r& d, T& out) {
@@ -1191,7 +1191,7 @@ namespace xx {
     struct DataFuncs<T, std::enable_if_t< std::is_base_of_v<RWFloatUInt16, T> >> {
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
-            d.WriteFixed((uint16_t)in.v);
+            d.WriteFixed<needReserve>((uint16_t)in.v);
         }
         static inline int Read(Data_r& d, T& out) {
             uint16_t tmp;
@@ -1211,7 +1211,7 @@ namespace xx {
     struct DataFuncs<T, std::enable_if_t< std::is_base_of_v<RWFloatInt16, T> >> {
         template<bool needReserve = true>
         static inline void Write(Data& d, T const& in) {
-            d.WriteFixed((int16_t)in.v);
+            d.WriteFixed<needReserve>((int16_t)in.v);
         }
         static inline int Read(Data_r& d, T& out) {
             int16_t tmp;
