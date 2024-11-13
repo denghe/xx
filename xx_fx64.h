@@ -93,11 +93,16 @@ namespace xx {
             return y;
         }
 
+        // ********* add by me
+        static constexpr FP_LONG LogicalShiftRight(FP_ULONG v, FP_INT shift) {
+            return (FP_LONG)(v >> shift);
+        }
+
         static constexpr FP_LONG Mul(FP_LONG a, FP_LONG b) {
             FP_LONG ai = a >> Shift;
-            FP_LONG af = (a & FractionMask);
+            FP_ULONG af = (a & FractionMask);   // ********* fix by me
             FP_LONG bi = b >> Shift;
-            FP_LONG bf = (b & FractionMask);
+            FP_ULONG bf = (b & FractionMask);   // ********* fix by me
             return LogicalShiftRight(af * bf, Shift) + ai * b + af * bi;
         }
 
@@ -130,6 +135,15 @@ namespace xx {
             // Apply exponent, convert back to s32.32.
             FP_LONG y = MulIntLongLong(res, a) << 2;
             return ShiftRight(sign * y, offset);
+        }
+
+        // pow log ...
+
+        // ********* add by me
+        static constexpr FP_LONG Pow2(FP_LONG a) {
+            FP_LONG ai = a >> Shift;
+            FP_ULONG af = (a & FractionMask);
+            return LogicalShiftRight(af * af, Shift) + ai * a + af * ai;
         }
 
         /********************************************************************************************/
@@ -170,6 +184,8 @@ namespace xx {
         XX_INLINE FX64 Clamp01() const {
             return { (value > One) ? One : (value < Zero) ? Zero : value };
         }
+
+
         // ... 
 
         /********************************************************************************************/
@@ -218,6 +234,8 @@ namespace xx {
         constexpr int32_t ToIntRound() const { return RoundToInt(value); }
         constexpr double ToDouble() const { return ToDouble(value); }
         constexpr float ToFloat() const { return ToFloat(value); }
+
+        constexpr FX64 Pow2() const { return Pow2(value); }
     };
 
     static constexpr FX64 FX64_0{ 0 };

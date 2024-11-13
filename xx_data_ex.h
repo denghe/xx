@@ -20,6 +20,10 @@ struct XXXXXXXXXXX {
         virtual void WriteTo(Data& d) const {};
         virtual int32_t ReadFrom(Data_r& dr) { return __LINE__; }
         uint16_t typeId;  // fill by MakeShared, after constructor
+
+        // user data area
+        uint8_t udByte1{}, udByte2{};  
+        int32_t indexAtContainer{ -1 };
     };
 
     struct SerdeInfo;

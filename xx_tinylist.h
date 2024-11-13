@@ -99,6 +99,19 @@ namespace xx {
 
 		template<bool fillVal = false, int val = 0>
 		void Resize(SizeType len_) noexcept {
+			if (!core) {
+				if (!len_) return;
+				Reserve(len_);
+				if constexpr (!(std::is_standard_layout_v<T> && std::is_trivial_v<T>)) {
+					for (SizeType i = 0; i < len_; ++i) {
+						std::construct_at(&core->buf[i]);
+					}
+				} else if constexpr (fillVal) {
+					memset(core->buf, val, len_ * sizeof(T));
+				}
+				core->len = len_;
+				return;
+			}
 			if (len_ == core->len) return;
 			else if (len_ < core->len) {
 				for (SizeType i = len_; i < core->len; ++i) {

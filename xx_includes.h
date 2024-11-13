@@ -88,7 +88,7 @@ using namespace std::chrono_literals;
 #           define XX_INLINE __forceinline
 #       else
 #           define XX_NOINLINE __attribute__((noinline))
-#           define XX_INLINE __attribute__((always_inline))
+#           define XX_INLINE __attribute__((always_inline)) inline
 #       endif
 #   endif
 #endif
