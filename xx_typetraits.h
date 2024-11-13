@@ -61,7 +61,7 @@ namespace xx {
     struct IsPod : std::false_type {};
     template<typename T>
     struct IsPod<T, std::enable_if_t<std::is_standard_layout_v<T>&& std::is_trivial_v<T>>> : std::true_type {};
-    template<typename T> constexpr bool IsPod_v = IsPod<T>::value;
+    template<typename T> constexpr bool IsPod_v = IsPod<std::remove_cvref_t<T>>::value;
 
     /************************************************************************************/
     // check T is literal "xxxxx" strings
