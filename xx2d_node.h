@@ -111,10 +111,10 @@ namespace xx {
 		decltype(Node::z) z;
 		Node* n;
 		XX_INLINE Node* operator->() { return n; }
-		inline XX_INLINE static bool LessThanComparer(ZNode const& a, ZNode const& b) {
+		XX_INLINE static bool LessThanComparer(ZNode const& a, ZNode const& b) {
 			return a.z < b.z;
 		}
-		inline XX_INLINE static bool GreaterThanComparer(ZNode const& a, ZNode const& b) {
+		XX_INLINE static bool GreaterThanComparer(ZNode const& a, ZNode const& b) {
 			return a.z > b.z;
 		}
 	};

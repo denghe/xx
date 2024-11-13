@@ -139,7 +139,7 @@ namespace xx {
                 v.value = Next<int32_t>((int32_t)FX64_PI_DIV_10_NEG.value, (int32_t)FX64_PI_DIV_10.value);
                 return v * FX64_10;
             } else {
-                static_assert(false, "unsupported type");
+                static_assert((ptrdiff_t)sizeof(V) < 0, "unsupported type");
             }
 
         }

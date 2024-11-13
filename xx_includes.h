@@ -81,15 +81,13 @@ using namespace std::chrono_literals;
 #ifndef XX_NOINLINE
 #   ifndef NDEBUG
 #       define XX_NOINLINE
-#       define XX_INLINE
-#       define XX_INLINE
+#       define XX_INLINE inline
 #   else
 #       ifdef _MSC_VER
 #           define XX_NOINLINE __declspec(noinline)
 #           define XX_INLINE __forceinline
 #       else
 #           define XX_NOINLINE __attribute__((noinline))
-#           define XX_INLINE __attribute__((always_inline))
 #           define XX_INLINE __attribute__((always_inline))
 #       endif
 #   endif
@@ -307,13 +305,13 @@ namespace xx {
     }
 
     // signed int decode: return (in is singular: negative) ? -(in + 1) / 2 : in / 2
-    inline XX_INLINE int16_t ZigZagDecode(uint16_t in) {
+    XX_INLINE int16_t ZigZagDecode(uint16_t in) {
         return (int16_t)((int16_t)(in >> 1) ^ (-(int16_t)(in & 1)));
     }
-    inline XX_INLINE int32_t ZigZagDecode(uint32_t in) {
+    XX_INLINE int32_t ZigZagDecode(uint32_t in) {
         return (int32_t)(in >> 1) ^ (-(int32_t)(in & 1));
     }
-    inline XX_INLINE int64_t ZigZagDecode(uint64_t in) {
+    XX_INLINE int64_t ZigZagDecode(uint64_t in) {
         return (int64_t)(in >> 1) ^ (-(int64_t)(in & 1));
     }
 
@@ -333,13 +331,13 @@ namespace xx {
     }
 
     // signed int encode: return in < 0 ? (-in * 2 - 1) : (in * 2)
-    inline XX_INLINE uint16_t ZigZagEncode(int16_t in) {
+    XX_INLINE uint16_t ZigZagEncode(int16_t in) {
         return (uint16_t)((in << 1) ^ (in >> 15));
     }
-    inline XX_INLINE uint32_t ZigZagEncode(int32_t in) {
+    XX_INLINE uint32_t ZigZagEncode(int32_t in) {
         return (in << 1) ^ (in >> 31);
     }
-    inline XX_INLINE uint64_t ZigZagEncode(int64_t in) {
+    XX_INLINE uint64_t ZigZagEncode(int64_t in) {
         return (in << 1) ^ (in >> 63);
     }
 

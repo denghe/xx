@@ -138,14 +138,14 @@ struct XXXXXXXXXXX {
         }
     };
 
-    inline XX_INLINE uint16_t ReadVarUint16(void* buf, size_t offset, size_t len) {
+    XX_INLINE uint16_t ReadVarUint16(void* buf, size_t offset, size_t len) {
         auto u = ((uint8_t*)buf)[offset] & 0x7Fu;
         if ((((uint8_t*)buf)[offset] & 0x80u) == 0) return u;
         if (offset + 1 >= len) return 0;
         return u | ((((uint8_t*)buf)[offset + 1] & 0x7Fu) << 7);
     }
 
-    inline XX_INLINE uint16_t ReadTypeId(DataShared const& ds) {
+    XX_INLINE uint16_t ReadTypeId(DataShared const& ds) {
         auto buf = ds.GetBuf();
         auto len = ds.GetLen();
         if (len < 2 || buf[0] != 1) return 0;

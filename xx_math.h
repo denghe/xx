@@ -12,25 +12,25 @@ namespace xx {
 
     namespace FrameControl {
 
-        inline XX_INLINE void Forward(float& frameIndex, float inc, float from, float to) {
+        XX_INLINE void Forward(float& frameIndex, float inc, float from, float to) {
             frameIndex += inc;
             if (frameIndex >= to) {
                 frameIndex = from + (frameIndex - to);
             }
         }
 
-        inline XX_INLINE void Forward(float& frameIndex, float inc, float to) {
+        XX_INLINE void Forward(float& frameIndex, float inc, float to) {
             Forward(frameIndex, inc, 0, to);
         }
 
-        inline XX_INLINE void Backward(float& frameIndex, float inc, float from, float to) {
+        XX_INLINE void Backward(float& frameIndex, float inc, float from, float to) {
             frameIndex -= inc;
             if (frameIndex <= from) {
                 frameIndex = to - (from - frameIndex);
             }
         }
 
-        inline XX_INLINE void Backward(float& frameIndex, float inc, float to) {
+        XX_INLINE void Backward(float& frameIndex, float inc, float to) {
             Backward(frameIndex, inc, 0, to);
         }
 
@@ -42,7 +42,7 @@ namespace xx {
 
     namespace RotateControl {
 
-        inline XX_INLINE float Gap(float tar, float cur) {
+        XX_INLINE float Gap(float tar, float cur) {
             auto gap = cur - tar;
             if (gap > gPI) {
                 gap -= g2PI;
@@ -55,7 +55,7 @@ namespace xx {
 
         // calc cur to tar by rate
         // return cur's new value
-        inline XX_INLINE float LerpAngleByRate(float tar, float cur, float rate) {
+        XX_INLINE float LerpAngleByRate(float tar, float cur, float rate) {
             auto gap = Gap(tar, cur);
             return cur - gap * rate;        // todo: verify
         }
@@ -78,7 +78,7 @@ namespace xx {
         */
         // calc cur to tar by fixed raidians
         // return cur's new value
-        inline XX_INLINE float LerpAngleByFixed(float tar, float cur, float a) {
+        XX_INLINE float LerpAngleByFixed(float tar, float cur, float a) {
             auto gap = Gap(tar, cur);
             if (gap < 0) {
                 if (gap >= -a) return tar;
@@ -93,13 +93,13 @@ namespace xx {
 
         // change cur to tar by a( max value )
         // return true: cur == tar
-        inline XX_INLINE bool Step(float& cur, float tar, float a) {
+        XX_INLINE bool Step(float& cur, float tar, float a) {
             return (cur = LerpAngleByFixed(tar, cur, a)) == tar;
         }
 
         // limit a by from ~ to
         // no change: return false
-        inline XX_INLINE bool Limit(float& a, float from, float to) {
+        XX_INLINE bool Limit(float& a, float from, float to) {
             // -PI ~~~~~~~~~~~~~~~~~~~~~~~~~ a ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PI
             assert(a >= gNPI && a <= gPI);
             // from ~~~~~~~~~~~~~~ a ~~~~~~~~~~~~~~~~ to
@@ -298,23 +298,23 @@ namespace xx {
 
     namespace Calc {
 
-        inline XX_INLINE float DistancePow2(float x1, float y1, float x2, float y2) {
+        XX_INLINE float DistancePow2(float x1, float y1, float x2, float y2) {
             return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
         }
 
-        inline XX_INLINE float Distance(float x1, float y1, float x2, float y2) {
+        XX_INLINE float Distance(float x1, float y1, float x2, float y2) {
             return std::sqrt(DistancePow2(x1, y1, x2, y2));
         }
 
-        inline XX_INLINE float DistancePow2(XY const& p1, XY const& p2) {
+        XX_INLINE float DistancePow2(XY const& p1, XY const& p2) {
             return DistancePow2(p1.x, p1.y, p2.x, p2.y);
         }
 
-        inline XX_INLINE float Distance(XY const& p1, XY const& p2) {
+        XX_INLINE float Distance(XY const& p1, XY const& p2) {
             return Distance(p1.x, p1.y, p2.x, p2.y);
         }
 
-        inline XX_INLINE float DistanceLimit(float d, float from, float to) {
+        XX_INLINE float DistanceLimit(float d, float from, float to) {
             if (d < from) return from;
             else if (d > to) return to;
             else return d;
@@ -325,7 +325,7 @@ namespace xx {
             ...
             p2 = RotatePoint(c - p, 1.23) + c;
         */
-        inline XX_INLINE XY RotatePoint(XY const& d, float radians) {
+        XX_INLINE XY RotatePoint(XY const& d, float radians) {
             auto c = std::cos(radians);
             auto s = std::sin(radians);
             return { d.x * c - d.y * s, d.x * s + d.y * c };
@@ -336,7 +336,7 @@ namespace xx {
         //    ((1 - t) + t)3 = 1 
         // Expands to ...
         //   (1 - t)3 + 3t(1-t)2 + 3t2(1 - t) + t3 = 1 
-        inline XX_INLINE float Bezierat(float a, float b, float c, float d, float t) {
+        XX_INLINE float Bezierat(float a, float b, float c, float d, float t) {
             return (std::pow(1.f - t, 3.f) * a +
                 3.f * t * (std::pow(1.f - t, 2.f)) * b +
                 3.f * std::pow(t, 2.f) * (1.f - t) * c +
@@ -392,7 +392,7 @@ namespace xx {
                 return (dx * dx) + (dy * dy) <= r * r;
             }
 
-            inline XX_INLINE bool LinePoint(float x1, float y1, float x2, float y2, float px, float py) {
+            XX_INLINE bool LinePoint(float x1, float y1, float x2, float y2, float px, float py) {
                 float d1 = Calc::Distance(px, py, x1, y1);
                 float d2 = Calc::Distance(px, py, x2, y2);
                 float lineLen = Calc::Distance(x1, y1, x2, y2);
@@ -545,7 +545,7 @@ namespace xx {
         // frame index controls
 
         template<typename T = FX64>
-        inline XX_INLINE void FrameIndexForward(T& frameIndex, T inc, T from, T to) {
+        XX_INLINE void FrameIndexForward(T& frameIndex, T inc, T from, T to) {
             frameIndex += inc;
             if (frameIndex >= to) {
                 frameIndex = from + (frameIndex - to);
@@ -553,12 +553,12 @@ namespace xx {
         }
 
         template<typename T = FX64>
-        inline XX_INLINE void FrameIndexForward(T& frameIndex, T inc, T to) {
+        XX_INLINE void FrameIndexForward(T& frameIndex, T inc, T to) {
             FrameIndexForward(frameIndex, inc, T{}, to);
         }
 
         template<typename T = FX64>
-        inline XX_INLINE void FrameIndexBackward(T& frameIndex, T inc, T from, T to) {
+        XX_INLINE void FrameIndexBackward(T& frameIndex, T inc, T from, T to) {
             frameIndex -= inc;
             if (frameIndex <= from) {
                 frameIndex = to - (from - frameIndex);
@@ -566,7 +566,7 @@ namespace xx {
         }
 
         template<typename T = FX64>
-        inline XX_INLINE void FrameIndexBackward(T& frameIndex, T inc, T to) {
+        XX_INLINE void FrameIndexBackward(T& frameIndex, T inc, T to) {
             FrameIndexBackward(frameIndex, inc, T{}, to);
         }
 

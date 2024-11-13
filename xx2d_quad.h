@@ -139,7 +139,7 @@ namespace xx {
         q.colorplus = 1;
         q.color = {255, 255, 255, 255};
         */
-        inline XX_INLINE static QuadInstanceData& DrawOnce(Ref<Frame> const& f) {
+        XX_INLINE static QuadInstanceData& DrawOnce(Ref<Frame> const& f) {
             auto& eg = EngineBase1::Instance();
             auto& r = *eg.ShaderBegin(eg.shaderQuadInstance).Draw(f->tex->GetValue(), 1);
             if (f->textureRotated) {
@@ -153,7 +153,7 @@ namespace xx {
             return r;
         }
 
-        inline XX_INLINE static QuadInstanceData* DrawMore(Ref<Frame> const& f, int32_t count) {
+        XX_INLINE static QuadInstanceData* DrawMore(Ref<Frame> const& f, int32_t count) {
             assert(count > 0);
             auto& eg = EngineBase1::Instance();
             auto r = eg.ShaderBegin(eg.shaderQuadInstance).Draw(f->tex->GetValue(), count);

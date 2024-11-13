@@ -414,31 +414,31 @@ namespace xx::TMX {
 		/****************************************************/
 	};
 
-	inline XX_INLINE int Map::GetMinColumnIndex(Camera const& camera, int offset) const {
+	XX_INLINE int Map::GetMinColumnIndex(Camera const& camera, int offset) const {
 		int r = int(camera.minX / tileWidth) + offset;
 		return r < 0 ? 0 : r;
 	}
 
-	inline XX_INLINE int Map::GetMaxColumnIndex(Camera const& camera, int offset) const {
+	XX_INLINE int Map::GetMaxColumnIndex(Camera const& camera, int offset) const {
 		int r = int(camera.maxX / tileWidth) + offset;
 		return r > (int)width ? (int)width : r;
 	}
 
-	inline XX_INLINE int Map::GetMinRowIndex(Camera const& camera, int offset) const {
+	XX_INLINE int Map::GetMinRowIndex(Camera const& camera, int offset) const {
 		int r = int(camera.minY / tileHeight) + offset;
 		return r < 0 ? 0 : r;
 	}
 
-	inline XX_INLINE int Map::GetMaxRowIndex(Camera const& camera, int offset) const {
+	XX_INLINE int Map::GetMaxRowIndex(Camera const& camera, int offset) const {
 		int r = int(camera.maxY / tileHeight) + offset;
 		return r > (int)height ? (int)height : r;
 	}
 
-	inline XX_INLINE XY Map::GetBasePos(Camera const& camera) const {
+	XX_INLINE XY Map::GetBasePos(Camera const& camera) const {
 		return XY{ -camera.original.x, float(-(int)tileHeight) + camera.original.y } * camera.scale;
 	}
 
-	inline XX_INLINE XY Map::GetScaledTileSize(Camera const& camera) const {
+	XX_INLINE XY Map::GetScaledTileSize(Camera const& camera) const {
 		return { tileWidth * camera.scale, tileHeight * camera.scale };
 	}
 
@@ -466,7 +466,7 @@ namespace xx::TMX {
 		return nullptr;
 	}
 
-	inline XX_INLINE GidInfo* Map::GetGidInfo(Layer* L, uint32_t rowIdx, uint32_t colIdx) const {
+	XX_INLINE GidInfo* Map::GetGidInfo(Layer* L, uint32_t rowIdx, uint32_t colIdx) const {
 		assert(L);
 		assert(L->type == LayerTypes::TileLayer);
 		assert(rowIdx < height);

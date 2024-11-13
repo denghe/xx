@@ -68,7 +68,7 @@ namespace xx {
                     return { x.ToDouble(), y.ToDouble() };
                 } else if constexpr (std::is_same_v<int32_t, U>) {
                     return { x.ToInt(), y.ToInt() };
-                } else static_assert(false);
+                } else static_assert((ptrdiff_t)sizeof(U) < 0, "unsupported type");
             } else {
                 return { (U)x, (U)y };
             }
