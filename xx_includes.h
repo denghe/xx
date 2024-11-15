@@ -234,6 +234,41 @@ namespace xx {
     };
 
     /************************************************************************************/
+    // container helpers
+
+    // element is Shared<T>
+    // T has member: indexAtContainer
+
+    template<typename T, typename SizeType>
+    XX_INLINE static void RemoveFrom(T& container, SizeType& indexAtContainer) {
+        auto bak = indexAtContainer;
+        container.Top()->indexAtContainer = bak;
+#ifndef NDEBUG
+        indexAtContainer = -1;
+#endif
+        container.SwapRemoveAt(bak);
+    }
+
+    template<typename T, typename SizeType>
+    XX_INLINE static auto MoveOutFrom(T& container, SizeType indexAtContainer) {
+        auto& p = container[indexAtContainer];					// current address
+        auto tmp = std::move(p);								// removed out
+        if (indexAtContainer + 1 < container.Len()) {			// not top
+            p = std::move(container.Top());						// top move to current
+            p->indexAtContainer = indexAtContainer;				// sync index
+        }
+        container.Pop();										// sync container size
+        return tmp;
+    }
+
+    template<typename T, typename U>
+    XX_INLINE static void AddTo(T& container, U&& item) {
+        assert(container.Empty() || container.Top() != item);	// avoid duplicate add
+        item->indexAtContainer = container.Len();
+        container.Add(std::forward<U>(item));
+    }
+
+    /************************************************************************************/
     // scope guards
 
     template<class F>   // F == lambda
