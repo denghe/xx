@@ -253,9 +253,9 @@ namespace xx {
     XX_INLINE static auto MoveOutFrom(T& container, SizeType indexAtContainer) {
         auto& p = container[indexAtContainer];					// current address
         auto tmp = std::move(p);								// removed out
-        if (indexAtContainer + 1 < container.Len()) {			// not top
-            p = std::move(container.Top());						// top move to current
-            p->indexAtContainer = indexAtContainer;				// sync index
+        if (auto& top = container.Top(); &top != &p) {          // not top?
+            top->indexAtContainer = indexAtContainer;			// sync index
+            p = std::move(top);						            // move
         }
         container.Pop();										// sync container size
         return tmp;
