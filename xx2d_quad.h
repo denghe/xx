@@ -28,6 +28,10 @@ namespace xx {
             return *this;
         }
 
+        XX_INLINE Quad& SetFrame(Ref<GLTexture> const& t) {
+            return SetFrame(Frame::Create(t));
+        }
+
         XX_INLINE Quad& ClearFrame() {
             frame.Reset();
             texId = 0;
