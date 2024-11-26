@@ -13,9 +13,9 @@ namespace xx {
         GLBuffer vb, ib;
 
         static constexpr int32_t maxIndexNums = int32_t(maxVertNums * 1.5);
-        std::unique_ptr<XYRGBA8[]> points = std::make_unique<XYRGBA8[]>(maxVertNums);
+        std::unique_ptr<XYRGBA8[]> points = std::make_unique_for_overwrite<XYRGBA8[]>(maxVertNums);
         int32_t pointsCount = 0;
-        std::unique_ptr<uint16_t[]> indexs = std::make_unique<uint16_t[]>(maxIndexNums);
+        std::unique_ptr<uint16_t[]> indexs = std::make_unique_for_overwrite<uint16_t[]>(maxIndexNums);
         int32_t indexsCount = 0;
 
         EngineBase0* eb{};

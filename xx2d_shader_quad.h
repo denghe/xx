@@ -22,7 +22,7 @@ namespace xx {
 
         static constexpr int32_t maxQuadNums{ 100000 };
         GLuint lastTextureId{};
-        std::unique_ptr<QuadInstanceData[]> quadInstanceDatas = std::make_unique<QuadInstanceData[]>(maxQuadNums);
+        std::unique_ptr<QuadInstanceData[]> quadInstanceDatas = std::make_unique_for_overwrite<QuadInstanceData[]>(maxQuadNums);
         int32_t quadCount{};
         EngineBase0* eb{};
 

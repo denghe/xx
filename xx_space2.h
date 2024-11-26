@@ -42,7 +42,7 @@ namespace xx {
             max.y = cellSize_ * numRows_;
 
             cellsLen = numRows * numCols;
-            cells = std::make_unique<Item*[]>(cellsLen);
+            cells = std::make_unique_for_overwrite<Item*[]>(cellsLen);
 			Clear();
         }
 

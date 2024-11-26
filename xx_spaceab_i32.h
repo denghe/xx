@@ -68,7 +68,7 @@ namespace xx {
 			max.y = cellSize_.y * numRows_;
 
 			cellsLen = numRows * numCols;
-			cells = std::make_unique<Cell[]>(cellsLen);
+			cells = std::make_unique_for_overwrite<Cell[]>(cellsLen);
 			Clear();
 		}
 

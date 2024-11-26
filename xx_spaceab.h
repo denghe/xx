@@ -60,7 +60,7 @@ namespace xx {
 			max.y = cellSize_.y * numRows_;
 
 			ST::dummy = numRows * numCols;
-			cells = std::make_unique<CellType * []>(ST::dummy);
+			cells = std::make_unique_for_overwrite<CellType * []>(ST::dummy);
 			memset(cells.get(), 0, sizeof(CellType*) * ST::dummy);
 		}
 

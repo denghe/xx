@@ -40,8 +40,8 @@ namespace xx {
 			max.y = cellSize_ * numRows_;
 
 			cellsLen = numRows * numCols;
-			cells = std::make_unique<int32_t[]>(cellsLen);
-			counts = std::make_unique<int32_t[]>(cellsLen);
+			cells = std::make_unique_for_overwrite<int32_t[]>(cellsLen);
+			counts = std::make_unique_for_overwrite<int32_t[]>(cellsLen);
 			Clear();
 		}
 
