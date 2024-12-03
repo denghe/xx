@@ -200,15 +200,19 @@ namespace xx {
         }
 
         // read all data by GetFullPath( fn )
-        template<bool autoDecompress = false>
-        std::pair<Data, std::string> LoadFileData(std::string_view const& fn) {
+        template<bool returnFullPath = true, bool autoDecompress = false>
+        auto LoadFileData(std::string_view const& fn) {
             auto p = GetFullPath(fn);
             if (p.empty()) {
                 CoutN("fn can't find: ", fn);
                 xx_assert(false);
             }
             auto d = LoadFileDataWithFullPath<autoDecompress>(p);
-            return { std::move(d), std::move(p) };
+            if constexpr (returnFullPath) {
+                return std::pair<Data, std::string>{ std::move(d), std::move(p) };
+            } else {
+                return std::move(d);
+            }
         }
 
         // detect file format by content header
