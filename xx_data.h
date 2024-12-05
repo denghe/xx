@@ -447,13 +447,20 @@ namespace xx {
             return !this->operator==(o);
         }
 
-        // 确保空间足够
-        template<bool CheckCap = true>
+        // 确保空间足够( round2n == false 通常用于定长文件加载之类需求, cap == len )
+        template<bool checkCap = true, bool round2n = true>
         XX_NOINLINE void Reserve(size_t newCap) {
-            if (CheckCap && newCap <= cap) return;
+            if constexpr (checkCap) {
+                if (newCap <= cap) return;
+            }
 
-            auto siz = Round2n(bufHeaderReserveLen + newCap);
-            //auto newBuf = (new uint8_t[siz]) + bufHeaderReserveLen;
+            size_t siz;
+            if constexpr (round2n) {
+                siz = Round2n(bufHeaderReserveLen + newCap);
+            } else {
+                siz = bufHeaderReserveLen + newCap;
+            }
+
             auto newBuf = ((uint8_t*)malloc(siz)) + bufHeaderReserveLen;
             if (len) {
                 memcpy(newBuf, buf, len);
@@ -461,7 +468,6 @@ namespace xx {
 
             // 这里判断 cap 不判断 buf, 是因为 gcc 优化会导致 if 失效, 无论如何都会执行 free
             if (cap) {
-                //delete[](buf - bufHeaderReserveLen);
                 free(buf - bufHeaderReserveLen);
             }
             buf = newBuf;
