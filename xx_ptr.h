@@ -242,12 +242,14 @@ namespace xx {
                     pointer = {};
                     if constexpr (weakSupport) {
                         if (h->weakCount == 0) {
-                            AlignedFree<HeaderType>(h);
+                            //AlignedFree<HeaderType>(h);
+                            delete (std::aligned_storage_t<sizeof(HT), alignof(HT)>*)h;
                         } else {
                             h->sharedCount = 0;
                         }
                     } else {
-                        AlignedFree<HeaderType>(h);
+                        //AlignedFree<HeaderType>(h);
+                        delete (std::aligned_storage_t<sizeof(HT), alignof(HT)>*)h;
                     }
                 } else {
                     --h->sharedCount;
@@ -272,12 +274,39 @@ namespace xx {
             Reset();
         }
 
+        //template<typename U = T, typename...Args>
+        //S<U>& EmplaceEx(size_t attachSize, Args &&...args) {
+        //    static_assert(std::is_base_of_v<T, U> || std::is_same_v<T, U>);
+        //    static_assert(PtrAlignCheck_v<T, U>);
+        //    Reset();
+        //    auto h = AlignedAlloc<typename S<U>::HeaderType>(sizeof(typename S<U>::HeaderType) + attachSize);
+        //    h->Init();
+        //    pointer = (T*)&h->data;
+        //    if constexpr (!std::has_virtual_destructor_v<T>) {
+        //        h->deleter = [](void* o) { std::destroy_at((U*)o); };
+        //    } else {
+        //        h->deleter = {};
+        //    }
+        //    std::construct_at(&h->data, std::forward<Args>(args)...);
+        //    if constexpr (HasMemberType_cParentTypeId<T>) {
+        //        pointer->typeId = T::cTypeId;
+        //    }
+        //    return (S<U>&) * this;
+        //}
+
+        //template<typename U = T, typename...Args>
+        //S<U>& Emplace(Args &&...args) {
+        //    return EmplaceEx<U>(0, std::forward<Args>(args)...);
+        //}
+
+        // faster than malloc* when link mimalloc
         template<typename U = T, typename...Args>
-        S<U>& EmplaceEx(size_t attachSize, Args &&...args) {
+        S<U>& Emplace(Args &&...args) {
             static_assert(std::is_base_of_v<T, U> || std::is_same_v<T, U>);
             static_assert(PtrAlignCheck_v<T, U>);
+            using HT = typename S<U>::HeaderType;
             Reset();
-            auto h = AlignedAlloc<typename S<U>::HeaderType>(sizeof(typename S<U>::HeaderType) + attachSize);
+            auto h = (HT*) new std::aligned_storage_t<sizeof(HT), alignof(HT)>();
             h->Init();
             pointer = (T*)&h->data;
             if constexpr (!std::has_virtual_destructor_v<T>) {
@@ -290,11 +319,6 @@ namespace xx {
                 pointer->typeId = T::cTypeId;
             }
             return (S<U>&) * this;
-        }
-
-        template<typename U = T, typename...Args>
-        S<U>& Emplace(Args &&...args) {
-            return EmplaceEx<U>(0, std::forward<Args>(args)...);
         }
 
         Weak<T> ToWeak() const requires(weakSupport);
