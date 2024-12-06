@@ -243,13 +243,13 @@ namespace xx {
                     if constexpr (weakSupport) {
                         if (h->weakCount == 0) {
                             //AlignedFree<HeaderType>(h);
-                            delete (std::aligned_storage_t<sizeof(HT), alignof(HT)>*)h;
+                            delete (std::aligned_storage_t<sizeof(HeaderType), alignof(HeaderType)>*)h;
                         } else {
                             h->sharedCount = 0;
                         }
                     } else {
                         //AlignedFree<HeaderType>(h);
-                        delete (std::aligned_storage_t<sizeof(HT), alignof(HT)>*)h;
+                        delete (std::aligned_storage_t<sizeof(HeaderType), alignof(HeaderType)>*)h;
                     }
                 } else {
                     --h->sharedCount;
