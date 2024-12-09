@@ -14,7 +14,6 @@ namespace xx {
 		} *core{};
 		static constexpr bool isBigT = alignof(SizeType) < alignof(T);
 		static_assert(!isBigT || sizeof(SizeType) * 2 <= alignof(T));
-		static constexpr size_t alignVal = isBigT ? alignof(T) : alignof(SizeType);
 
 		TinyList() = default;
 		TinyList(TinyList const& o) = delete;
@@ -69,9 +68,9 @@ namespace xx {
 			if (core && cap_ <= core->cap) return {};
 			if (!core) {
 				if constexpr (isBigT) {
-					core = (Core*)operator new (sizeof(T) * (cap_ + 1), std::align_val_t(alignVal));
+					core = (Core*)operator new (sizeof(T) * (cap_ + 1), std::align_val_t(alignof(Core)));
 				} else {
-					core = (Core*)operator new (sizeof(Core) + sizeof(T) * cap_, std::align_val_t(alignVal));
+					core = (Core*)operator new (sizeof(Core) + sizeof(T) * cap_, std::align_val_t(alignof(Core)));
 				}
 				core->len = 0;
 				core->cap = cap_;
@@ -84,9 +83,9 @@ namespace xx {
 
 			Core* newCore;
 			if constexpr (isBigT) {
-				newCore = (Core*)operator new (sizeof(T) * (newCap + 1), std::align_val_t(alignVal));
+				newCore = (Core*)operator new (sizeof(T) * (newCap + 1), std::align_val_t(alignof(Core)));
 			} else {
-				newCore = (Core*)operator new (sizeof(Core) + sizeof(T) * newCap, std::align_val_t(alignVal));
+				newCore = (Core*)operator new (sizeof(Core) + sizeof(T) * newCap, std::align_val_t(alignof(Core)));
 			}
 			newCore->len = core->len;
 			newCore->cap = core->cap;
@@ -105,7 +104,7 @@ namespace xx {
 					std::destroy_at(&buf[i]);
 				}
 			}
-			operator delete (core, std::align_val_t(alignVal));
+			operator delete (core, std::align_val_t(alignof(Core)));
 			core = newCore;
 		}
 
@@ -188,7 +187,7 @@ namespace xx {
 				core->len = 0;
 			}
 			if (freeBuf) {
-				operator delete (core, std::align_val_t(alignVal));
+				operator delete (core, std::align_val_t(alignof(Core)));
 				core = {};
 			}
 		}
