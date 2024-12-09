@@ -48,7 +48,7 @@ namespace xx {
 		// ... more
 
 		struct Item {
-			std::aligned_storage_t<MaxSizeof_v<Space, Text, Picture>> data;
+			alignas(MaxAlignof_v<Space, Text, Picture>) char data[MaxSizeof_v<Space, Text, Picture>];
 
 			Item(Item const&) = delete;
 			Item& operator=(Item const&) = delete;

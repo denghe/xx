@@ -72,14 +72,14 @@ namespace xx {
 			assert(cap_ > 0);
 			if (cap_ <= cap) return {};
 			if (!cap) {
-				buf = AlignedAlloc<T>(cap_ * sizeof(T));
+				buf = (T*)new MyAlignedStorage<T>[cap_];
 				cap = cap_;
 				return {};
 			}
 			do {
 				cap *= 2;
 			} while (cap < cap_);
-			return AlignedAlloc<T>(cap * sizeof(T));
+			return (T*) new MyAlignedStorage<T>[cap];
 		}
 		void ReserveEnd(T* newBuf) noexcept {
 			if constexpr (IsPod_v<T>) {
@@ -91,7 +91,7 @@ namespace xx {
 					buf[i].~T();
 				}
 			}
-			AlignedFree<T>(buf);
+			delete[](MyAlignedStorage<T>*)buf;
 			buf = newBuf;
 		}
 
@@ -153,7 +153,7 @@ namespace xx {
 				len = 0;
 			}
 			if (freeBuf) {
-				AlignedFree<T>(buf);
+				delete[](MyAlignedStorage<T>*)buf;
 				buf = {};
 				cap = 0;
 			}

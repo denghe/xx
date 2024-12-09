@@ -10,8 +10,11 @@ namespace xx {
 		using S = SizeType;
 		struct Core {
 			SizeType len, cap;
-			T buf[0];
+			/*alignas(T)*/ T buf[0];
 		} *core{};
+		static constexpr bool isBigT = alignof(SizeType) < alignof(T);
+		static_assert(!isBigT || sizeof(SizeType) * 2 <= alignof(T));
+		static constexpr size_t alignVal = isBigT ? alignof(T) : alignof(SizeType);
 
 		TinyList() = default;
 		TinyList(TinyList const& o) = delete;
@@ -65,7 +68,11 @@ namespace xx {
 			assert(cap_ > 0);
 			if (core && cap_ <= core->cap) return {};
 			if (!core) {
-				core = AlignedAlloc<Core>(sizeof(Core) + sizeof(T) * cap_);
+				if constexpr (isBigT) {
+					core = (Core*)operator new (sizeof(T) * (cap_ + 1), std::align_val_t(alignVal));
+				} else {
+					core = (Core*)operator new (sizeof(Core) + sizeof(T) * cap_, std::align_val_t(alignVal));
+				}
 				core->len = 0;
 				core->cap = cap_;
 				return {};
@@ -75,7 +82,12 @@ namespace xx {
 				newCap *= 2;
 			} while (newCap < cap_);
 
-			auto newCore = AlignedAlloc<Core>(sizeof(Core) + sizeof(T) * newCap);
+			Core* newCore;
+			if constexpr (isBigT) {
+				newCore = (Core*)operator new (sizeof(T) * (newCap + 1), std::align_val_t(alignVal));
+			} else {
+				newCore = (Core*)operator new (sizeof(Core) + sizeof(T) * newCap, std::align_val_t(alignVal));
+			}
 			newCore->len = core->len;
 			newCore->cap = core->cap;
 			return newCore;
@@ -93,7 +105,7 @@ namespace xx {
 					std::destroy_at(&buf[i]);
 				}
 			}
-			AlignedFree<Core>(core);
+			operator delete (core, std::align_val_t(alignVal));
 			core = newCore;
 		}
 
@@ -176,7 +188,7 @@ namespace xx {
 				core->len = 0;
 			}
 			if (freeBuf) {
-				AlignedFree<Core>(core);
+				operator delete (core, std::align_val_t(alignVal));
 				core = {};
 			}
 		}

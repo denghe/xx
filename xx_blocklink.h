@@ -238,7 +238,7 @@ namespace xx {
 			}
 			if constexpr (freeBuf) {
 				for (auto& o : this->blocks) {
-					AlignedFree<Block>(o);
+					delete (MyAlignedStorage<Block>*)o;
 				}
 				this->blocks.Clear(true);
 				this->cap = 0;
@@ -443,7 +443,7 @@ namespace xx {
 		XX_INLINE void Reserve() {
 			auto len = this->blocks.len;
 			this->cap += 64;
-			auto b = (Block*)this->blocks.Emplace(AlignedAlloc<Block>());
+			auto b = (Block*)this->blocks.Emplace((Block*)new MyAlignedStorage<Block>());
 			if constexpr (!isDoubleLink) {
 				b->flags = 0;
 			}

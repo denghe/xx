@@ -20,11 +20,10 @@ namespace xx {
 		explicit Queue(SizeType capacity = 8) noexcept {
 			if (capacity < 8) {
 				capacity = 8;
+			} else {
+				cap = SizeType(Round2n(capacity * sizeof(T)) / sizeof(T));
 			}
-			auto bufByteLen = Round2n(capacity * sizeof(T));
-			buf = AlignedAlloc<T>((size_t)bufByteLen);				// buf can't be null
-			assert(buf);
-			cap = SizeType(bufByteLen / sizeof(T));
+			buf = (T*)new MyAlignedStorage<T>[cap];				// buf can't be null
 		}
 
 		Queue(Queue&& o) noexcept : Queue() {
@@ -37,7 +36,7 @@ namespace xx {
 		~Queue() noexcept {
 			assert(buf);
 			Clear();
-			AlignedFree<T>(buf);
+			delete[](MyAlignedStorage<T>*)buf;
 			buf = nullptr;
 		}
 
@@ -100,10 +99,8 @@ namespace xx {
 			assert(capacity > 0);
 			if (capacity <= cap) return;
 
-			auto newBufByteLen = Round2n(capacity * sizeof(T));
-			auto newBuf = AlignedAlloc<T>((size_t)newBufByteLen);
-			assert(newBuf);
-			auto newBufLen = SizeType(newBufByteLen / sizeof(T));
+			auto newBufLen = SizeType(Round2n(capacity * sizeof(T)) / sizeof(T));
+			auto newBuf = (T*)new MyAlignedStorage<T>[newBufLen];
 
 			// callByEmplace == true: ++++++++++++++TH++++++++++++++++
 			auto dataLen = callByEmplace ? cap : Count();
@@ -148,7 +145,7 @@ namespace xx {
 			head = 0;
 			tail = dataLen;
 
-			AlignedFree<T>(buf);
+			delete[](MyAlignedStorage<T>*)buf;
 			buf = newBuf;
 			cap = newBufLen;
 		}

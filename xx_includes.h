@@ -293,33 +293,40 @@ namespace xx {
         return SG(std::forward<F>(f));
     }
 
-    /************************************************************************************/
-    // aligned alloc free
-
-    template<typename T>
-    XX_INLINE T* AlignedAlloc(size_t siz = sizeof(T)) {
-        assert(siz >= sizeof(T));
-        if constexpr (alignof(T) <= sizeof(void*)) return (T*)malloc(siz);
-        else {
-#if defined(_MSC_VER) || defined(__MINGW32__)
-            return (T*)_aligned_malloc(siz, alignof(T));
-#else   // emscripten
-            return (T*)aligned_alloc(alignof(T), siz);
-#endif
-        }
-    }
-
-    template<typename T>
-    XX_INLINE void AlignedFree(void* p) {
-#ifdef _MSC_VER
-        if constexpr (alignof(T) <= sizeof(void*)) free(p);
-        else {
-            _aligned_free(p);
-        }
-#else
-        free(p);
-#endif
-    }
+    // use new delete instead    example:
+    //  p = (TTTTT*)operator new ( size , std::align_val_t( alignof(TTTTT) ));
+    // operator delete (p, std::align_val_t( alignof(TTTTT) ));
+    // 
+    // (HT*) new MyAlignedStorage<HT>();
+    // delete (MyAlignedStorage<HT>*)h;
+    // 
+//    /************************************************************************************/
+//    // aligned alloc free
+//
+//    template<typename T>
+//    XX_INLINE T* AlignedAlloc(size_t siz = sizeof(T)) {
+//        assert(siz >= sizeof(T));
+//        if constexpr (alignof(T) <= sizeof(void*)) return (T*)malloc(siz);
+//        else {
+//#if defined(_MSC_VER) || defined(__MINGW32__)
+//            return (T*)_aligned_malloc(siz, alignof(T));
+//#else   // emscripten
+//            return (T*)aligned_alloc(alignof(T), siz);
+//#endif
+//        }
+//    }
+//
+//    template<typename T>
+//    XX_INLINE void AlignedFree(void* p) {
+//#ifdef _MSC_VER
+//        if constexpr (alignof(T) <= sizeof(void*)) free(p);
+//        else {
+//            _aligned_free(p);
+//        }
+//#else
+//        free(p);
+//#endif
+//    }
 
     /************************************************************************************/
     // mem utils

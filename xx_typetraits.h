@@ -302,6 +302,38 @@ namespace xx {
     template<typename T, typename... Args>
     constexpr size_t MaxSizeof_v = MaxSizeof<T, Args...>::value;
 
+
+    template<typename T, typename... Args>
+    struct MaxAlignof {
+        static const size_t value = alignof(T) > MaxAlignof<Args...>::value
+            ? alignof(T)
+            : MaxAlignof<Args...>::value;
+    };
+    template<typename T>
+    struct MaxAlignof<T> {
+        static const size_t value = alignof(T);
+    };
+
+    template<typename T, typename... Args>
+    constexpr size_t MaxAlignof_v = MaxAlignof<T, Args...>::value;
+
+
+    /***********************************************************************************/
+    // replace std::aligned_storage & std::aligned_union
+
+    template <typename T>
+    class MyAlignedStorage {
+    private:
+        alignas(T) char dummyBuf[sizeof(T)];
+    };
+
+    template <typename... Ts>
+    class MyAlignedUnion {
+    private:
+        alignas(MaxAlignof_v<Ts...>) char dummyBuf[MaxSizeof_v<Ts...>];
+    };
+
+
     /************************************************************************************/
     // check T is []{} likely (lambda)( depend on compiler impl )
     // unsafe

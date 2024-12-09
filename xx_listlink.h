@@ -42,7 +42,7 @@ namespace xx {
 			assert(newCap > 0);
 			if (newCap <= cap) return;
 			cap = newCap;
-			auto newBuf = AlignedAlloc<Node>(newCap * sizeof(Node));
+			auto newBuf = (Node*)new MyAlignedStorage<Node>[newCap];
 			if constexpr (IsPod_v<T>) {
 				memcpy(newBuf, buf, len * sizeof(Node));
 			} else {
@@ -52,7 +52,7 @@ namespace xx {
 					buf[i].value.~T();
 				}
 			}
-			AlignedFree<Node>(buf);
+			delete[](MyAlignedStorage<Node>*)buf;
 			buf = newBuf;
 		}
 
@@ -140,7 +140,7 @@ namespace xx {
 				}
 			}
 			if constexpr (freeBuf) {
-				AlignedFree<Node>(buf);
+				delete[](MyAlignedStorage<Node>*)buf;
 				buf = {};
 				cap = 0;
 			}
