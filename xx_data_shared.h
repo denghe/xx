@@ -66,7 +66,7 @@ namespace xx {
 		XX_INLINE void Clear() {
 			if (h) {
 				if (--h->numRefs == 0) {
-					free(h);
+					delete[](h);
 				}
 				h = nullptr;
 			}

@@ -461,14 +461,14 @@ namespace xx {
                 siz = bufHeaderReserveLen + newCap;
             }
 
-            auto newBuf = ((uint8_t*)malloc(siz)) + bufHeaderReserveLen;
+            auto newBuf = new uint8_t[siz] + bufHeaderReserveLen;
             if (len) {
                 memcpy(newBuf, buf, len);
             }
 
-            // 这里判断 cap 不判断 buf, 是因为 gcc 优化会导致 if 失效, 无论如何都会执行 free
+            // 这里判断 cap 不判断 buf, 是因为 gcc 优化会导致 if 失效, 无论如何都会执行 delete
             if (cap) {
-                free(buf - bufHeaderReserveLen);
+                delete[](buf - bufHeaderReserveLen);
             }
             buf = newBuf;
             cap = siz - bufHeaderReserveLen;
@@ -479,9 +479,9 @@ namespace xx {
             if (!len) {
                 Clear(true);
             } else if (cap > len * 2) {
-                auto newBuf = ((uint8_t*)malloc(bufHeaderReserveLen + len)) + bufHeaderReserveLen;
+                auto newBuf = new uint8_t[bufHeaderReserveLen + len] + bufHeaderReserveLen;
                 memcpy(newBuf, buf, len);
-                free(buf - bufHeaderReserveLen);
+                delete[](buf - bufHeaderReserveLen);
                 buf = newBuf;
                 cap = len;
             }
@@ -491,7 +491,7 @@ namespace xx {
         Data_rw ShrinkCopy() {
             Data_rw rtv;
             if (len) {
-                rtv.buf = ((uint8_t*)malloc(bufHeaderReserveLen + len)) + bufHeaderReserveLen;
+                rtv.buf = new uint8_t[bufHeaderReserveLen + len] + bufHeaderReserveLen;
                 memcpy(rtv.buf, buf, len);
                 rtv.cap = rtv.len = len;
             }
@@ -723,7 +723,7 @@ namespace xx {
         XX_INLINE void Clear(bool freeBuf = false) {
             if (freeBuf && cap) {
                 //delete[](buf - bufHeaderReserveLen);
-                free(buf - bufHeaderReserveLen);
+                delete[](buf - bufHeaderReserveLen);
                 buf = nullptr;
                 cap = 0;
             }

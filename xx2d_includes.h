@@ -82,10 +82,7 @@ static constexpr auto FX64_PI_DIV_10_NEG = xx::FX64_PI_DIV_10_NEG;
 /*
 // copy these code to pch.cpp
 
-#define GLAD_MALLOC(sz)       malloc(sz)
-#define GLAD_FREE(ptr)        free(ptr)
-#define GLAD_GL_IMPLEMENTATION
-#include <glad.h>
+#include <xx2d__cpp.inc>
 
 */
 
