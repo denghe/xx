@@ -421,14 +421,14 @@ namespace xx {
 
         Weak() = default;
 
-        Weak(Weak const &o) : h(o.h) {
+        Weak(Weak const &o) : h((HeaderType*)o.h) {
             if (o.h) {
                 ++o.h->weakCount;
             }
         }
 
         template<typename U>
-        Weak(Weak<U> const &o) : h(o.h) {
+        Weak(Weak<U> const &o) : h((HeaderType*)o.h) {
             static_assert(std::is_base_of_v<T, U> || std::is_same_v<T, U>);
             static_assert(PtrAlignCheck_v<T, U>);
             if (o.h) {
@@ -436,12 +436,12 @@ namespace xx {
             }
         }
 
-        Weak(Weak &&o) : h(o.h) {
+        Weak(Weak &&o) : h((HeaderType*)o.h) {
             o.h = {};
         }
 
         template<typename U>
-        Weak(Weak<U> &&o) : h(o.h) {
+        Weak(Weak<U> &&o) : h((HeaderType*)o.h) {
             static_assert(std::is_base_of_v<T, U> || std::is_same_v<T, U>);
             static_assert(PtrAlignCheck_v<T, U>);
             o.h = {};
