@@ -366,7 +366,7 @@ namespace xx {
     int lineNumber = 0;
     int Update() {
         COR_BEGIN
-            // COR_YIELD
+            COR_YIELD
         COR_END
     }
     ... lineNumber = Update();
@@ -376,3 +376,18 @@ namespace xx {
 #define COR_YIELD	return __LINE__; case __LINE__:;
 #define COR_EXIT	return 0;
 #define COR_END		} return 0;
+
+/* example:
+
+    int lineNumber{};   // struct member
+    void Update() {
+        XXSC_BEGIN
+            XXSC_YIELD
+        XXSC_END
+    }
+
+*/
+#define XX_BEGIN             switch (lineNumber) { case 0:
+#define XX_YIELD             lineNumber = __LINE__; return; case __LINE__:;
+#define XX_YIELD_TO_BEGIN    lineNumber = 0; return;
+#define XX_END               }
