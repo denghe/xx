@@ -389,5 +389,7 @@ namespace xx {
 */
 #define XX_BEGIN             switch (lineNumber) { case 0:
 #define XX_YIELD             lineNumber = __LINE__; return; case __LINE__:;
+#define XX_YIELD_F           lineNumber = __LINE__; return false; case __LINE__:;
 #define XX_YIELD_TO_BEGIN    lineNumber = 0; return;
+#define XX_YIELD_F_TO_BEGIN  lineNumber = 0; return false;
 #define XX_END               }
