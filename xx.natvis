@@ -39,6 +39,7 @@
 	</Type>
 
 	<Type Name="xx::Shared_&lt;*,*&gt;">
+		<SmartPointer Usage="Minimal">pointer</SmartPointer>
 		<DisplayString Condition="pointer == 0">null</DisplayString>
 		<DisplayString Condition="pointer != 0">{((HeaderType*)((char*)pointer - ((::size_t)&amp;(char&amp;)((((HeaderType*)0)->data)))))}</DisplayString>
 		<Expand HideRawView="true">

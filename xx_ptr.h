@@ -347,6 +347,13 @@ namespace xx {
             h = (HeaderType*)h_;
         }
 
+        T* TryGetPointer() const {
+            if (h && h->sharedCount) {
+                return &h->data;
+            }
+            return {};
+        }
+
         template<typename ...Args>
         decltype(auto) operator()(Args&&...args) {
             return (*pointer())(std::forward<Args>(args)...);
