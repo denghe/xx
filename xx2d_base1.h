@@ -286,7 +286,7 @@ namespace xx {
 
         template<bool autoDecompress = false>
         Ref<GLTexture> LoadTexture(std::string_view fn) {
-            auto [d, p] = LoadFileData<autoDecompress>(fn);
+            auto [d, p] = LoadFileData<true, autoDecompress>(fn);
             xx_assert(d);
             return MakeRef<GLTexture>(LoadGLTexture(d, p));
         }
@@ -298,7 +298,7 @@ namespace xx {
 
         template<bool autoDecompress = false>
         Ref<TexturePacker> LoadTexturePacker(std::string_view fn) {
-            auto [blistData, fp] = LoadFileData<autoDecompress>(fn);
+            auto [blistData, fp] = LoadFileData<true, autoDecompress>(fn);
             xx_assert(blistData);
 
             auto tp = MakeRef<TexturePacker>();
@@ -319,7 +319,7 @@ namespace xx {
             auto map = MakeRef<TMX::Map>();
             std::string fullPath;
             {
-                auto [d, fp] = LoadFileData<autoDecompress>(bmxPath);
+                auto [d, fp] = LoadFileData<true, autoDecompress>(bmxPath);
                 xx_assert(d);
                 TmxData td(std::move(d));
                 auto r = td.Read(*map);
