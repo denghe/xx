@@ -20,6 +20,7 @@
 #include <xx_data_ex.h>
 #include <xx_fx64.h>
 using XY = xx::XY;
+using XYf = xx::XYf;
 using XYi = xx::XYi;
 using XYp = xx::XYp;
 using FX64 = xx::FX64;
