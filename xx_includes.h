@@ -381,15 +381,20 @@ namespace xx {
 
     int lineNumber{};   // struct member
     void Update() {
-        XXSC_BEGIN
-            XXSC_YIELD
-        XXSC_END
+        XX_BEGIN(lineNumber)
+            XX_YIELD(lineNumber)
+        XX_END(lineNumber)
     }
+	bool Update() {
+		XX_BEGIN(lineNumber)
+			XX_YIELD_F(lineNumber)
+		XX_END(lineNumber)
+	}
 
 */
-#define XX_BEGIN             switch (lineNumber) { case 0:
-#define XX_YIELD             lineNumber = __LINE__; return; case __LINE__:;
-#define XX_YIELD_F           lineNumber = __LINE__; return false; case __LINE__:;
-#define XX_YIELD_TO_BEGIN    lineNumber = 0; return;
-#define XX_YIELD_F_TO_BEGIN  lineNumber = 0; return false;
-#define XX_END               }
+#define XX_BEGIN(lineNumber)             switch (lineNumber) { case 0:
+#define XX_YIELD(lineNumber)             lineNumber = __LINE__; return; case __LINE__:;
+#define XX_YIELD_F(lineNumber)           lineNumber = __LINE__; return false; case __LINE__:;
+#define XX_YIELD_TO_BEGIN(lineNumber)    lineNumber = 0; return;
+#define XX_YIELD_F_TO_BEGIN(lineNumber)  lineNumber = 0; return false;
+#define XX_END(lineNumber)               }
