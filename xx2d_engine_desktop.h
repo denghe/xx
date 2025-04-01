@@ -64,7 +64,7 @@ namespace xx {
             }
         }
 
-        template<bool powerSaveMode = true>
+        template<int sleepValue = 0>
         void Run() {
             xx_assert(framePerSeconds);
 
@@ -113,10 +113,10 @@ namespace xx {
 
                 glfwSwapBuffers(wnd);
 
-                if constexpr (powerSaveMode && Derived::frameDelay > 0.005) {
+                if constexpr (sleepValue && Derived::frameDelay > 0.005) {
                     auto d = Derived::frameDelay - NowSteadyEpochSeconds(s);
                     while (d > 0.005) {
-                        Sleep(1);
+                        Sleep(sleepValue);
                         d -= 0.005;
                     }
                 }
