@@ -5,9 +5,11 @@ namespace xx {
 
 	struct Scale9SpriteConfig {
 		Ref<Frame> frame;
-		XY texScale;
-		UVRect center;
-		RGBA8 color;
+		XY texScale{};
+		UVRect center{};
+		RGBA8 color{};
+		float borderScale{};	// for button
+		RGBA8 txtColor{};		// for button
 
 		XX_INLINE XY GetCornerSize() const {
 			return { float(frame->textureRect.w - center.w), float(frame->textureRect.h - center.h) };
