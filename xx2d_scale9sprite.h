@@ -5,14 +5,15 @@ namespace xx {
 
 	struct Scale9SpriteConfig {
 		Ref<Frame> frame;
-		XY texScale{};
+		XY texScale{ 0.99, 0.99 };
 		UVRect center{};
-		RGBA8 color{};
-		float borderScale{};	// for button
-		RGBA8 txtColor{};		// for button
+		RGBA8 color{ xx::RGBA8{ 0x5f, 0x15, 0xd9, 0xff } };
+		float borderScale{ 1.f };
+		RGBA8 txtColor{ xx::RGBA8_White };
+		XY txtPadding{ 20, 5};
 
 		XX_INLINE XY GetCornerSize() const {
-			return { float(frame->textureRect.w - center.w), float(frame->textureRect.h - center.h) };
+			return { float(frame->textureRect.w - center.w) * borderScale, float(frame->textureRect.h - center.h) * borderScale };
 		}
 
 		XX_INLINE XY GetCornerScaledSize() const {

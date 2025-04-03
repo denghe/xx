@@ -11,7 +11,6 @@ namespace xx {
 		constexpr static float cBgColorplusNormal{ 1 };
 		constexpr static float cBgColorplusDark{ 0.75 };
 		constexpr static float cBgChangeColorplusSpeed{ cBgColorplusHighlight / 0.2 };
-		constexpr static XY cTextPadding{ 20, 5 };
 
 		std::function<void()> onClicked = [] { CoutN("button clicked."); };
 
@@ -26,8 +25,8 @@ namespace xx {
 
 			auto cornerSize = cfg_.GetCornerSize();
 			lbl = MakeChildren<Label>();
-			lbl->Init(z + 1, (cornerSize + cTextPadding) / 2, cfg_.texScale, {}, cfg_.txtColor, txt_);
-			size = lbl->size + cornerSize + cTextPadding;
+			lbl->Init(z + 1, (cornerSize + cfg_.txtPadding) / 2, cfg_.texScale, {}, cfg_.txtColor, txt_);
+			size = lbl->size + cornerSize + cfg_.txtPadding;
 
 			bg = MakeChildren<Scale9Sprite>();
 			bg->Init(z, {}, cfg_.borderScale, {}, size / cfg_.borderScale, cfg_);
