@@ -21,7 +21,7 @@ namespace xx {
 			auto len = (int)txt_.size();
 			fs.Resize(len);
 			auto& ctc = EngineBase2::Instance().ctcDefault;
-			size = { 0, (float)ctc.canvasHeight * scale.x };
+			size = { 0, (float)ctc.canvasHeight * scale.y };
 			for (int i = 0; i < len; ++i) {
 				fs[i] = &ctc.Find(txt_[i]);
 				size.x += fs[i]->texRect.w * scale.x;

@@ -141,7 +141,7 @@ namespace xx {
         Down = 1, Left = 2, Right = 4, Up = 8
     };
 
-    enum class VAligns {
+    enum class VAligns : uint8_t {
         Top,
         Center,
         Bottom

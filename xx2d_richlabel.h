@@ -5,7 +5,7 @@ namespace xx {
 
 	struct RichLabel : Node {
 
-		enum class ItemTypes {
+		enum class ItemTypes : uint8_t {
 			Unknown, Space, Text, Picture	// ... more
 		};
 
@@ -25,8 +25,8 @@ namespace xx {
 		};
 
 		struct Text : ItemBase {
+			TinyList<TinyFrame const*> chars;
 			RGBA8 color;
-			Listi32<TinyFrame const*> chars;
 			XY scale;
 			Text(VAligns align, RGBA8 color, XY const& scale) {
 				this->type = ItemTypes::Text;
@@ -288,7 +288,8 @@ namespace xx {
 				{
 					auto& t = o.As<Text>();
 					auto pos = basePos + XY{ t.x * worldScale.x, t.y * worldScale.y };
-					for (auto& f : t.chars) {
+					for(auto e = t.chars.Len(), i = 0; i < e; ++i) {
+						auto f = t.chars[i];
 						auto& q = *shader.Draw(f->tex->GetValue(), 1);
 						q.anchor = { 0.f, 0.f };
 						q.color = t.color;

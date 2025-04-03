@@ -2,7 +2,7 @@
 #include <xx2d_base2.h>
 #include <xx2d_label.h>
 #include <xx2d_richlabel.h>
-#include <xx2d_button.h>
+#include <xx2d_iconbutton.h>
 #include <xx2d_scrollview.h>
 
 namespace xx {

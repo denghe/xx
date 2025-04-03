@@ -17,20 +17,20 @@ namespace xx {
 		Shared<Label> lbl;
 		Shared<Scale9Sprite> bg;
 
-		// todo: scale support
+		void MakeContent(Scale9SpriteConfig const& cfg, std::u32string_view const& txt) {
+			lbl = MakeChildren<Label>();
+			lbl->Init(z + 1, { cfg.txtPadding.x, cfg.txtPaddingRightBottom.y }, cfg.txtScale, {}, cfg.txtColor, txt);
+			size = lbl->size + cfg.txtPadding + cfg.txtPaddingRightBottom;
+
+			bg = MakeChildren<Scale9Sprite>();
+			bg->Init(z, {}, cfg.borderScale, {}, size / cfg.borderScale, cfg);
+		}
+
 		void Init(int z_, XY const& position_, XY const& anchor_, Scale9SpriteConfig const& cfg_, std::u32string_view const& txt_) {
 			z = z_;
 			position = position_;
 			anchor = anchor_;
-
-			auto cornerSize = cfg_.GetCornerSize();
-			lbl = MakeChildren<Label>();
-			lbl->Init(z + 1, (cornerSize + cfg_.txtPadding) / 2, cfg_.texScale, {}, cfg_.txtColor, txt_);
-			size = lbl->size + cornerSize + cfg_.txtPadding;
-
-			bg = MakeChildren<Scale9Sprite>();
-			bg->Init(z, {}, cfg_.borderScale, {}, size / cfg_.borderScale, cfg_);
-
+			MakeContent(cfg_, txt_);
 			FillTransRecursive();
 		}
 
