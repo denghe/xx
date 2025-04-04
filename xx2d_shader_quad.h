@@ -170,10 +170,17 @@ void main() {
             quadCount += numQuads;
             return r;
         }
+        QuadInstanceData* Draw(Ref<GLTexture> const& tex, int32_t numQuads) {
+            return Draw(tex->GetValue(), numQuads);
+        }
 
         void Draw(GLuint texId, QuadInstanceData const& qv) {
             memcpy(Draw(texId, 1), &qv, sizeof(QuadInstanceData));
         }
+        void Draw(Ref<GLTexture> const& tex, QuadInstanceData const& qv) {
+			Draw(tex->GetValue(), qv);
+        }
+
     };
 
 }
