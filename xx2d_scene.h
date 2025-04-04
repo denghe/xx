@@ -3,7 +3,7 @@
 
 namespace xx {
 
-	struct SceneBase {
+	struct alignas(8) SceneBase {
 		xx::Tasks tasks;
 		virtual void Init() {};			// enter: gLooper.scene == old
 		virtual ~SceneBase() {}				//  exit: gLooper.scene == new
