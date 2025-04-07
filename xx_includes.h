@@ -226,6 +226,10 @@ namespace xx {
     template<typename T>
     struct FromTo {
         T from, to;
+		XX_INLINE void Limit(T& v) const {
+			if (v < from) v = from;
+			else if (v > to) v = to;
+		}
     };
 
     template<typename T>
