@@ -3,29 +3,48 @@
 
 namespace xx {
 
-	struct Image : Node {
-		TinyFrame frame;
-		RGBA8 color;
-		float colorplus;
+	enum class ImageRadians : int32_t {
+		Zero = 0,		// 0'
+		PiDiv2 = 1,		// 90'
+		Pi = 2,			// 180'
+		NegPiDiv2 = -1,	// -90'
+		NegPi = -2		// -180'
+	};
 
-		void Init(int z_, XY const& position_, XY const& scale_, XY const& anchor_, TinyFrame frame_, RGBA8 color_ = RGBA8_White, float colorplus_ = 1) {
-			Node::Init(z_, position_, scale_, anchor_, { frame_.texRect.w,frame_.texRect.h });
+	struct Image : Node {
+		TinyFrame frame{};
+		RGBA8 color{};
+		float colorplus{};
+		float radians{};
+		XY anchorSize{};
+
+		void Init(int z_, XY const& position_, XY const& scale_, XY const& anchor_, TinyFrame frame_, ImageRadians radians_ = ImageRadians::Zero, RGBA8 color_ = RGBA8_White, float colorplus_ = 1) {
+			auto r = (int32_t)radians_;
+			XY siz;
+			if (r == 1 || r == -1) {
+				siz = { frame_.texRect.h * scale_.y, frame_.texRect.w * scale_.x };
+			}
+			else {
+				siz = { frame_.texRect.w * scale_.x, frame_.texRect.h * scale_.y };
+			}
+			anchorSize = siz * anchor;
+			radians = float(M_PI) * 0.5f * r;
+			Node::Init(z_, position_, scale_, anchor_, siz);
 			frame = frame_;
 			color = color_;
 			colorplus = colorplus_;
-			FillTrans();
 		}
 
-		void Init(int z_, XY const& position_, XY const& scale_, XY const& anchor_, Ref<Frame> const& frame_, RGBA8 color_ = RGBA8_White, float colorplus_ = 1) {
-			Init(z_, position_, scale_, anchor_, { frame_->tex, frame_->textureRect }, color_, colorplus_);
+		void Init(int z_, XY const& position_, XY const& scale_, XY const& anchor_, Ref<Frame> const& frame_, ImageRadians radians_ = ImageRadians::Zero, RGBA8 color_ = RGBA8_White, float colorplus_ = 1) {
+			Init(z_, position_, scale_, anchor_, { frame_->tex, frame_->textureRect }, radians_, color_, colorplus_);
 		}
 
 		void Draw() override {
 			auto q = EngineBase1::Instance().ShaderBegin(EngineBase1::Instance().shaderQuadInstance).Draw(frame.tex->GetValue(), 1);
-			q->pos = worldMinXY;
-			q->anchor = { 0, 0.5f };
+			q->pos = worldMinXY + anchorSize;
+			q->anchor = 0.5f;
 			q->scale = worldScale;
-			q->radians = {};
+			q->radians = radians;
 			q->colorplus = colorplus;
 			q->color = { color.r, color.g, color.b, (uint8_t)(color.a * alpha) };
 			q->texRect.data = frame.texRect.data;
@@ -44,7 +63,7 @@ namespace xx {
 			if (icon_.texRect.h) {
 				auto s = (size.y - cfg_.iconPadding * 2) /  icon_.texRect.h;
 				icon = MakeChildren<Image>();
-				icon->Init(z + 1, { cfg_.iconPadding, size.y * 0.5f }, s, {}, icon_);
+				icon->Init(z + 1, { cfg_.iconPadding, size.y * 0.5f }, s, { 0, 0.5f }, icon_);
 			}
 
 			FillTransRecursive();

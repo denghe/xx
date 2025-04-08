@@ -26,12 +26,13 @@ namespace xx {
 			bg->Init(z, {}, cfg.borderScale, {}, size / cfg.borderScale, cfg);
 		}
 
-		void Init(int z_, XY const& position_, XY const& anchor_, Scale9SpriteConfig const& cfg_, std::u32string_view const& txt_) {
+		Button& Init(int z_, XY const& position_, XY const& anchor_, Scale9SpriteConfig const& cfg_, std::u32string_view const& txt_) {
 			z = z_;
 			position = position_;
 			anchor = anchor_;
 			MakeContent(cfg_, txt_);
 			FillTransRecursive();
+			return *this;
 		}
 
 		template<typename F>

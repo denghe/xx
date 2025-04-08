@@ -373,8 +373,8 @@ namespace xx {
         XX_INLINE void PosScaleAnchorSize(XY const& pos, XY const& scale, XY const& anchorSize) {
             a = scale.x;
             d = scale.y;
-            tx = pos.x - scale.x * anchorSize.x;
-            ty = pos.y - scale.y * anchorSize.y;
+            tx = pos.x - /*scale.x * */anchorSize.x;
+            ty = pos.y - /*scale.y * */anchorSize.y;
         }
 
         XX_INLINE void Identity() {
