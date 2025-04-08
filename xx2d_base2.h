@@ -7,6 +7,7 @@
 #include <xx2d_repeat_quad.h>
 #include <xx2d_linestrip.h>
 #include <xx2d_dynamictexturepacker.h>
+#include <xx2d_scale9.h>
 #include <xx2d_scale9sprite.h>
 #include <xx2d_camera.h>
 #include <xx2d_scene.h>
