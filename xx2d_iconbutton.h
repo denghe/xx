@@ -54,30 +54,21 @@ namespace xx {
 	struct IconButton : Button {
 		Shared<Image> icon;
 
-		void Init(int z_, XY const& position_, XY const& anchor_, Scale9SpriteConfig const& cfg_, TinyFrame const& icon_, std::u32string_view const& txt_) {
+		IconButton& Init(int z_, XY const& pos_, XY const& anchor_, Scale9SpriteConfig const& cfg_, TinyFrame const& icon_, std::u32string_view const& txt_, ImageRadians iconRadians_ = ImageRadians::Zero, RGBA8 iconColor_ = RGBA8_White, float iconColorplus_ = 1) {
 			z = z_;
-			position = position_;
+			position = pos_;
 			anchor = anchor_;
 			MakeContent(cfg_, txt_);
-
 			if (icon_.texRect.h) {
 				auto s = (size.y - cfg_.iconPadding * 2) /  icon_.texRect.h;
 				icon = MakeChildren<Image>();
-				icon->Init(z + 1, { cfg_.iconPadding, size.y * 0.5f }, s, { 0, 0.5f }, icon_);
+				icon->Init(z + 1, { cfg_.iconPadding, size.y * 0.5f }, s, { 0, 0.5f }, icon_, iconRadians_, iconColor_, iconColorplus_);
 			}
-
 			FillTransRecursive();
+			return *this;
 		}
-
-		template<typename F>
-		void Init(int z_, XY const& position_, XY const& anchor_, Scale9SpriteConfig const& cfg_, TinyFrame const& icon_, std::u32string_view const& txt_, F&& callback) {
-			Init(z_, position_, anchor_, cfg_, icon_, txt_);
-			onClicked = std::forward<F>(callback);
-		}
-
-		template<typename F>
-		void Init(int z_, XY const& position_, XY const& anchor_, Scale9SpriteConfig const& cfg_, Ref<Frame> const& icon_, std::u32string_view const& txt_, F&& callback) {
-			Init(z_, position_, anchor_, cfg_, TinyFrame{ icon_->tex, icon_->textureRect }, txt_, std::forward<F>(callback));
+		IconButton& Init(int z_, XY const& pos_, XY const& anchor_, Scale9SpriteConfig const& cfg_, Ref<Frame> const& icon_, std::u32string_view const& txt_, ImageRadians iconRadians_ = ImageRadians::Zero, RGBA8 iconColor_ = RGBA8_White, float iconColorplus_ = 1) {
+			return Init(z_, pos_, anchor_, cfg_, TinyFrame{ icon_->tex, icon_->textureRect }, txt_, iconRadians_, iconColor_, iconColorplus_);
 		}
 	};
 
@@ -99,7 +90,6 @@ namespace xx {
 			frame = frame_;
 			color = color_;
 			colorplus = colorplus_;
-			FillTrans();
 			return *this;
 		}
 		ImageButton& Init(int z_, XY const& pos_, XY const& anchor_, XY const& size_, Ref<Frame> frame_, RGBA8 color_ = RGBA8_White, float colorplus_ = 1) {
@@ -165,6 +155,47 @@ namespace xx {
 			assert(gEngine->mouseEventHandler.pointer() == this);
 			gEngine->mouseEventHandler.Reset();
 			colorplus = cBgColorplusNormal;
+			if (MousePosInArea()) {
+				onClicked();
+			}
+		}
+	};
+
+	// usually for full screen click avoid
+	struct SwallowButton : MouseEventHandlerNode {
+
+		std::function<void()> onClicked = [] { CoutN("SwallowButton clicked."); };
+
+		// example: sb.Init(.....).onClicked = [](){ ... };
+		SwallowButton& Init(int z_, XY const& pos_ = {}, XY const& anchor_ = 0.5f, XY const& size_ = gEngine->windowSize) {
+			Node::Init(z_, pos_, XY{ 1,1 }, anchor_, size_);
+			return *this;
+		}
+
+		void Draw() override {}
+
+		XY mPos{};
+		virtual void OnMouseDown() override {
+			assert(!gEngine->mouseEventHandler);
+			gEngine->mouseEventHandler = WeakFromThis(this);
+			mPos = gEngine->mouse.pos;
+		}
+
+		virtual void OnMouseMove() override {
+			if (gEngine->mouseEventHandler.pointer() != this) {		// mbtn up
+			}
+			else if (scissor) {
+				// check scroll view & detect move distance & set handler to sv
+				if (Calc::DistancePow2(mPos, gEngine->mouse.pos) > 3 * 3) {
+					gEngine->mouseEventHandler.Reset();
+					scissor.Lock().As<MouseEventHandlerNode>()->OnMouseDown();
+				}
+			}
+		}
+
+		virtual void OnMouseUp() override {
+			assert(gEngine->mouseEventHandler.pointer() == this);
+			gEngine->mouseEventHandler.Reset();
 			if (MousePosInArea()) {
 				onClicked();
 			}
