@@ -202,4 +202,21 @@ namespace xx {
 		}
 	};
 
+
+	struct EmptyButton : Button {
+
+		EmptyButton& Init(int z_, XY const& pos_, XY const& anchor_, Scale9SpriteConfig const& cfg_, XY const& size_) {
+			z = z_;
+			position = pos_;
+			anchor = anchor_;
+			Node::Init(z_, pos_, 1, anchor_, size_);
+		
+			bg = MakeChildren<Scale9Sprite>();
+			bg->Init(z, {}, cfg_.borderScale, {}, size / cfg_.borderScale, cfg_);
+
+			return *this;
+		}
+
+	};
+
 }

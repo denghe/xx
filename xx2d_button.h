@@ -34,6 +34,9 @@ namespace xx {
 			FillTransRecursive();
 			return *this;
 		}
+		Button& Init(int z_, XY const& position_, XY const& anchor_, Scale9SpriteConfig const& cfg_, std::string_view const& txt_) {
+			return Init(z_, position_, anchor_, cfg_, StringU8ToU32(txt_));
+		}
 
 		template<typename F>
 		void Init(int z_, XY const& position_, XY const& anchor_, Scale9SpriteConfig const& cfg_, std::u32string_view const& txt_, F&& callback) {
