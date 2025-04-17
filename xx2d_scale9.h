@@ -13,6 +13,7 @@ namespace xx {
 		XY size{};
 		XY pos{};
 		XY anchor{};
+		XY scale{ 1, 1 };
 		float radians{};		// clockwise
 		float colorplus{ 1 };
 		RGBA8 color{ 255, 255, 255, 255 };
@@ -40,31 +41,35 @@ namespace xx {
 			uint16_t th2 = center.h;
 			uint16_t th3 = r.h - (center.y + center.h);
 
-			float sx = float(size.x - tw1 * texScale.x - tw3 * texScale.x) / tw2;
-			float sy = float(size.y - th1 * texScale.y - th3 * texScale.y) / th2;
+			auto ss = size * scale;
+			auto ts = texScale * scale;
+			auto co = centerOffset * scale;
+
+			float sx = float(ss.x - tw1 * ts.x - tw3 * ts.x) / tw2;
+			float sy = float(ss.y - th1 * ts.y - th3 * ts.y) / th2;
 #ifndef NDEBUG
 			if (sx < 0 || sy < 0) {
-				CoutN(" sx = ", sx, " sy = ", sy, " texScale = ", texScale);
+				CoutN(" sx = ", sx, " sy = ", sy, " ts = ", ts);
 				xx_assert(false);
 			}
 #endif
 			float px1 = 0;
-			float px2 = tw1 * texScale.x;
-			float px3 = size.x - tw3 * texScale.x;
+			float px2 = tw1 * ts.x;
+			float px3 = ss.x - tw3 * ts.x;
 
-			float py1 = size.y;
-			float py2 = size.y - (th1 * texScale.y);
-			float py3 = size.y - (size.y - th3 * texScale.y);
+			float py1 = ss.y;
+			float py2 = ss.y - (th1 * ts.y);
+			float py3 = ss.y - (ss.y - th3 * ts.y);
 
 			auto offset = pos;
 
 			AffineTransform at;
 			if constexpr (enableRotation) {
-				at = AffineTransform::MakePosScaleRadiansAnchorSize({}, 1, radians, anchor * size);
+				at = AffineTransform::MakePosScaleRadiansAnchorSize({}, 1, radians, anchor * ss);
 			}
 			else {
 				radians = 0;
-				offset -= anchor * size;
+				offset -= anchor * ss;
 			}
 
 			{
@@ -76,7 +81,7 @@ namespace xx {
 					q.pos = offset + XY{ px1, py1 };
 				}
 				q.anchor = { 0, 1 };
-				q.scale = texScale;
+				q.scale = ts;
 				q.radians = radians;
 				q.colorplus = colorplus;
 				q.color = color;
@@ -91,7 +96,7 @@ namespace xx {
 					q.pos = offset + XY{ px2, py1 };
 				}
 				q.anchor = { 0, 1 };
-				q.scale = { sx, texScale.y };
+				q.scale = { sx, ts.y };
 				q.radians = radians;
 				q.colorplus = colorplus;
 				q.color = color;
@@ -106,7 +111,7 @@ namespace xx {
 					q.pos = offset + XY{ px3, py1 };
 				}
 				q.anchor = { 0, 1 };
-				q.scale = texScale;
+				q.scale = ts;
 				q.radians = radians;
 				q.colorplus = colorplus;
 				q.color = color;
@@ -121,7 +126,7 @@ namespace xx {
 					q.pos = offset + XY{ px1, py2 };
 				}
 				q.anchor = { 0, 1 };
-				q.scale = { texScale.x, sy };
+				q.scale = { ts.x, sy };
 				q.radians = radians;
 				q.colorplus = colorplus;
 				q.color = color;
@@ -130,10 +135,10 @@ namespace xx {
 			{
 				auto& q = qs[4];
 				if constexpr (enableRotation) {
-					q.pos = offset + at({ px2 + centerOffset.x + tw2 * centerScale.x * centerAnchor.x, py2 + centerOffset.y + th2 * centerScale.y * (1 - centerAnchor.y) });
+					q.pos = offset + at({ px2 + co.x + tw2 * centerScale.x * centerAnchor.x, py2 + co.y + th2 * centerScale.y * (1 - centerAnchor.y) });
 				}
 				else {
-					q.pos = offset + XY{ px2 + centerOffset.x + tw2 * centerScale.x * centerAnchor.x, py2 + centerOffset.y + th2 * centerScale.y * (1 - centerAnchor.y) };
+					q.pos = offset + XY{ px2 + co.x + tw2 * centerScale.x * centerAnchor.x, py2 + co.y + th2 * centerScale.y * (1 - centerAnchor.y) };
 				}
 				q.anchor = centerAnchor;
 				if (drawCenter) {
@@ -156,7 +161,7 @@ namespace xx {
 					q.pos = offset + XY{ px3, py2 };
 				}
 				q.anchor = { 0, 1 };
-				q.scale = { texScale.x, sy };
+				q.scale = { ts.x, sy };
 				q.radians = radians;
 				q.colorplus = colorplus;
 				q.color = color;
@@ -171,7 +176,7 @@ namespace xx {
 					q.pos = offset + XY{ px1, py3 };
 				}
 				q.anchor = { 0, 1 };
-				q.scale = texScale;
+				q.scale = ts;
 				q.radians = radians;
 				q.colorplus = colorplus;
 				q.color = color;
@@ -186,7 +191,7 @@ namespace xx {
 					q.pos = offset + XY{ px2, py3 };
 				}
 				q.anchor = { 0, 1 };
-				q.scale = { sx, texScale.y };
+				q.scale = { sx, ts.y };
 				q.radians = radians;
 				q.colorplus = colorplus;
 				q.color = color;
@@ -201,7 +206,7 @@ namespace xx {
 					q.pos = offset + XY{ px3, py3 };
 				}
 				q.anchor = { 0, 1 };
-				q.scale = texScale;
+				q.scale = ts;
 				q.radians = radians;
 				q.colorplus = colorplus;
 				q.color = color;
