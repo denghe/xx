@@ -6,7 +6,8 @@ namespace xx {
     struct FrameBuffer {
         GLFrameBuffer fb;
         XY bakWndSiz{};
-        std::array<uint32_t, 3> bakBlend;
+        std::array<uint32_t, 3> bakBlend{};
+        XYu bakTexSiz{};
 
         // need ogl frame env
         explicit FrameBuffer(bool autoInit = false) {
@@ -27,16 +28,16 @@ namespace xx {
         }
 
         template<typename Func>
-        void DrawTo(Ref<GLTexture>& t, std::optional<RGBA8> const& c, Func&& func) {
+        void DrawTo(Ref<GLTexture>& t, std::optional<RGBA8> const& c, Func&& func, Data* store = {}) {
             Begin(t, c);
             func();
-            End();
+            End(store);
         }
 
         template<typename Func>
-        Ref<GLTexture> Draw(XYu const& wh, bool hasAlpha, std::optional<RGBA8> const& c, Func&& func) {
+        Ref<GLTexture> Draw(XYu const& wh, bool hasAlpha, std::optional<RGBA8> const& c, Func&& func, Data* store = {}) {
             auto t = MakeTexture(wh, hasAlpha);
-            DrawTo(t, c, std::forward<Func>(func));
+            DrawTo(t, c, std::forward<Func>(func), store);
             return t;
         }
 
@@ -47,6 +48,7 @@ namespace xx {
             eb.ShaderEnd();
             bakWndSiz = eb.windowSize;
             bakBlend = eb.blend;
+            bakTexSiz = { t->Width(), t->Height() };
             eb.SetWindowSize((float)t->Width(), (float)t->Height());
             eb.flipY = -1;
             BindGLFrameBufferTexture(fb, *t);
@@ -56,9 +58,13 @@ namespace xx {
             }
             eb.GLBlendFunc(eb.blendDefault);
         }
-        void End() {
+
+        void End(Data* store = {}) {
             auto& eb = EngineBase1::Instance();
             eb.ShaderEnd();
+            if (store) {
+                GLFrameBufferSaveTo(*store, 0, 0, bakTexSiz.x, bakTexSiz.y);
+            }
             UnbindGLFrameBuffer();
             eb.SetWindowSize(bakWndSiz.x, bakWndSiz.y);
             eb.flipY = 1;

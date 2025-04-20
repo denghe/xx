@@ -215,6 +215,13 @@ namespace xx {
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
+	// only support GL_RGBA, GL_UNSIGNED_BYTE
+	inline void GLFrameBufferSaveTo(Data& tar, GLint x, GLint y, GLsizei width, GLsizei height) {
+		auto siz = width * height * 4;
+		tar.Resize(siz);
+		glReadPixels(x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, tar.buf);
+	}
+
 
 	/**********************************************************************************************************************************/
 	/**********************************************************************************************************************************/
