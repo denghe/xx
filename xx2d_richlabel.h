@@ -216,6 +216,45 @@ namespace xx {
 			return AddText(StringU8ToU32(text), scale_, color, align);
 		}
 
+		// SetOffset( width - txtWidth ) + AddText( txt )
+		// txt can't newLine
+		RichLabel& AddRightText(std::u32string_view const& text, XY const& scale_ = { 1, 1 }, RGBA8 color = RGBA8_White, VAligns align = VAligns::Center) {
+			auto& ctc = EngineBase2::Instance().ctcDefault;
+			float txtWidth{};
+			for (auto& c : text) {
+				txtWidth += ctc.Find(c).texRect.w * scale_.x;
+			}
+			assert(width >= txtWidth);
+			SetOffset(width - txtWidth);
+			AddText(text, scale_, color, align);
+			return *this;
+		}
+		RichLabel& AddRightText(std::string_view const& text, XY const& scale_ = { 1, 1 }, RGBA8 color = RGBA8_White, VAligns align = VAligns::Center) {
+			return AddRightText(StringU8ToU32(text), scale_, color, align);
+		}
+
+		// AddText( txt, auto scale x )
+		// txt can't newLine
+		RichLabel& AddLimitedWidthText(std::u32string_view const& text, float txtWidth, XY const& scale_ = { 1, 1 }, RGBA8 color = RGBA8_White, VAligns align = VAligns::Center) {
+			auto& ctc = EngineBase2::Instance().ctcDefault;
+			float tw{};
+			for (auto& c : text) {
+				tw += ctc.Find(c).texRect.w * scale_.x;
+			}
+			if (tw <= txtWidth) {
+				AddText(text, scale_, color, align);
+			}
+			else {
+				AddText(text, { scale_.x / tw * txtWidth, scale_.y }, color, align);
+			}
+			return *this;
+		}
+		RichLabel& AddLimitedWidthText(std::string_view const& text, float txtWidth, XY const& scale_ = { 1, 1 }, RGBA8 color = RGBA8_White, VAligns align = VAligns::Center) {
+			return AddLimitedWidthText(StringU8ToU32(text), txtWidth, scale_, color, align);
+		}
+
+
+
 		RichLabel& AddPicture(Ref<Quad> quad, VAligns align = VAligns::Center) {
 			assert(quad);
 			quad->anchor = {};
