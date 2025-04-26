@@ -174,13 +174,13 @@ namespace xx {
 			}
 		}
 
-		void LineInit() {
+		XX_INLINE void LineInit() {
 			lineX = {};
 			lineHeight = {};
 			lineItemsCount = {};
 		}
 
-		void NewLine() {
+		XX_INLINE void NewLine() {
 			FillY();
 			LineInit();
 		}
@@ -193,8 +193,8 @@ namespace xx {
 			TinyFrame* charFrame{};
 			float charWidth, leftWidth{};
 			for (auto& c : text) {
-				if (c == '\r') continue;
-				else if (c == '\n') {
+				if (c == U'\r') continue;
+				else if (c == U'\n') {
 					NewLine();
 				} else {
 					charFrame = &ctc.Find(c);
@@ -217,7 +217,7 @@ namespace xx {
 		}
 
 		// SetOffset( width - txtWidth ) + AddText( txt )
-		// txt can't newLine
+		// txt can't include /r/n
 		RichLabel& AddRightText(std::u32string_view const& text, XY const& scale_ = { 1, 1 }, RGBA8 color = RGBA8_White, VAligns align = VAligns::Center) {
 			auto& ctc = EngineBase2::Instance().ctcDefault;
 			float txtWidth{};
@@ -227,6 +227,7 @@ namespace xx {
 			assert(width >= txtWidth);
 			SetOffset(width - txtWidth);
 			AddText(text, scale_, color, align);
+			lineX = width;
 			return *this;
 		}
 		RichLabel& AddRightText(std::string_view const& text, XY const& scale_ = { 1, 1 }, RGBA8 color = RGBA8_White, VAligns align = VAligns::Center) {
@@ -234,7 +235,7 @@ namespace xx {
 		}
 
 		// AddText( txt, auto scale x )
-		// txt can't newLine
+		// txt can't include /r/n
 		RichLabel& AddLimitedWidthText(std::u32string_view const& text, float txtWidth, XY const& scale_ = { 1, 1 }, RGBA8 color = RGBA8_White, VAligns align = VAligns::Center) {
 			auto& ctc = EngineBase2::Instance().ctcDefault;
 			float tw{};
