@@ -7,13 +7,14 @@ namespace xx {
 		Listi32<TinyFrame const*> fs;
 		RGBA8 color;
 
-		void Init(int z_, XY const& position_, XY const& scale_, XY const& anchor_, RGBA8 color_, std::u32string_view const& txt_) {
+		Label& Init(int z_, XY const& position_, XY const& scale_, XY const& anchor_, RGBA8 color_, std::u32string_view const& txt_) {
 			z = z_;
 			position = position_;
 			anchor = anchor_;
 			scale = scale_;
 			color = color_;
 			SetText(txt_);
+			return *this;
 		}
 
 
@@ -29,8 +30,8 @@ namespace xx {
 			FillTrans();
 		}
 
-		void Init(int z_, XY const& position_, XY const& scale_, XY const& anchor_, RGBA8 color_, std::string_view const& txt_) {
-			Init(z_, position_, scale_, anchor_, color_, StringU8ToU32(txt_));
+		Label& Init(int z_, XY const& position_, XY const& scale_, XY const& anchor_, RGBA8 color_, std::string_view const& txt_) {
+			return Init(z_, position_, scale_, anchor_, color_, StringU8ToU32(txt_));
 		}
 
 		void SetText(std::string_view const& txt_) {
