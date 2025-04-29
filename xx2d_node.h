@@ -17,6 +17,7 @@ namespace xx {
 		float alpha{ 1 };
 		int z{};													// global z for event priority or batch combine
 		bool inParentArea{ true };									// panel true ? combo box pop false ?
+		int32_t indexAtParentChildren{-1};
 
 
 		// for init
@@ -77,14 +78,6 @@ namespace xx {
 			}
 		}
 
-		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Node, T>>>
-		XX_INLINE Shared<T>& MakeChildren() {
-			auto& r = children.Emplace().Emplace<T>();
-			r->parent = WeakFromThis(this);
-			r->scissor = scissor;
-			r->inParentArea = !size.IsZeroSimple();
-			return r;
-		}
 
 		XX_INLINE void Init(int z_ = 0, XY const& position_ = {}, XY const& scale_ = { 1,1 }, XY const& anchor_ = {}, XY const& size_ = {}) {
 			z = z_;
@@ -98,6 +91,33 @@ namespace xx {
 		XX_INLINE void Init_Root() {
 			Init(0, -gEngine->windowSize_2, { 1,1 }, {}, gEngine->windowSize);
 		}
+
+
+		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Node, T>>>
+		XX_INLINE Shared<T>& AddChildren(Shared<T> c) {
+			assert(c);
+			assert(!c->parent);
+			assert(c->indexAtParentChildren == -1);
+			c->parent = WeakFromThis(this);
+			c->indexAtParentChildren = children.len;
+			c->scissor = scissor;
+			c->inParentArea = !size.IsZeroSimple();
+			return (Shared<T>&)children.Emplace(std::move(c));
+		}
+
+		template<typename T, typename = std::enable_if_t<std::is_base_of_v<Node, T>>>
+		XX_INLINE Shared<T>& MakeChildren() {
+			return AddChildren(MakeShared<T>());
+		}
+
+		void SwapRemoveFromParent() {
+			assert(parent);
+			assert(parent->children[indexAtParentChildren].pointer == this);
+			auto i = parent->children.Back()->indexAtParentChildren = indexAtParentChildren;
+			indexAtParentChildren = -1;
+			parent->children.SwapRemoveAt(i);
+		}
+
 
 		virtual void TransUpdate() {};
 		virtual void Draw() {};									// draw current node only ( do not contain children )
