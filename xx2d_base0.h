@@ -51,16 +51,26 @@ namespace xx {
         Audio audio;
 #endif
 
+        static constexpr XY anchor7{ 0, 1   }, anchor8{ 0.5, 1   }, anchor9{ 1, 1   };
+        static constexpr XY anchor4{ 0, 0.5 }, anchor5{ 0.5, 0.5 }, anchor6{ 1, 0.5 };
+        static constexpr XY anchor1{ 0, 0   }, anchor2{ 0.5, 0   }, anchor3{ 1, 0   };
+
         // fill after Init()
         float framePerSeconds{}, maxFrameDelay{ 0.1f };
         XY windowSize{}, windowSize_2{};
         XY worldMinXY{}, worldMaxXY{}, worldSize{};             // for node easy access
+        XY pos7{}, pos8{}, pos9{};
+        XY pos4{}, pos5{}, pos6{};
+        XY pos1{}, pos2{}, pos3{};
         void SetWindowSize(float w, float h) {
             windowSize = { w, h };
             windowSize_2 = windowSize / 2;
             worldSize = windowSize;
             worldMinXY = -windowSize_2;
             worldMaxXY = windowSize_2;
+            pos7 = { -windowSize_2.x, +windowSize_2.y }; pos8 = { 0, +windowSize_2.y }; pos9 = { +windowSize_2.x, +windowSize_2.y };
+            pos4 = { -windowSize_2.x, 0               }; pos5 = { 0, 0               }; pos6 = { +windowSize_2.x, 0               };
+            pos1 = { -windowSize_2.x, -windowSize_2.y }; pos2 = { 0, -windowSize_2.y }; pos3 = { +windowSize_2.x, -windowSize_2.y };
         }
 
         RGBA8 clearColor{};

@@ -62,7 +62,9 @@ namespace xx {
         static constexpr XY xy8{ x8, y8 };
         static constexpr XY xy9{ x9, y9 };
 
-        // m mean margin
+        // m: margin
+        // a: anchor
+
         static constexpr float xym = 10.f;
         static constexpr XY xy1m{ x1 + xym, y1 + xym };
         static constexpr XY xy2m{ x2, y2 + xym };
@@ -74,7 +76,6 @@ namespace xx {
         static constexpr XY xy8m{ x8, y8 - xym };
         static constexpr XY xy9m{ x9 - xym, y9 - xym };
 
-        // a mean anchoa
         static constexpr XY xy1a{ 0, 0 };
         static constexpr XY xy2a{ 0.5, 0 };
         static constexpr XY xy3a{ 1, 0 };

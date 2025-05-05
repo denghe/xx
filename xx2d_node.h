@@ -118,6 +118,11 @@ namespace xx {
 			parent->children.SwapRemoveAt(i);
 		}
 
+		XX_INLINE void Clear() {
+			for (auto i = children.len - 1; i >= 0; --i) {
+				children[i]->SwapRemoveFromParent();
+			}
+		}
 
 		virtual void TransUpdate() {};
 		virtual void Draw() {};									// draw current node only ( do not contain children )
