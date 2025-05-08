@@ -7,6 +7,7 @@
 #include <xx2d_shader.h>
 #include <xx2d_shader_linestrip.h>
 #include <xx2d_shader_quad.h>
+#include <xx2d_shader_vertexs.h>
 #include <xx2d_texturepacker.h>
 #include <xx2d_tiledmap_sede.h>
 #ifdef ENABLE_ENGINE_IMGUI
@@ -22,6 +23,7 @@ namespace xx {
 
         Shader_QuadInstance shaderQuadInstance;
         Shader_LineStrip shaderLineStrip;
+        Shader_Vertexs shaderVertexs;
         // ... more
 
 #ifdef ENABLE_ENGINE_IMGUI
@@ -141,8 +143,9 @@ namespace xx {
             glDisable(GL_DEPTH_TEST);
             glEnable(GL_BLEND);
 
-            shaderQuadInstance.Init(this);
-            shaderLineStrip.Init(this);
+            shaderQuadInstance.Init();
+            shaderLineStrip.Init();
+            shaderVertexs.Init();
             // ... more
 
 #ifdef ENABLE_ENGINE_IMGUI

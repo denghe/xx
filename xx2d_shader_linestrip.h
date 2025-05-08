@@ -8,21 +8,16 @@ namespace xx {
 
     struct Shader_LineStrip : Shader {
         using Shader::Shader;
-        GLint uCxy = -1, aPos = -1, aColor = -1;
+        GLint aPos{ -1 }, aColor{ -1 };
         GLVertexArrays va;
         GLBuffer vb, ib;
 
         static constexpr int32_t maxIndexNums = int32_t(maxVertNums * 1.5);
+        int32_t pointsCount{}, indexsCount{};
         std::unique_ptr<XYRGBA8[]> points = std::make_unique_for_overwrite<XYRGBA8[]>(maxVertNums);
-        int32_t pointsCount = 0;
         std::unique_ptr<uint16_t[]> indexs = std::make_unique_for_overwrite<uint16_t[]>(maxIndexNums);
-        int32_t indexsCount = 0;
 
-        EngineBase0* eb{};
-
-        void Init(EngineBase0* eb_) {
-            eb = eb_;
-
+        void Init() {
             v = LoadGLVertexShader({ R"(#version 300 es
 precision highp float;
 uniform vec2 uCxy;	// screen center coordinate
@@ -77,14 +72,14 @@ void main() {
         }
 
         virtual void Begin() override {
-            assert(!eb->shader);
+            assert(!gEngine->shader);
             glUseProgram(p);
-            glUniform2f(uCxy, 2 / eb->windowSize.x, 2 / eb->windowSize.y * eb->flipY);
+            glUniform2f(uCxy, 2 / gEngine->windowSize.x, 2 / gEngine->windowSize.y * gEngine->flipY);
             glBindVertexArray(va);
         }
 
         virtual void End() override {
-            assert(eb->shader == this);
+            assert(gEngine->shader == this);
             if (indexsCount) {
                 Commit();
             }
@@ -106,7 +101,7 @@ void main() {
         }
 
         XYRGBA8* Draw(int32_t pc) {
-            assert(eb->shader == this);
+            assert(gEngine->shader == this);
             assert(pc <= maxVertNums);
             auto&& c = pointsCount + pc;
             if (c > maxVertNums) {

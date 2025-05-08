@@ -16,7 +16,7 @@ namespace xx {
 
     struct Shader_QuadInstance : Shader {
         using Shader::Shader;
-        GLint uCxy{ -1 }, uTex0{ -1 }, aVert{ -1 }, aPosAnchor{ -1 }, aScaleRadiansColorplus{ -1 }, aColor{ -1 }, aTexRect{ -1 };
+        GLint uTex0{ -1 }, aVert{ -1 }, aPosAnchor{ -1 }, aScaleRadiansColorplus{ -1 }, aColor{ -1 }, aTexRect{ -1 };
         GLVertexArrays va;
         GLBuffer vb, ib;
 
@@ -24,10 +24,8 @@ namespace xx {
         GLuint lastTextureId{};
         std::unique_ptr<QuadInstanceData[]> quadInstanceDatas = std::make_unique_for_overwrite<QuadInstanceData[]>(maxQuadNums);
         int32_t quadCount{};
-        EngineBase0* eb{};
 
-        void Init(EngineBase0* eb_) {
-            eb = eb_;
+        void Init() {
 
             v = LoadGLVertexShader({ R"(#version 300 es
 uniform vec2 uCxy;	// screen center coordinate
@@ -126,16 +124,16 @@ void main() {
         }
 
         virtual void Begin() override {
-            assert(!eb->shader);
+            assert(!gEngine->shader);
             glUseProgram(p);
             glActiveTexture(GL_TEXTURE0/* + textureUnit*/);
             glUniform1i(uTex0, 0);
-            glUniform2f(uCxy, 2 / eb->windowSize.x, 2 / eb->windowSize.y * eb->flipY);
+            glUniform2f(uCxy, 2 / gEngine->windowSize.x, 2 / gEngine->windowSize.y * gEngine->flipY);
             glBindVertexArray(va);
         }
 
         virtual void End() override {
-            assert(eb->shader == this);
+            assert(gEngine->shader == this);
             if (quadCount) {
                 Commit();
             }
@@ -160,7 +158,7 @@ void main() {
         }
 
         QuadInstanceData* Draw(GLuint texId, int32_t numQuads) {
-            assert(eb->shader == this);
+            assert(gEngine->shader == this);
             assert(numQuads <= maxQuadNums);
             if (quadCount + numQuads > maxQuadNums || (lastTextureId && lastTextureId != texId)) {
                 Commit();

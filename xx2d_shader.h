@@ -6,7 +6,7 @@
 namespace xx {
 
     struct Shader {
-        static const size_t maxVertNums = 65535;	// 65535 for primitive restart index
+        static constexpr size_t maxVertNums{ 65535 };	// 65535 for primitive restart index
 
         inline static int drawVerts{}, drawCall{};
         inline static void ClearCounter() {
@@ -16,6 +16,8 @@ namespace xx {
 
         GLShader v, f;
         GLProgram p;
+        GLint uCxy{-1};
+
         Shader() = default;
         Shader(Shader const&) = delete;
         Shader& operator=(Shader const&) = delete;
