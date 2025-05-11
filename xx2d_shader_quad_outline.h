@@ -90,30 +90,27 @@ void main() {
     vec2 p2 = vec2(vTexCoord.x + vOutlineThickness.x, vTexCoord.y + vOutlineThickness.y);
     vec2 p3 = vec2(vTexCoord.x + vOutlineThickness.x, vTexCoord.y - vOutlineThickness.y);
     vec2 p4 = vec2(vTexCoord.x - vOutlineThickness.x, vTexCoord.y - vOutlineThickness.y);
-
-    vec2 p5 = vec2(vTexCoord.x, vTexCoord.y + vOutlineThickness.y);
-    vec2 p6 = vec2(vTexCoord.x, vTexCoord.y - vOutlineThickness.y);
-    vec2 p7 = vec2(vTexCoord.x + vOutlineThickness.x, vTexCoord.y);
-    vec2 p8 = vec2(vTexCoord.x - vOutlineThickness.x, vTexCoord.y);
-
     float a1 = vColor.w * texture(uTex0, p1 / texSize).w;
     float a2 = vColor.w * texture(uTex0, p2 / texSize).w;
     float a3 = vColor.w * texture(uTex0, p3 / texSize).w;
     float a4 = vColor.w * texture(uTex0, p4 / texSize).w;
 
-    float a5 = vColor.w * texture(uTex0, p5 / texSize).w;
-    float a6 = vColor.w * texture(uTex0, p6 / texSize).w;
-    float a7 = vColor.w * texture(uTex0, p7 / texSize).w;
-    float a8 = vColor.w * texture(uTex0, p8 / texSize).w;
+    // vec2 p5 = vec2(vTexCoord.x, vTexCoord.y + vOutlineThickness.y);
+    // vec2 p6 = vec2(vTexCoord.x, vTexCoord.y - vOutlineThickness.y);
+    // vec2 p7 = vec2(vTexCoord.x + vOutlineThickness.x, vTexCoord.y);
+    // vec2 p8 = vec2(vTexCoord.x - vOutlineThickness.x, vTexCoord.y);
+    // float a5 = vColor.w * texture(uTex0, p5 / texSize).w;
+    // float a6 = vColor.w * texture(uTex0, p6 / texSize).w;
+    // float a7 = vColor.w * texture(uTex0, p7 / texSize).w;
+    // float a8 = vColor.w * texture(uTex0, p8 / texSize).w;
 
     vec4 c = vColor * texture(uTex0, vTexCoord / texSize);
     c = clamp(vec4( (c.x + 0.00001f) * vColorplus, (c.y + 0.00001f) * vColorplus, (c.z + 0.00001f) * vColorplus, c.w ), 0.f, 1.f);
-    float a = clamp(a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8, 0.f, 1.f) - c.w;
-    vec4 oa = vOutlineColor * a;
-    //oa.x = step(oa.x, vOutlineColor.x * 0.2f) * vOutlineColor.x;
-    //oa.y = step(oa.y, vOutlineColor.y * 0.2f) * vOutlineColor.y;
-    //oa.z = step(oa.z, vOutlineColor.z * 0.2f) * vOutlineColor.z;
-    oColor = oa + c;
+    float a = clamp(a1 + a2 + a3 + a4
+    // + a5 + a6 + a7 + a8
+    , 0.f, 1.f) - c.w;
+    if (a > 0.5f) oColor = vOutlineColor;
+    else oColor = c;
 })"sv });
 
             p = LinkGLProgram(v, f);
