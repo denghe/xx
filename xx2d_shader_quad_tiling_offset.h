@@ -169,7 +169,7 @@ void main() {
             quadCount = 0;
         }
 
-        QuadInstanceTilingOffsetData* Draw(GLuint texId, int32_t numQuads) {
+        QuadInstanceTilingOffsetData* Draw(GLuint texId, int32_t numQuads = 1) {
             assert(gEngine->shader == this);
             assert(numQuads <= maxQuadNums);
             if (quadCount + numQuads > maxQuadNums || (lastTextureId && lastTextureId != texId)) {
@@ -180,15 +180,8 @@ void main() {
             quadCount += numQuads;
             return r;
         }
-        QuadInstanceTilingOffsetData* Draw(Ref<GLTexture> const& tex, int32_t numQuads) {
+        QuadInstanceTilingOffsetData* Draw(Ref<GLTexture> const& tex, int32_t numQuads = 1) {
             return Draw(tex->GetValue(), numQuads);
-        }
-
-        void Draw(GLuint texId, QuadInstanceTilingOffsetData const& qv) {
-            memcpy(Draw(texId, 1), &qv, sizeof(QuadInstanceTilingOffsetData));
-        }
-        void Draw(Ref<GLTexture> const& tex, QuadInstanceTilingOffsetData const& qv) {
-			Draw(tex->GetValue(), qv);
         }
 
     };

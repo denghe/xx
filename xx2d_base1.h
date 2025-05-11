@@ -7,6 +7,7 @@
 #include <xx2d_shader.h>
 #include <xx2d_shader_linestrip.h>
 #include <xx2d_shader_quad.h>
+#include <xx2d_shader_quad_outline.h>
 #include <xx2d_shader_quad_tiling_offset.h>
 #include <xx2d_shader_quad_light.h>
 #include <xx2d_shader_vertexs.h>
@@ -24,6 +25,7 @@ namespace xx {
         XX_INLINE static EngineBase1& Instance() { return *(EngineBase1*)gEngine; }
 
         Shader_QuadInstance shaderQuadInstance;
+        Shader_QuadInstanceOutline shaderQuadInstanceOutline;
         Shader_QuadInstanceTilingOffset shaderQuadInstanceTilingOffset;
         Shader_QuadInstanceLight shaderQuadInstanceLight;
         Shader_LineStrip shaderLineStrip;
@@ -148,6 +150,7 @@ namespace xx {
             glEnable(GL_BLEND);
 
             shaderQuadInstance.Init();
+            shaderQuadInstanceOutline.Init();
             shaderQuadInstanceTilingOffset.Init();
             shaderQuadInstanceLight.Init();
             shaderLineStrip.Init();
