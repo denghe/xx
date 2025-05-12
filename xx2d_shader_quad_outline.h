@@ -24,7 +24,7 @@ namespace xx {
         GLVertexArrays va;
         GLBuffer vb, ib;
 
-        static constexpr int32_t maxQuadNums{ 1000 };
+        static constexpr int32_t maxQuadNums{ 20000 };
         GLuint lastTextureId{};
         std::unique_ptr<QuadInstanceOutlineData[]> quadInstanceOutlineDatas = std::make_unique_for_overwrite<QuadInstanceOutlineData[]>(maxQuadNums);
         int32_t quadCount{};
