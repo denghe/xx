@@ -10,7 +10,7 @@ namespace xx {
 			xx_assert(false);
 		}
 	}
-#define CheckGLError() CheckGLErrorAt(__FILE__, __LINE__, __FUNCTION__)
+#define CheckGLError() ::xx::CheckGLErrorAt(__FILE__, __LINE__, __FUNCTION__)
 #else
 #define CheckGLError() ((void)0)
 #endif
