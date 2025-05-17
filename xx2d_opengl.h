@@ -226,12 +226,13 @@ namespace xx {
 	/**********************************************************************************************************************************/
 	/**********************************************************************************************************************************/
 
+	template<GLuint filter = GL_NEAREST /* GL_LINEAR */, GLuint wraper = GL_CLAMP_TO_EDGE /* GL_REPEAT */>
 	inline GLuint LoadGLTexture_core(int textureUnit = 0) {
 		GLuint t{};
 		glGenTextures(1, &t);
 		glActiveTexture(GL_TEXTURE0 + textureUnit);
 		glBindTexture(GL_TEXTURE_2D, t);
-		GLTexParameteri();
+		GLTexParameteri<filter, wraper>();
 		return t;
 	}
 
@@ -402,4 +403,12 @@ namespace xx {
 		return {};
 	}
 
+	// data's bytes len == w * h * sizeof(colorFormat)
+	template<GLuint filter = GL_NEAREST /* GL_LINEAR */, GLuint wraper = GL_CLAMP_TO_EDGE /* GL_REPEAT */>
+	inline GLTexture LoadGLTexture_Memory(void* data, GLsizei w, GLsizei h, GLint colorFormat = GL_RGBA) {
+		auto t = LoadGLTexture_core<filter, wraper>();
+		glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, w, h, 0, colorFormat, GL_UNSIGNED_BYTE, data);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		return { t, w, h, "::memory::" };
+	}
 }
