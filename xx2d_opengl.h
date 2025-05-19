@@ -407,6 +407,7 @@ namespace xx {
 	template<GLuint filter = GL_NEAREST /* GL_LINEAR */, GLuint wraper = GL_CLAMP_TO_EDGE /* GL_REPEAT */>
 	inline GLTexture LoadGLTexture_Memory(void* data, GLsizei w, GLsizei h, GLint colorFormat = GL_RGBA) {
 		auto t = LoadGLTexture_core<filter, wraper>();
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 8 - 4 * (w & 0x1));
 		glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, w, h, 0, colorFormat, GL_UNSIGNED_BYTE, data);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		return { t, w, h, "::memory::" };
