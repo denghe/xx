@@ -5,13 +5,13 @@ namespace xx {
 
 	struct Scale9SpriteConfig {
 		Ref<Frame> frame;
-		XY texScale{ 0.99, 0.99 };
+		XY texScale{ 1, 1 };
 		UVRect center{};
 		RGBA8 color{ xx::RGBA8{ 0x5f, 0x15, 0xd9, 0xff } };
 		float borderScale{ 1.f };
 		RGBA8 txtColor{ xx::RGBA8_White };
-		XY txtPadding{ 20, 5};
-		XY txtPaddingRightBottom{ 20, 10};
+		XY txtPadding{ 20, 5 };
+		XY txtPaddingRightBottom{ 20, 10 };
 		float txtScale{ 1 };
 		float iconPadding{ 5 };
 

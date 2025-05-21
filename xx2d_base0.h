@@ -63,6 +63,8 @@ namespace xx {
         XY pos4{}, pos5{}, pos6{};
         XY pos1{}, pos2{}, pos3{};
         void SetWindowSize(float w, float h) {
+            if (w < 1.f) w = 1.f;
+            if (h < 1.f) h = 1.f;
             windowSize = { w, h };
             windowSize_2 = windowSize / 2;
             worldSize = windowSize;
