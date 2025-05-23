@@ -89,6 +89,13 @@ namespace xx {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wraper);
 	}
 
+	void GLTexParameteri(GLuint filter, GLuint wraper) {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wraper);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wraper);
+	}
+
 	template<bool exitBind0 = false, GLuint filter = GL_NEAREST /* GL_LINEAR */, GLuint wraper = GL_CLAMP_TO_EDGE /* GL_REPEAT */>
 	GLuint GLGenTextures() {
 		GLuint t{};
@@ -110,6 +117,12 @@ namespace xx {
 		void SetGLTexParm() {
 			glBindTexture(GL_TEXTURE_2D, GetValue());
 			GLTexParameteri<filter, wraper>();
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+
+		void SetGLTexParm(GLuint filter, GLuint wraper) {
+			glBindTexture(GL_TEXTURE_2D, GetValue());
+			GLTexParameteri(filter, wraper);
 			glBindTexture(GL_TEXTURE_2D, 0);
 		}
 
