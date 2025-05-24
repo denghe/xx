@@ -2,10 +2,6 @@
 #include "xx2d.h"
 #include <spine/spine.h>
 
-namespace spine {
-	SpineExtension* getDefaultExtension();
-}
-
 namespace xx {
 
 	struct SpineSkeleton {
@@ -37,31 +33,28 @@ namespace xx {
 	struct SpineListener : spine::AnimationStateListenerObject {
 		using HandlerType = std::function<void(spine::AnimationState* state, spine::EventType type, spine::TrackEntry* entry, spine::Event* e)>;
 		HandlerType h;
-		SpineListener(HandlerType h) : h(std::move(h)) {}
+		SpineListener() = default;
+		template<typename CB>
+		void SetCallBack(CB&& cb) { h = std::forward<CB>(cb); }
 		void callback(spine::AnimationState* state, spine::EventType type, spine::TrackEntry* entry, spine::Event* e) override;
 	};
 
 	// todo: more enhance like rotate ??
 	struct SpinePlayer {
-		std::shared_ptr<spine::Atlas> atlas;	// can shrae?
-		std::shared_ptr<spine::SkeletonData> skData;	// can share?
+		spine::AnimationStateData animationStateData;
+		SpineSkeleton spineSkeleton;
+		SpineListener spineListener;	// can SetCallBack( func )
 
-		std::optional<spine::AnimationStateData> asData;
-		std::optional<SpineSkeleton> xxSkel;
-		std::optional<SpineListener> xxListener;
+		SpinePlayer(spine::SkeletonData* skeletonData);
+		SpinePlayer() = delete;
+		SpinePlayer(SpinePlayer const&) = delete;
+		SpinePlayer& operator=(SpinePlayer const&) = delete;
 
-		SpinePlayer& Init(SpinePlayer const& sharedRes);
-		SpinePlayer& Init1(const spine::String& atlasName);
-		SpinePlayer& Init2_Json(const spine::String& filename, float scale);
-		SpinePlayer& Init2_Skel(const spine::String& filename, float scale);
-		SpinePlayer& Init3();
-
-		SpinePlayer& SetMix(const spine::String& fromName, const spine::String& toName, float duration);
+		SpinePlayer& SetMix(std::string_view fromName, std::string_view toName, float duration);
 		SpinePlayer& SetTimeScale(float t);
 		SpinePlayer& SetUsePremultipliedAlpha(bool b);
 		SpinePlayer& SetPosition(float x, float y);
-		SpinePlayer& SetListener(SpineListener::HandlerType h);
-		SpinePlayer& AddAnimation(size_t trackIndex, const spine::String& animationName, bool loop, float delay);
+		SpinePlayer& AddAnimation(size_t trackIndex, std::string_view animationName, bool loop, float delay);
 		SpinePlayer& Update(float delta);
 		void Draw();
 	};
@@ -72,49 +65,42 @@ namespace xx {
 	};
 
 
-	struct string_hash {
-		using is_transparent = void;
-		[[nodiscard]] size_t operator()(const char* txt) const {
-			return std::hash<std::string_view>{}(txt);
-		}
-		[[nodiscard]] size_t operator()(std::string_view txt) const {
-			return std::hash<std::string_view>{}(txt);
-		}
-		[[nodiscard]] size_t operator()(const std::string& txt) const {
-			return std::hash<std::string>{}(txt);
-		}
-	};
-
 	// spine's global env
 	struct SpineEnv {
-		// need preload. for load( page, path ) search. path is key
-		std::unordered_map<std::string, Ref<GLTexture>, string_hash, std::equal_to<>> texs;
-		std::unordered_map<std::string, xx::Data, string_hash, std::equal_to<>> fileDatas;
-
+		SpineExtension ext;
 		SpineTextureLoader textureLoader;
+		spine::String tmpStr, tmpStr2;
+
+		// key: file path
+		std::unordered_map<std::string, Ref<GLTexture>, StdStringHash, std::equal_to<>> textures;								// need preload
+		std::unordered_map<std::string, Data, StdStringHash, std::equal_to<>> fileDatas;										// need preload Atlas & SkeletonData files
+		std::unordered_map<std::string, std::unique_ptr<spine::Atlas>, StdStringHash, std::equal_to<>> atlass;					// fill by AddAtlas
+		std::unordered_map<std::string, std::unique_ptr<spine::SkeletonData>, StdStringHash, std::equal_to<>> skeletonDatas;	// fill by AddSkeletonData
+
+		spine::Atlas* AddAtlas(std::string_view atlasFileName);
+
+		template<bool skeletonFileIsJson>
+		spine::SkeletonData* AddSkeletonData(spine::Atlas* atlas, std::string_view skeletonFileName, float scale = 1.f);
+
+		void Init();
+
 	};
 	inline SpineEnv gSpineEnv;
 
-	/****************************************************************************************************************/
-	/****************************************************************************************************************/
 
-	// normal, additive, multiply, screen
-	inline static const constexpr std::array<std::pair<uint32_t, uint32_t>, 4> nonpmaBlendFuncs{ std::pair<uint32_t, uint32_t>
-	{ GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA }, { GL_SRC_ALPHA, GL_ONE }, { GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA }, { GL_ONE, GL_ONE_MINUS_SRC_COLOR } };
+	/*****************************************************************************************************************************************************************************************/
+	/*****************************************************************************************************************************************************************************************/
 
-	// pma: normal, additive, multiply, screen
-	inline static const constexpr std::array<std::pair<uint32_t, uint32_t>, 4> pmaBlendFuncs{ std::pair<uint32_t, uint32_t>
-	{ GL_ONE, GL_ONE_MINUS_SRC_ALPHA }, { GL_ONE, GL_ONE }, { GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA }, { GL_ONE, GL_ONE_MINUS_SRC_COLOR } };
 
-	char* SpineExtension::_readFile(const spine::String& pathStr, int* length) {
+	inline char* SpineExtension::_readFile(const spine::String& pathStr, int* length) {
 		std::string_view fn(pathStr.buffer(), pathStr.length());
 		auto&& iter = gSpineEnv.fileDatas.find(fn);
-		*length = iter->second.len;
+		*length = (int)iter->second.len;
 		return (char*)iter->second.buf;
 	}
 
 
-	SpineSkeleton::SpineSkeleton(spine::SkeletonData* skeletonData, spine::AnimationStateData* stateData) {
+	inline SpineSkeleton::SpineSkeleton(spine::SkeletonData* skeletonData, spine::AnimationStateData* stateData) {
 
 		spine::Bone::setYDown(true);
 
@@ -136,19 +122,19 @@ namespace xx {
 		quadIndices.add(0);
 	}
 
-	SpineSkeleton::~SpineSkeleton() {
+	inline SpineSkeleton::~SpineSkeleton() {
 		if (ownsAnimationStateData) delete state->getData();
 		delete state;
 		delete skeleton;
 	}
 
-	void SpineSkeleton::Update(float delta) {
+	inline void SpineSkeleton::Update(float delta) {
 		state->update(delta * timeScale);
 		state->apply(*skeleton);
 		skeleton->updateWorldTransform();
 	}
 
-	void SpineSkeleton::Draw() {
+	inline void SpineSkeleton::Draw() {
 
 		auto& eg = EngineBase1::Instance();
 		auto&& shader = eg.ShaderBegin(eg.shaderSpine38);
@@ -156,8 +142,8 @@ namespace xx {
 		// Early out if skeleton is invisible
 		if (skeleton->getColor().a == 0) return;
 
-		xx::RGBA8 c{};
-		spine::AtlasPage* page{};
+		RGBA8 c{};
+		GLTexture* tex{};
 
 		for (size_t i = 0, e = skeleton->getSlots().size(); i < e; ++i) {
 
@@ -173,7 +159,7 @@ namespace xx {
 			spine::Vector<float>* vertices = &worldVertices;
 			spine::Vector<float>* uvs{};
 			spine::Vector<unsigned short>* indices{};
-			int indicesCount{};
+			size_t indicesCount{};
 			spine::Color* attachmentColor{};
 
 			auto&& attachmentRTTI = attachment->getRTTI();
@@ -192,8 +178,7 @@ namespace xx {
 				uvs = &regionAttachment->getUVs();
 				indices = &quadIndices;
 				indicesCount = 6;
-				page = ((spine::AtlasRegion*)regionAttachment)->page;
-
+				tex = (GLTexture*)((spine::AtlasRegion*)regionAttachment->getRendererObject())->page->getRendererObject();
 			}
 			else if (attachmentRTTI.isExactly(spine::MeshAttachment::rtti)) {
 
@@ -210,8 +195,7 @@ namespace xx {
 				uvs = &mesh->getUVs();
 				indices = &mesh->getTriangles();
 				indicesCount = mesh->getTriangles().size();
-				page = ((spine::AtlasRegion*)mesh)->page;
-
+				tex = (GLTexture*)((spine::AtlasRegion*)mesh->getRendererObject())->page->getRendererObject();
 			}
 			else if (attachmentRTTI.isExactly(spine::ClippingAttachment::rtti)) {
 
@@ -231,6 +215,15 @@ namespace xx {
 			c.a = (uint8_t)(skc.a * slc.a * attachmentColor->a * 255);
 
 			std::pair<uint32_t, uint32_t> blend;
+
+			// normal, additive, multiply, screen
+			static const constexpr std::array<std::pair<uint32_t, uint32_t>, 4> nonpmaBlendFuncs{ std::pair<uint32_t, uint32_t>
+			{ GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA }, { GL_SRC_ALPHA, GL_ONE }, { GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA }, { GL_ONE, GL_ONE_MINUS_SRC_COLOR } };
+
+			// pma: normal, additive, multiply, screen
+			static const constexpr std::array<std::pair<uint32_t, uint32_t>, 4> pmaBlendFuncs{ std::pair<uint32_t, uint32_t>
+			{ GL_ONE, GL_ONE_MINUS_SRC_ALPHA }, { GL_ONE, GL_ONE }, { GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA }, { GL_ONE, GL_ONE_MINUS_SRC_COLOR } };
+
 			if (!usePremultipliedAlpha) {
 				blend = nonpmaBlendFuncs[slot.getData().getBlendMode()];
 			}
@@ -250,17 +243,17 @@ namespace xx {
 				indices = &clipper.getClippedTriangles();
 				indicesCount = clipper.getClippedTriangles().size();
 			}
-
-			auto vp = shader.Draw(page->textureId, indicesCount);
-			xx::XY size{ (float)page->width, (float)page->height };
+			auto vs = shader.Draw(tex->GetValue(), (int32_t)indicesCount);
+			XY size{ (float)tex->Width(), (float)tex->Height() };
 			for (size_t ii = 0; ii < indicesCount; ++ii) {
 				auto index = (*indices)[ii] << 1;
-				auto&& vertex = vp[ii];
+				auto&& vertex = vs[ii];
 				vertex.pos.x = (*vertices)[index];
 				vertex.pos.y = (*vertices)[index + 1];
-				vertex.uv.u = (*uvs)[index] * size.x;
-				vertex.uv.v = (*uvs)[index + 1] * size.y;
+				vertex.uv.x = (*uvs)[index] * size.x;
+				vertex.uv.y = (*uvs)[index + 1] * size.y;
 				(uint32_t&)vertex.color = (uint32_t&)c;
+				//xx::CoutN("{ .pos = {", vertex.pos, " }, .uv = { ", vertex.uv, "}, .color = xx::RGBA8_White }");
 			}
 
 			clipper.clipEnd(slot);
@@ -270,11 +263,11 @@ namespace xx {
 	}
 
 
-	void SpineTextureLoader::load(spine::AtlasPage& page, const spine::String& path) {
+	inline void SpineTextureLoader::load(spine::AtlasPage& page, const spine::String& path) {
 
 		std::string_view fn(path.buffer(), path.length());
 
-		auto&& iter = gSpineEnv.texs.find(fn);
+		auto&& iter = gSpineEnv.textures.find(fn);
 		auto&& tex = iter->second;
 		tex->SetGLTexParm(
 			page.magFilter == spine::TextureFilter_Linear ? GL_LINEAR : GL_NEAREST,
@@ -283,102 +276,103 @@ namespace xx {
 
 		page.width = tex->Width();
 		page.height = tex->Height();
-		page.textureId = tex->GetValue();
-		tex.pointer = nullptr;
+		page.setRendererObject(tex.pointer);
 	}
 
-	void SpineTextureLoader::unload(void* texture) {
-		xx::Shared<xx::GLTexture> tex;
-		tex.pointer = (xx::GLTexture*)texture;	// move back
+	inline void SpineTextureLoader::unload(void* texture) {
+		// do nothing. because texture from cache
 	}
 
 
-
-	void SpineListener::callback(spine::AnimationState* state, spine::EventType type, spine::TrackEntry* entry, spine::Event* e) {
+	inline void SpineListener::callback(spine::AnimationState* state, spine::EventType type, spine::TrackEntry* entry, spine::Event* e) {
 		h(state, type, entry, e);
 	}
 
 
-	SpinePlayer& SpinePlayer::Init(SpinePlayer const& sharedRes) {
-		this->atlas = sharedRes.atlas;
-		this->skData = sharedRes.skData;
-		return Init3();
+	inline void SpineEnv::Init() {
+		spine::SpineExtension::setInstance(&ext);
 	}
 
-	SpinePlayer& SpinePlayer::Init1(const spine::String& atlasName) {
-		atlas.reset(new spine::Atlas(atlasName, &gSpineEnv.textureLoader));
-		return *this;
+	inline spine::Atlas* SpineEnv::AddAtlas(std::string_view atlasFileName) {
+		auto& fn = tmpStr;
+		fn._buffer = (char*)atlasFileName.data();
+		fn._length = atlasFileName.length();
+		auto r = atlass.emplace(std::string(atlasFileName), std::make_unique<spine::Atlas>(fn, &gSpineEnv.textureLoader));
+		fn._buffer = nullptr;
+		fn._length = 0;
+		if (!r.second) return nullptr;
+		return r.first->second.get();
 	}
 
-	SpinePlayer& SpinePlayer::Init2_Json(const spine::String& filename, float scale) {
-		spine::SkeletonJson parser(atlas.get());
+	template<bool skeletonFileIsJson>
+	inline spine::SkeletonData* SpineEnv::AddSkeletonData(spine::Atlas* atlas, std::string_view skeletonFileName, float scale) {
+		auto& fn = tmpStr;
+		fn._buffer = (char*)skeletonFileName.data();
+		fn._length = skeletonFileName.length();
+		std::conditional_t<skeletonFileIsJson, spine::SkeletonJson, spine::SkeletonBinary> parser(atlas);
 		parser.setScale(scale);
-		skData.reset(parser.readSkeletonDataFile(filename));	// todo: read  buf + len
-		if (!skData) throw std::logic_error(xx::ToString("Init2_Json failed. fn = ", filename.buffer()));
+		auto r = skeletonDatas.emplace(std::string(skeletonFileName), parser.readSkeletonDataFile(fn));
+		fn._buffer = nullptr;
+		fn._length = 0;
+		if (!r.second) return nullptr;
+		return r.first->second.get();
+	}
+
+
+	inline SpinePlayer::SpinePlayer(spine::SkeletonData* skeletonData)
+		: animationStateData(skeletonData)
+		, spineSkeleton(skeletonData, &animationStateData) 
+	{
+		spineSkeleton.skeleton->setToSetupPose();
+	}
+
+	XX_INLINE SpinePlayer& SpinePlayer::SetMix(std::string_view fromName, std::string_view toName, float duration) {
+		auto& s1 = gSpineEnv.tmpStr;
+		s1._buffer = (char*)fromName.data();
+		s1._length = fromName.length();
+		auto& s2 = gSpineEnv.tmpStr2;
+		s2._buffer = (char*)toName.data();
+		s2._length = toName.length();
+		animationStateData.setMix(s1, s2, duration);
+		s1._buffer = nullptr;
+		s1._length = 0;
+		s2._buffer = nullptr;
+		s2._length = 0;
 		return *this;
 	}
 
-	SpinePlayer& SpinePlayer::Init2_Skel(const spine::String& filename, float scale) {
-		spine::SkeletonBinary parser(atlas.get());
-		parser.setScale(scale);
-		skData.reset(parser.readSkeletonDataFile(filename));	// todo: read  buf + len
-		if (!skData) throw std::logic_error(xx::ToString("Init2_Skel failed. fn = ", filename.buffer()));
+	XX_INLINE SpinePlayer& SpinePlayer::SetTimeScale(float t) {
+		spineSkeleton.timeScale = t;
 		return *this;
 	}
 
-	SpinePlayer& SpinePlayer::Init3() {
-		assert(atlas);
-		assert(skData);
-		asData.emplace(skData.get());
-		xxSkel.emplace(skData.get(), &*asData);
-		xxSkel->skeleton->setToSetupPose();
+	XX_INLINE SpinePlayer& SpinePlayer::SetUsePremultipliedAlpha(bool b) {
+		spineSkeleton.usePremultipliedAlpha = b;
 		return *this;
 	}
 
-	SpinePlayer& SpinePlayer::SetMix(const spine::String& fromName, const spine::String& toName, float duration) {
-		asData->setMix(fromName, toName, duration);
+	XX_INLINE SpinePlayer& SpinePlayer::SetPosition(float x, float y) {
+		spineSkeleton.skeleton->setPosition(x, -y);
+		spineSkeleton.skeleton->updateWorldTransform();
 		return *this;
 	}
 
-	SpinePlayer& SpinePlayer::SetTimeScale(float t) {
-		xxSkel->timeScale = t;
+	XX_INLINE SpinePlayer& SpinePlayer::AddAnimation(size_t trackIndex, std::string_view animationName, bool loop, float delay) {
+		auto& s1 = gSpineEnv.tmpStr;
+		s1._buffer = (char*)animationName.data();
+		s1._length = animationName.length();
+		spineSkeleton.state->addAnimation(trackIndex, s1, loop, delay);
+		s1._buffer = nullptr;
+		s1._length = 0;
 		return *this;
 	}
 
-	SpinePlayer& SpinePlayer::SetUsePremultipliedAlpha(bool b) {
-		xxSkel->usePremultipliedAlpha = b;
+	XX_INLINE SpinePlayer& SpinePlayer::Update(float delta) {
+		spineSkeleton.Update(delta);
 		return *this;
 	}
 
-	SpinePlayer& SpinePlayer::SetPosition(float x, float y) {
-		xxSkel->skeleton->setPosition(x, -y);
-		xxSkel->skeleton->updateWorldTransform();
-		return *this;
-	}
-
-	SpinePlayer& SpinePlayer::SetListener(SpineListener::HandlerType h) {
-		xxListener.emplace(std::move(h));
-		xxSkel->state->setListener(&*xxListener);
-		return *this;
-	}
-
-	SpinePlayer& SpinePlayer::AddAnimation(size_t trackIndex, const spine::String& animationName, bool loop, float delay) {
-		xxSkel->state->addAnimation(trackIndex, animationName, loop, delay);
-		return *this;
-	}
-
-	SpinePlayer& SpinePlayer::Update(float delta) {
-		xxSkel->Update(delta);
-		return *this;
-	}
-
-	void SpinePlayer::Draw() {
-		xxSkel->Draw();
-	}
-}
-
-namespace spine {
-	SpineExtension* getDefaultExtension() {
-		return new ::xx::SpineExtension();
+	XX_INLINE void SpinePlayer::Draw() {
+		spineSkeleton.Draw();
 	}
 }

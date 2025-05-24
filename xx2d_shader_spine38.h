@@ -3,32 +3,36 @@
 
 namespace xx {
 
+    struct SpineVertexData {
+        XY pos, uv;
+        RGBA8 color;
+    };
+
     struct Shader_Spine38 : Shader {
         using Shader::Shader;
-        GLint uTex0{ -1 }, aPos{ -1 }, aColor{ -1 }, aTexCoord{ -1 };
+        GLint uTex0{ -1 }, aPosUv{ -1 }, aColor{ -1 };
         GLVertexArrays va;
         GLBuffer vb;
 
         static constexpr int32_t maxIndexNums{ maxVertNums * 4 };
         GLuint lastTextureId{};
         int32_t vertsCount{};
-        std::unique_ptr<VertexData[]> verts = std::make_unique<VertexData[]>(maxVertNums);
+        std::unique_ptr<SpineVertexData[]> verts = std::make_unique<SpineVertexData[]>(maxVertNums);
 
         void Init() {
             v = LoadGLVertexShader({ R"(#version 300 es
 precision highp float;
 uniform vec2 uCxy;	// screen center coordinate
 
-in vec2 aPos;
-in vec2 aTexCoord;
+in vec4 aPosUv;
 in vec4 aColor;
 
 out vec4 vColor;
 out vec2 vTexCoord;
 
 void main() {
-	gl_Position = vec4(aPos * uCxy, 0, 1);
-	vTexCoord = aTexCoord;
+	gl_Position = vec4(aPosUv.xy * uCxy, 0, 1);
+	vTexCoord = aPosUv.zw;
 	vColor = aColor;
 })"sv });
 
@@ -50,8 +54,7 @@ void main() {
             uCxy = glGetUniformLocation(p, "uCxy");
             uTex0 = glGetUniformLocation(p, "uTex0");
 
-            aPos = glGetAttribLocation(p, "aPos");
-            aTexCoord = glGetAttribLocation(p, "aTexCoord");
+            aPosUv = glGetAttribLocation(p, "aPosUv");
             aColor = glGetAttribLocation(p, "aColor");
             CheckGLError();
 
@@ -60,11 +63,9 @@ void main() {
             glGenBuffers(1, (GLuint*)&vb);
 
             glBindBuffer(GL_ARRAY_BUFFER, vb);
-            glVertexAttribPointer(aPos, 2, GL_FLOAT, GL_FALSE, sizeof(VertexData), 0);
-            glEnableVertexAttribArray(aPos);
-            glVertexAttribPointer(aTexCoord, 2, GL_UNSIGNED_SHORT, GL_FALSE, sizeof(VertexData), (GLvoid*)offsetof(VertexData, uv));
-            glEnableVertexAttribArray(aTexCoord);
-            glVertexAttribPointer(aColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(VertexData), (GLvoid*)offsetof(VertexData, color));
+            glVertexAttribPointer(aPosUv, 4, GL_FLOAT, GL_FALSE, sizeof(SpineVertexData), 0);
+            glEnableVertexAttribArray(aPosUv);
+            glVertexAttribPointer(aColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(SpineVertexData), (GLvoid*)offsetof(SpineVertexData, color));
             glEnableVertexAttribArray(aColor);
 
             glBindVertexArray(0);
@@ -79,7 +80,7 @@ void main() {
             glUseProgram(p);
             glActiveTexture(GL_TEXTURE0/* + textureUnit*/);
             glUniform1i(uTex0, 0);
-            glUniform2f(uCxy, 2 / gEngine->windowSize.x, 2 / gEngine->windowSize.y * gEngine->flipY);
+            glUniform2f(uCxy, 2 / gEngine->windowSize.x, -2 / gEngine->windowSize.y * gEngine->flipY);  // flip y for spine
             glBindVertexArray(va);
         }
 
@@ -92,7 +93,7 @@ void main() {
 
         void Commit() {
             glBindBuffer(GL_ARRAY_BUFFER, vb);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(VertexData) * vertsCount, verts.get(), GL_STREAM_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(SpineVertexData) * vertsCount, verts.get(), GL_STREAM_DRAW);
 
             glBindTexture(GL_TEXTURE_2D, lastTextureId);
             glDrawArrays(GL_TRIANGLES, 0, vertsCount);
@@ -105,7 +106,7 @@ void main() {
             vertsCount = 0;
         }
 
-        VertexData* Draw(GLuint texId, int32_t numVerts) {
+        SpineVertexData* Draw(GLuint texId, int32_t numVerts) {
             assert(numVerts <= maxVertNums);
             if (vertsCount + numVerts > maxVertNums || (lastTextureId && lastTextureId != texId)) {
                 Commit();
@@ -116,7 +117,7 @@ void main() {
             return &verts[vc];
         }
 
-        VertexData* Draw(Ref<GLTexture> const& tex, int32_t numVerts) {
+        SpineVertexData* Draw(Ref<GLTexture> const& tex, int32_t numVerts) {
             return Draw(tex->GetValue(), numVerts);
         }
     };

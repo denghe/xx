@@ -89,7 +89,7 @@ namespace xx {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wraper);
 	}
 
-	void GLTexParameteri(GLuint filter, GLuint wraper) {
+	inline void GLTexParameteri(GLuint filter, GLuint wraper) {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wraper);

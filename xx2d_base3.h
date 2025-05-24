@@ -95,18 +95,18 @@ namespace xx {
 
         // todo: timeout support
         template<bool autoDecompress = false>
-        Task<Ref<Data>> AsyncDownloadFromUrl(std::string url) {
+        Task<Data> AsyncDownloadFromUrl(std::string url) {
             emscripten_fetch_attr_t attr;
             emscripten_fetch_attr_init(&attr);
             strcpy(attr.requestMethod, "GET");
             attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
 
-            using UD = std::pair<bool*, Ref<Data>*>;
+            using UD = std::pair<bool*, Data*>;
 
             attr.onsuccess = [](emscripten_fetch_t* fetch) {
                 UD& ud = *(UD*)fetch->userData;
                 *ud.first = true;
-                ud.second->Emplace()->WriteBuf(fetch->data, fetch->numBytes);
+                ud.second->WriteBuf(fetch->data, fetch->numBytes);
                 emscripten_fetch_close(fetch);
                 };
 
@@ -116,7 +116,7 @@ namespace xx {
                 emscripten_fetch_close(fetch);
                 };
 
-            Ref<Data> sd;
+            Data sd;
             bool callbacked = false;
             UD ud = { &callbacked, &sd };
             attr.userData = &ud;
@@ -128,19 +128,19 @@ namespace xx {
             }
 
             if constexpr (autoDecompress) {
-                TryZstdDecompress(*sd);
+                TryZstdDecompress(sd);
             }
-            co_return sd;
+            co_return std::move(sd);
         }
 
         // blist == texture packer export cocos plist file's bin version, use xx2d's tools: plist 2 blist convert
         template<bool autoDecompress = false>
         Task<Ref<TexturePacker>> AsyncLoadTexturePackerFromUrl(std::string blistUrl) {
             auto blistData = co_await AsyncDownloadFromUrl<autoDecompress>(blistUrl);
-            if (!blistData) co_return Ref<TexturePacker>{};
+            if (!blistData.len) co_return Ref<TexturePacker>{};
 
             auto tp = MakeRef<TexturePacker>();
-            int r = tp->Load(*blistData, blistUrl);
+            int r = tp->Load(blistData, blistUrl);
             xx_assert(!r);
 
             auto tex = co_await AsyncLoadTextureFromUrl<autoDecompress>(tp->realTextureFileName.c_str());
@@ -160,10 +160,10 @@ namespace xx {
             // download bmx & fill
             {
                 auto sd = co_await AsyncDownloadFromUrl<autoDecompress>(bmxUrl);
-                xx_assert(sd);
+                xx_assert(sd.len);
 
                 TmxData td;
-                td = std::move(*sd);
+                td = std::move(sd);
                 auto r = td.Read(*map);
                 xx_assert(!r);
             }
@@ -196,7 +196,16 @@ namespace xx {
         }
 
 #else
-        // todo
+        template<bool showLog = false, int timeoutSeconds = 30>
+        Task<Ref<GLTexture>> AsyncLoadTextureFromUrl(std::string_view url_) {
+            co_return LoadTexture(url_);
+        }
+
+        template<bool autoDecompress = false>
+        Task<Data> AsyncDownloadFromUrl(std::string url) {
+            co_return LoadFileData<false, autoDecompress>(url);
+        }
+        // todo: more simulate
 #endif
     };
 

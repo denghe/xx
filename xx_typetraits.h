@@ -335,6 +335,25 @@ namespace xx {
 
 
     /************************************************************************************/
+    // std::????map<std::string, T>    .find( std::string_view
+    // example:
+    // std::unordered_map<std::string, XXXXXXXX, xx::StdStringHash, std::equal_to<>> m;
+
+    struct StdStringHash {
+        using is_transparent = void;
+        [[nodiscard]] size_t operator()(const char* txt) const {
+            return std::hash<std::string_view>{}(txt);
+        }
+        [[nodiscard]] size_t operator()(std::string_view txt) const {
+            return std::hash<std::string_view>{}(txt);
+        }
+        [[nodiscard]] size_t operator()(const std::string& txt) const {
+            return std::hash<std::string>{}(txt);
+        }
+    };
+
+
+    /************************************************************************************/
     // check T is []{} likely (lambda)( depend on compiler impl )
     // unsafe
 
