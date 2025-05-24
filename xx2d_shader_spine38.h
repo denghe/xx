@@ -14,10 +14,10 @@ namespace xx {
         GLVertexArrays va;
         GLBuffer vb;
 
-        static constexpr int32_t maxIndexNums{ maxVertNums * 4 };
+        static constexpr int32_t vertsCap{ maxVertNums * 4 };
         GLuint lastTextureId{};
         int32_t vertsCount{};
-        std::unique_ptr<SpineVertexData[]> verts = std::make_unique<SpineVertexData[]>(maxVertNums);
+        std::unique_ptr<SpineVertexData[]> verts = std::make_unique<SpineVertexData[]>(vertsCap);
 
         void Init() {
             v = LoadGLVertexShader({ R"(#version 300 es
@@ -107,8 +107,8 @@ void main() {
         }
 
         SpineVertexData* Draw(GLuint texId, int32_t numVerts) {
-            assert(numVerts <= maxVertNums);
-            if (vertsCount + numVerts > maxVertNums || (lastTextureId && lastTextureId != texId)) {
+            assert(numVerts <= vertsCap);
+            if (vertsCount + numVerts > vertsCap || (lastTextureId && lastTextureId != texId)) {
                 Commit();
             }
             lastTextureId = texId;
