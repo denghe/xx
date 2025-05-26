@@ -6,7 +6,7 @@ namespace xx {
 #ifndef NDEBUG
 	inline void CheckGLErrorAt(const char* file, int line, const char* func) {
 		if (auto e = glGetError(); e != GL_NO_ERROR) {
-			printf("glGetError() == %d\n", e);
+			printf("glGetError() == %d file = %s line = %d\n", e, file, line);
 			xx_assert(false);
 		}
 	}
@@ -425,4 +425,12 @@ namespace xx {
 		glBindTexture(GL_TEXTURE_2D, 0);
 		return { t, w, h, "::memory::" };
 	}
+
+	inline GLTexture LoadGLTexture_RGBA32F(void* data, GLsizei w, GLsizei h, GLsizei numFloats) {
+		auto t = LoadGLTexture_core<GL_NEAREST, GL_REPEAT>();
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w, h, 0, GL_RGBA, GL_FLOAT, data);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		return { t, w, numFloats, "::float memory::" };
+	}
+
 }

@@ -91,19 +91,20 @@ void main() {
             CheckGLError();
 
             glGenVertexArrays(1, va.GetValuePointer());
+            glGenBuffers(1, ib.GetValuePointer());
+            glGenBuffers(1, vb.GetValuePointer());
+
             glBindVertexArray(va);
 
-            glGenBuffers(1, (GLuint*)&ib);
             static const XY verts[4] = { { 0, 0 }, { 0, 1.f }, { 1.f, 0 }, { 1.f, 1.f } };
             glBindBuffer(GL_ARRAY_BUFFER, ib);
             glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
             glVertexAttribPointer(aVert, 2, GL_FLOAT, GL_FALSE, sizeof(XY), 0);
             glEnableVertexAttribArray(aVert);
 
-            glGenBuffers(1, (GLuint*)&vb);
             glBindBuffer(GL_ARRAY_BUFFER, vb);
 
-            glVertexAttribPointer(aPosAnchor, 4, GL_FLOAT, GL_FALSE, sizeof(QuadInstanceData), 0);  // offsetof(QuadInstanceData, pos
+            glVertexAttribPointer(aPosAnchor, 4, GL_FLOAT, GL_FALSE, sizeof(QuadInstanceData), (GLvoid*)offsetof(QuadInstanceData, pos));
             glVertexAttribDivisor(aPosAnchor, 1);
             glEnableVertexAttribArray(aPosAnchor);
 
@@ -120,8 +121,6 @@ void main() {
             glEnableVertexAttribArray(aTexRect);
 
             glBindVertexArray(0);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-
             CheckGLError();
         }
 

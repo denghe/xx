@@ -12,6 +12,7 @@
 #include <xx2d_shader_quad_light.h>
 #include <xx2d_shader_vertexs.h>
 #include <xx2d_shader_spine38.h>
+#include <xx2d_shader_texvert.h>
 #include <xx2d_texturepacker.h>
 #include <xx2d_tiledmap_sede.h>
 #ifdef ENABLE_ENGINE_IMGUI
@@ -32,6 +33,7 @@ namespace xx {
         Shader_LineStrip shaderLineStrip;
         Shader_Vertexs shaderVertexs;
         Shader_Spine38 shaderSpine38;
+        Shader_TexVert shaderTexVert;
         // ... more
 
 #ifdef ENABLE_ENGINE_IMGUI
@@ -158,6 +160,7 @@ namespace xx {
             shaderLineStrip.Init();
             shaderVertexs.Init();
             shaderSpine38.Init();
+            shaderTexVert.Init();
             // ... more
 
 #ifdef ENABLE_ENGINE_IMGUI

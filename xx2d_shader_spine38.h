@@ -59,18 +59,19 @@ void main() {
             CheckGLError();
 
             glGenVertexArrays(1, va.GetValuePointer());
+            glGenBuffers(1, vb.GetValuePointer());
+
             glBindVertexArray(va);
-            glGenBuffers(1, (GLuint*)&vb);
 
             glBindBuffer(GL_ARRAY_BUFFER, vb);
-            glVertexAttribPointer(aPosUv, 4, GL_FLOAT, GL_FALSE, sizeof(SpineVertexData), 0);
+
+            glVertexAttribPointer(aPosUv, 4, GL_FLOAT, GL_FALSE, sizeof(SpineVertexData), (GLvoid*)offsetof(SpineVertexData, pos));
             glEnableVertexAttribArray(aPosUv);
+
             glVertexAttribPointer(aColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(SpineVertexData), (GLvoid*)offsetof(SpineVertexData, color));
             glEnableVertexAttribArray(aColor);
 
             glBindVertexArray(0);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
 
             CheckGLError();
         }

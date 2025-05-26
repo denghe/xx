@@ -243,6 +243,7 @@ namespace xx {
 				indices = &clipper.getClippedTriangles();
 				indicesCount = clipper.getClippedTriangles().size();
 			}
+
 			auto vs = shader.Draw(tex->GetValue(), (int32_t)indicesCount);
 			XY size{ (float)tex->Width(), (float)tex->Height() };
 			for (size_t ii = 0; ii < indicesCount; ++ii) {
