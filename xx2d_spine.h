@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "xx2d.h"
+#include <xx2d_shader_texvert.h>
 #include <spine/spine.h>
 
 namespace xx {
@@ -54,9 +55,11 @@ namespace xx {
 		SpinePlayer& SetTimeScale(float t);
 		SpinePlayer& SetUsePremultipliedAlpha(bool b);
 		SpinePlayer& SetPosition(float x, float y);
+		SpinePlayer& SetAnimation(size_t trackIndex, std::string_view animationName, bool loop);
 		SpinePlayer& AddAnimation(size_t trackIndex, std::string_view animationName, bool loop, float delay);
 		SpinePlayer& Update(float delta);
 		void Draw();
+		GLVertTexture AnimToTexture(std::string_view animName, float frameDelay);
 	};
 
 	struct SpineExtension : spine::DefaultSpineExtension {
@@ -69,7 +72,6 @@ namespace xx {
 	struct SpineEnv {
 		SpineExtension ext;
 		SpineTextureLoader textureLoader;
-		spine::String tmpStr, tmpStr2;
 
 		// key: file path
 		std::unordered_map<std::string, Ref<GLTexture>, StdStringHash, std::equal_to<>> textures;								// need preload
@@ -295,26 +297,16 @@ namespace xx {
 	}
 
 	inline spine::Atlas* SpineEnv::AddAtlas(std::string_view atlasFileName) {
-		auto& fn = tmpStr;
-		fn._buffer = (char*)atlasFileName.data();
-		fn._length = atlasFileName.length();
-		auto r = atlass.emplace(std::string(atlasFileName), std::make_unique<spine::Atlas>(fn, &gSpineEnv.textureLoader));
-		fn._buffer = nullptr;
-		fn._length = 0;
+		auto r = atlass.emplace(atlasFileName, std::make_unique<spine::Atlas>(atlasFileName, &gSpineEnv.textureLoader));
 		if (!r.second) return nullptr;
 		return r.first->second.get();
 	}
 
 	template<bool skeletonFileIsJson>
 	inline spine::SkeletonData* SpineEnv::AddSkeletonData(spine::Atlas* atlas, std::string_view skeletonFileName, float scale) {
-		auto& fn = tmpStr;
-		fn._buffer = (char*)skeletonFileName.data();
-		fn._length = skeletonFileName.length();
 		std::conditional_t<skeletonFileIsJson, spine::SkeletonJson, spine::SkeletonBinary> parser(atlas);
 		parser.setScale(scale);
-		auto r = skeletonDatas.emplace(std::string(skeletonFileName), parser.readSkeletonDataFile(fn));
-		fn._buffer = nullptr;
-		fn._length = 0;
+		auto r = skeletonDatas.emplace(skeletonFileName, parser.readSkeletonDataFile(skeletonFileName));
 		if (!r.second) return nullptr;
 		return r.first->second.get();
 	}
@@ -328,17 +320,7 @@ namespace xx {
 	}
 
 	XX_INLINE SpinePlayer& SpinePlayer::SetMix(std::string_view fromName, std::string_view toName, float duration) {
-		auto& s1 = gSpineEnv.tmpStr;
-		s1._buffer = (char*)fromName.data();
-		s1._length = fromName.length();
-		auto& s2 = gSpineEnv.tmpStr2;
-		s2._buffer = (char*)toName.data();
-		s2._length = toName.length();
-		animationStateData.setMix(s1, s2, duration);
-		s1._buffer = nullptr;
-		s1._length = 0;
-		s2._buffer = nullptr;
-		s2._length = 0;
+		animationStateData.setMix(fromName, toName, duration);
 		return *this;
 	}
 
@@ -358,13 +340,13 @@ namespace xx {
 		return *this;
 	}
 
+	XX_INLINE SpinePlayer& SpinePlayer::SetAnimation(size_t trackIndex, std::string_view animationName, bool loop) {
+		spineSkeleton.state->setAnimation(trackIndex, animationName, loop);
+		return *this;
+	}
+
 	XX_INLINE SpinePlayer& SpinePlayer::AddAnimation(size_t trackIndex, std::string_view animationName, bool loop, float delay) {
-		auto& s1 = gSpineEnv.tmpStr;
-		s1._buffer = (char*)animationName.data();
-		s1._length = animationName.length();
-		spineSkeleton.state->addAnimation(trackIndex, s1, loop, delay);
-		s1._buffer = nullptr;
-		s1._length = 0;
+		spineSkeleton.state->addAnimation(trackIndex, animationName, loop, delay);
 		return *this;
 	}
 
@@ -375,5 +357,51 @@ namespace xx {
 
 	XX_INLINE void SpinePlayer::Draw() {
 		spineSkeleton.Draw();
+	}
+
+	inline GLVertTexture SpinePlayer::AnimToTexture(std::string_view animName, float frameDelay) {
+		auto& eg = EngineBase1::Instance();
+		SetPosition(0, 0).SetAnimation(0, animName, true);
+		eg.ShaderEnd();
+		Update(frameDelay);
+		Draw();	// draw once for get vert size
+		auto&& shader = eg.ShaderBegin(eg.shaderSpine38);
+		auto vc = shader.vertsCount;
+
+		auto rowByteSize = vc * 32;			// sizeof(float) * 8
+		auto texWidth = rowByteSize / 16;	// sizeof(RGBA32F)
+		texWidth = (texWidth + 7) & ~7u;	// align 8
+		rowByteSize = texWidth * 16;
+
+		auto a = spineSkeleton.state->getData()->getSkeletonData()->findAnimation(animName);
+		auto numFrames = int32_t(a->getDuration() / frameDelay);
+		auto texHeight = numFrames;
+		texHeight = (texHeight + 7) & ~7u;	// align 8
+
+		auto d = std::make_unique<char[]>(rowByteSize * texHeight);
+		auto vs = shader.verts.get();
+		for (int i = 0; i < numFrames; ++i) {
+			auto bp = (xx::TexData*)(d.get() + rowByteSize * i);
+			for (int j = 0; j < vc; ++j) {
+				auto& p = bp[j];
+				auto& v = vs[j];
+				p.x = v.pos.x;
+				p.y = v.pos.y;
+				p.u = v.uv.x;
+				p.v = v.uv.y;
+				static constexpr auto _255_1 = 1.f / 255.f;
+				p.r = v.color.r * _255_1;
+				p.g = v.color.g * _255_1;
+				p.b = v.color.b * _255_1;
+				p.a = v.color.a * _255_1;
+			}
+			shader.vertsCount = 0;
+			shader.lastTextureId = 0;
+			Update(frameDelay);
+			Draw();
+		}
+		shader.vertsCount = 0;
+		shader.lastTextureId = 0;
+		return xx::LoadGLVertTexture(d.get(), texWidth, texHeight, vc, numFrames);
 	}
 }

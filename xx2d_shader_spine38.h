@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <xx2d_shader_vertexs.h>
+#include <xx2d_shader.h>
 
 namespace xx {
 

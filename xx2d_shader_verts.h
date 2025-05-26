@@ -9,7 +9,7 @@ namespace xx {
         RGBA8 color;
     };
 
-    struct Shader_Vertexs : Shader {
+    struct Shader_Verts : Shader {
         using Shader::Shader;
         GLint uTex0{ -1 }, aPos{ -1 }, aColor{ -1 }, aTexCoord{ -1 };
         GLVertexArrays va;

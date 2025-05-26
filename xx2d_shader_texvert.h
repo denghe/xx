@@ -140,7 +140,7 @@ void main() {
             dataCount = 0;
         }
 
-        TexVertData* Draw(Ref<GLTexture> tex, Ref<GLTexture> const& vertTex, int32_t count) {
+        TexVertData* Draw(Ref<GLTexture> tex, Ref<GLVertTexture> const& vertTex, int32_t count) {
             assert(gEngine->shader == this);
             assert(count <= dataCap);
             auto texId = tex->GetValue();
@@ -152,7 +152,7 @@ void main() {
             }
             lastTextureId = texId;
             lastVertTextureId = vertTexId;
-            numVerts = vertTex->Height();
+            numVerts = vertTex->NumVerts();
             assert(vertCap >= numVerts);
             auto r = &datas[dataCount];
             dataCount += count;

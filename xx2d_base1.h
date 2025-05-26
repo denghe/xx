@@ -10,7 +10,7 @@
 #include <xx2d_shader_quad_outline.h>
 #include <xx2d_shader_quad_tiling_offset.h>
 #include <xx2d_shader_quad_light.h>
-#include <xx2d_shader_vertexs.h>
+#include <xx2d_shader_verts.h>
 #include <xx2d_shader_spine38.h>
 #include <xx2d_shader_texvert.h>
 #include <xx2d_texturepacker.h>
@@ -31,7 +31,7 @@ namespace xx {
         Shader_QuadInstanceTilingOffset shaderQuadInstanceTilingOffset;
         Shader_QuadInstanceLight shaderQuadInstanceLight;
         Shader_LineStrip shaderLineStrip;
-        Shader_Vertexs shaderVertexs;
+        Shader_Verts shaderVerts;
         Shader_Spine38 shaderSpine38;
         Shader_TexVert shaderTexVert;
         // ... more
@@ -158,7 +158,7 @@ namespace xx {
             shaderQuadInstanceTilingOffset.Init();
             shaderQuadInstanceLight.Init();
             shaderLineStrip.Init();
-            shaderVertexs.Init();
+            shaderVerts.Init();
             shaderSpine38.Init();
             shaderTexVert.Init();
             // ... more

@@ -146,6 +146,16 @@ namespace xx {
 		}
 	};
 
+	struct GLVertTexture : GLRes<GLResTypes::Texture, GLsizei, GLsizei, int32_t, int32_t> {
+		using BT = GLRes<GLResTypes::Texture, GLsizei, GLsizei, int32_t, int32_t>;
+		using BT::BT;
+
+		auto const& Width() const { return std::get<1>(vs); }
+		auto const& Height() const { return std::get<2>(vs); }
+		auto const& NumVerts() const { return std::get<3>(vs); }
+		auto const& NumFrames() const { return std::get<4>(vs); }
+	};
+
 	/**********************************************************************************************************************************/
 	/**********************************************************************************************************************************/
 
@@ -426,11 +436,11 @@ namespace xx {
 		return { t, w, h, "::memory::" };
 	}
 
-	inline GLTexture LoadGLTexture_RGBA32F(void* data, GLsizei w, GLsizei h, GLsizei numFloats) {
+	inline GLVertTexture LoadGLVertTexture(void* data, GLsizei w, GLsizei h, int32_t numVerts, int32_t numFrames) {
 		auto t = LoadGLTexture_core<GL_NEAREST, GL_REPEAT>();
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w, h, 0, GL_RGBA, GL_FLOAT, data);
 		glBindTexture(GL_TEXTURE_2D, 0);
-		return { t, w, numFloats, "::float memory::" };
+		return { t, w, h, numVerts, numFrames };
 	}
 
 }
