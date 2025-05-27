@@ -86,6 +86,8 @@ namespace xx {
 
 		void Init();
 
+		template<bool skeletonFileIsJson = false>
+		Task<> AsyncLoad(std::string const& baseFileNameWithPath, spine::SkeletonData*& sd, xx::Ref<xx::GLTexture>& tex);
 	};
 	inline SpineEnv gSpineEnv;
 
@@ -267,7 +269,6 @@ namespace xx {
 
 
 	inline void SpineTextureLoader::load(spine::AtlasPage& page, const spine::String& path) {
-
 		std::string_view fn(path.buffer(), path.length());
 
 		auto&& iter = gSpineEnv.textures.find(fn);
@@ -279,11 +280,13 @@ namespace xx {
 
 		page.width = tex->Width();
 		page.height = tex->Height();
+		++tex.GetHeader()->sharedCount;			// unsafe: ref
 		page.setRendererObject(tex.pointer);
 	}
 
 	inline void SpineTextureLoader::unload(void* texture) {
-		// do nothing. because texture from cache
+		xx::Ref<xx::GLTexture> tex;
+		tex.pointer = (xx::GLTexture*)texture;	// unsafe: deref
 	}
 
 
@@ -296,6 +299,30 @@ namespace xx {
 		spine::SpineExtension::setInstance(&ext);
 	}
 
+	template<bool skeletonFileIsJson>
+	inline Task<> SpineEnv::AsyncLoad(std::string const& baseFileNameWithPath, spine::SkeletonData*& sd, xx::Ref<xx::GLTexture>& tex) {
+		assert(spine::SpineExtension::getInstance());	// forget gSpineEnv.Init() ?
+		auto fnTex = baseFileNameWithPath + ".png";
+		auto fnAtlas = baseFileNameWithPath + ".atlas";
+		// todo: error check?
+		auto& eg = EngineBase3::Instance();
+		textures.emplace(fnTex, co_await eg.AsyncLoadTextureFromUrl(fnTex));
+		fileDatas.emplace(fnAtlas, co_await eg.AsyncDownloadFromUrl(fnAtlas));
+		auto a = AddAtlas(fnAtlas);
+		if constexpr (skeletonFileIsJson) {
+			auto fnJson = baseFileNameWithPath + ".json";
+			fileDatas.emplace(fnJson, co_await eg.AsyncDownloadFromUrl(fnJson));
+			sd = AddSkeletonData<true>(a, fnJson);
+		}
+		else {
+			auto fnSkel = baseFileNameWithPath + ".skel";
+			fileDatas.emplace(fnSkel, co_await eg.AsyncDownloadFromUrl(fnSkel));
+			sd = AddSkeletonData<false>(a, fnSkel);
+		}
+		tex = textures[fnTex];
+		fileDatas.clear();
+	}
+
 	inline spine::Atlas* SpineEnv::AddAtlas(std::string_view atlasFileName) {
 		auto r = atlass.emplace(atlasFileName, std::make_unique<spine::Atlas>(atlasFileName, &gSpineEnv.textureLoader));
 		if (!r.second) return nullptr;
@@ -306,7 +333,9 @@ namespace xx {
 	inline spine::SkeletonData* SpineEnv::AddSkeletonData(spine::Atlas* atlas, std::string_view skeletonFileName, float scale) {
 		std::conditional_t<skeletonFileIsJson, spine::SkeletonJson, spine::SkeletonBinary> parser(atlas);
 		parser.setScale(scale);
-		auto r = skeletonDatas.emplace(skeletonFileName, parser.readSkeletonDataFile(skeletonFileName));
+		auto sd = parser.readSkeletonDataFile(skeletonFileName);
+		assert(sd);
+		auto r = skeletonDatas.emplace(skeletonFileName, sd);
 		if (!r.second) return nullptr;
 		return r.first->second.get();
 	}
@@ -359,8 +388,11 @@ namespace xx {
 		spineSkeleton.Draw();
 	}
 
+	// todo: multi anim pack to 1 tex
+
 	inline GLVertTexture SpinePlayer::AnimToTexture(std::string_view animName, float frameDelay) {
 		auto& eg = EngineBase1::Instance();
+		auto bak = eg.blend;
 		SetPosition(0, 0).SetAnimation(0, animName, true);
 		eg.ShaderEnd();
 		Update(frameDelay);
@@ -402,6 +434,7 @@ namespace xx {
 		}
 		shader.vertsCount = 0;
 		shader.lastTextureId = 0;
+		eg.GLBlendFunc(bak);
 		return xx::LoadGLVertTexture(d.get(), texWidth, texHeight, vc, numFrames);
 	}
 }
