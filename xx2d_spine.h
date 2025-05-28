@@ -30,6 +30,7 @@ namespace xx {
 
 		spine::Vector<spine::Animation*>& GetAnimations();
 		spine::Animation* FindAnimation(std::string_view name);
+		spine::Bone* FindBone(std::string_view name);
 		SpinePlayer& Update(float delta);
 		GLVertTexture AnimToTexture(spine::Animation* anim, float frameDelay);
 		GLVertTexture AnimToTexture(std::string_view animName, float frameDelay);
@@ -37,7 +38,10 @@ namespace xx {
 		SpinePlayer& SetTimeScale(float t);
 		SpinePlayer& SetUsePremultipliedAlpha(bool b);
 		SpinePlayer& SetPosition(float x, float y);
-		SpinePlayer& SetPosition(XY const& xy);
+		SpinePlayer& SetPosition(XY const& pos);		// whole
+		SpinePlayer& SetScale(XY const& scale);			// whole
+		SpinePlayer& SetFirstRotation(float r);			// first bone
+		SpinePlayer& SetFirstScale(XY const& scale);	// first bone
 		SpinePlayer& SetMix(spine::Animation* from, spine::Animation* to, float duration);
 		SpinePlayer& SetMix(std::string_view fromName, std::string_view toName, float duration);
 		SpinePlayer& SetAnimation(size_t trackIndex, spine::Animation* anim, bool loop);
@@ -82,7 +86,7 @@ namespace xx {
 		void Init();
 
 		template<bool skeletonFileIsJson = false>
-		Task<> AsyncLoad(std::string const& baseFileNameWithPath, spine::SkeletonData*& sd, xx::Ref<xx::GLTexture>& tex);
+		Task<> AsyncLoad(std::string const& baseFileNameWithPath, spine::SkeletonData*& sd, xx::Ref<xx::GLTexture>& tex, float scale = 1.f);
 	};
 	inline SpineEnv gSpineEnv;
 
@@ -253,6 +257,10 @@ namespace xx {
 		return animationStateData.getSkeletonData()->findAnimation(name);
 	}
 
+	XX_INLINE spine::Bone* SpinePlayer::FindBone(std::string_view name) {
+		return skeleton.findBone(name);
+	}
+
 	XX_INLINE SpinePlayer& SpinePlayer::SetMix(spine::Animation* from, spine::Animation* to, float duration) {
 		animationStateData.setMix(from, to, duration);
 		return *this;
@@ -272,9 +280,26 @@ namespace xx {
 		return SetPosition(xy.x, xy.y);
 	}
 
+	XX_INLINE SpinePlayer& SpinePlayer::SetScale(XY const& xy) {
+		skeleton.setScaleX(xy.x);
+		skeleton.setScaleY(xy.y);
+		return *this;
+	}
+
+	XX_INLINE SpinePlayer& SpinePlayer::SetFirstRotation(float r) {
+		skeleton.getBones()[0]->setRotation(r);
+		return *this;
+	}
+
+	XX_INLINE SpinePlayer& SpinePlayer::SetFirstScale(XY const& scale) {
+		auto& b = skeleton.getBones()[0];
+		b->setScaleX(scale.x);
+		b->setScaleY(scale.y);
+		return *this;
+	}
+
 	XX_INLINE SpinePlayer& SpinePlayer::SetPosition(float x, float y) {
 		skeleton.setPosition(x, -y);
-		skeleton.updateWorldTransform();
 		return *this;
 	}
 
@@ -403,7 +428,7 @@ namespace xx {
 	}
 
 	template<bool skeletonFileIsJson>
-	inline Task<> SpineEnv::AsyncLoad(std::string const& baseFileNameWithPath, spine::SkeletonData*& sd, xx::Ref<xx::GLTexture>& tex) {
+	inline Task<> SpineEnv::AsyncLoad(std::string const& baseFileNameWithPath, spine::SkeletonData*& sd, xx::Ref<xx::GLTexture>& tex, float scale) {
 		assert(spine::SpineExtension::getInstance());	// forget gSpineEnv.Init() ?
 		auto fnTex = baseFileNameWithPath + ".png";
 		auto fnAtlas = baseFileNameWithPath + ".atlas";
@@ -415,12 +440,12 @@ namespace xx {
 		if constexpr (skeletonFileIsJson) {
 			auto fnJson = baseFileNameWithPath + ".json";
 			fileDatas.emplace(fnJson, co_await eg.AsyncDownloadFromUrl(fnJson));
-			sd = AddSkeletonData<true>(a, fnJson);
+			sd = AddSkeletonData<true>(a, fnJson, scale);
 		}
 		else {
 			auto fnSkel = baseFileNameWithPath + ".skel";
 			fileDatas.emplace(fnSkel, co_await eg.AsyncDownloadFromUrl(fnSkel));
-			sd = AddSkeletonData<false>(a, fnSkel);
+			sd = AddSkeletonData<false>(a, fnSkel, scale);
 		}
 		tex = textures[fnTex];
 		fileDatas.clear();
