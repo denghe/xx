@@ -109,7 +109,7 @@ void main() {
             glActiveTexture(GL_TEXTURE0 + 1);
             glUniform1i(uTex0, 0);
             glUniform1i(uTex1, 1);
-            glUniform2f(uCxy, 2 / gEngine->windowSize.x, -2 / gEngine->windowSize.y * gEngine->flipY);
+            glUniform2f(uCxy, 2 / gEngine->windowSize.x, 2 / gEngine->windowSize.y * gEngine->flipY);
             glBindVertexArray(va);
         }
 

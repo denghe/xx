@@ -81,7 +81,7 @@ void main() {
             glUseProgram(p);
             glActiveTexture(GL_TEXTURE0/* + textureUnit*/);
             glUniform1i(uTex0, 0);
-            glUniform2f(uCxy, 2 / gEngine->windowSize.x, -2 / gEngine->windowSize.y * gEngine->flipY);  // flip y for spine
+            glUniform2f(uCxy, 2 / gEngine->windowSize.x, 2 / gEngine->windowSize.y * gEngine->flipY);
             glBindVertexArray(va);
         }
 
