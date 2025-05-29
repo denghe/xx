@@ -87,7 +87,11 @@ namespace xx {
 		}
 
 		XX_INLINE XY ToLogicPos(XY const& glPos) const {
-			return (glPos / scale).FlipY() + original;
+			return (glPos * zoom).FlipY() + original;
+		}
+
+		XX_INLINE XY ToLogicPos(XY const& glPos, float globalScale) const {
+			return (glPos / (scale * globalScale)).FlipY() + original;
 		}
 
 
