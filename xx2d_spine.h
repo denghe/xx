@@ -34,7 +34,7 @@ namespace xx {
 		SpinePlayer& Update(float delta);
 		GLVertTexture AnimToTexture(spine::Animation* anim, float frameDelay);
 		GLVertTexture AnimToTexture(std::string_view animName, float frameDelay);
-		void Draw();
+		void Draw(float cameraScale = 1.f);
 		SpinePlayer& SetTimeScale(float t);
 		SpinePlayer& SetUsePremultipliedAlpha(bool b);
 		SpinePlayer& SetPosition(float x, float y);
@@ -121,7 +121,7 @@ namespace xx {
 		return *this;
 	}
 
-	inline void SpinePlayer::Draw() {
+	inline void SpinePlayer::Draw(float cameraScale) {
 		auto& eg = EngineBase1::Instance();
 		auto&& shader = eg.ShaderBegin(eg.shaderSpine38);
 
@@ -235,8 +235,8 @@ namespace xx {
 			for (size_t ii = 0; ii < indicesCount; ++ii) {
 				auto index = (*indices)[ii] << 1;
 				auto&& vertex = vs[ii];
-				vertex.pos.x = (*vertices)[index];
-				vertex.pos.y = (*vertices)[index + 1];
+				vertex.pos.x = (*vertices)[index] * cameraScale;
+				vertex.pos.y = (*vertices)[index + 1] * cameraScale;
 				vertex.uv.x = (*uvs)[index] * size.x;
 				vertex.uv.y = (*uvs)[index + 1] * size.y;
 				(uint32_t&)vertex.color = (uint32_t&)c;
