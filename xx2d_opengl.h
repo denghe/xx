@@ -156,6 +156,16 @@ namespace xx {
 		auto const& NumFrames() const { return std::get<4>(vs); }
 	};
 
+	struct GLTiledTexture : GLRes<GLResTypes::Texture, GLsizei, GLsizei, int32_t, int32_t> {
+		using BT = GLRes<GLResTypes::Texture, GLsizei, GLsizei, int32_t, int32_t>;
+		using BT::BT;
+
+		auto const& Width() const { return std::get<1>(vs); }
+		auto const& Height() const { return std::get<2>(vs); }
+		auto const& SizeX() const { return std::get<3>(vs); }
+		auto const& SizeY() const { return std::get<4>(vs); }
+	};
+
 	/**********************************************************************************************************************************/
 	/**********************************************************************************************************************************/
 
@@ -428,7 +438,7 @@ namespace xx {
 
 	// data's bytes len == w * h * sizeof(colorFormat)
 	template<GLuint filter = GL_NEAREST /* GL_LINEAR */, GLuint wraper = GL_CLAMP_TO_EDGE /* GL_REPEAT */>
-	inline GLTexture LoadGLTexture_Memory(void* data, GLsizei w, GLsizei h, GLint colorFormat = GL_RGBA) {
+	inline GLTexture LoadGLTexture(void* data, GLsizei w, GLsizei h, GLint colorFormat = GL_RGBA) {
 		auto t = LoadGLTexture_core<filter, wraper>();
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 8 - 4 * (w & 0x1));
 		glTexImage2D(GL_TEXTURE_2D, 0, colorFormat, w, h, 0, colorFormat, GL_UNSIGNED_BYTE, data);
@@ -441,6 +451,13 @@ namespace xx {
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w, h, 0, GL_RGBA, GL_FLOAT, data);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		return { t, w, h, numVerts, numFrames };
+	}
+
+	inline GLTiledTexture LoadGLTiledTexture(void* data, GLsizei w, GLsizei h, XYi size) {
+		auto t = LoadGLTexture_core<GL_NEAREST, GL_REPEAT>();
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, w, h, 0, GL_RGBA, GL_FLOAT, data);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		return { t, w, h, size.x, size.y };
 	}
 
 }
