@@ -2,11 +2,46 @@
 
 #include "xx_ptr.h"
 #include "xx_data.h"
+
+#ifdef __EMSCRIPTEN__
+
+// todo: emscripten support ( web audio api backend for soloud )
+
+namespace xx {
+	struct SoundSource {
+	};
+
+	struct Sound {
+		Sound() {
+		}
+
+		~Sound() {
+		}
+
+		Shared<SoundSource> Load(Data const& oggFileData, bool looping = false) {
+			auto rtv = MakeShared<SoundSource>();
+			return rtv;
+		}
+
+		int Play(Shared<SoundSource> const& ss, float volume = 1.f, float pan = 0.f, float speed = 1.f) {
+			return 0;
+		}
+
+		void Stop(int h) {
+		}
+
+		void StopAll() {
+		}
+
+		void SetPauseAll(bool b) {
+		}
+	};
+}
+#else
+
 #include <soloud.h>
 #include <soloud_wav.h>
 #include <soloud_file.h>
-
-// todo: emscripten support ( web audio api backend for soloud )
 
 namespace xx {
 	struct SoundSource {
@@ -58,3 +93,4 @@ namespace xx {
 	};
 
 }
+#endif
