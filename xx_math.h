@@ -583,6 +583,26 @@ namespace xx {
         // https://github.com/CharlesFeng207/Unity-Math-Utils/blob/main/Unity-Math-Utils/Assets/MathUtils.cs
 
 
+        XX_INLINE bool IsAABBIntersect(XYi aPos, XYi aSize, XYi bPos, XYi bSize) {
+            if (bPos.x >= aPos.x) {
+                if (bPos.y >= aPos.y) {
+                    if (bPos.x < aPos.x + aSize.x) return bPos.y < aPos.y + aSize.y;
+                }
+                else /* bPos.y < aPos.y */ {
+                    if (bPos.x < aPos.x + aSize.x) return bPos.y + bSize.y > aPos.y;
+                }
+            }
+            else /* bPos.x < aPos.x */ {
+                if (bPos.y >= aPos.y) {
+                    if (bPos.x + bSize.x > aPos.x) return bPos.y < aPos.y + aSize.y;
+                }
+                else /* bPos.y < aPos.y */ {
+                    if (bPos.x + bSize.x > aPos.x) return bPos.y + bSize.y > aPos.y;
+                }
+            }
+            return false;
+        }
+
         // sRadiansCosSin == T{ Cos(sRadians), Sin(sRadians) }
         template<typename T = XYp, typename U = decltype(T::x), class = std::enable_if_t<xx::IsXY_v<T>>>
         bool IsSectorCircleIntersect(T const& sPos, U sRadius, T const& sRadiansCosSin, U sTheta, T const& cPos, U cRadius) {
