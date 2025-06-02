@@ -38,7 +38,12 @@ namespace xx {
 			SetText(StringU8ToU32(txt_));
 		}
 
+		void SetText() {
+			fs.Clear();
+		}
+
 		virtual void Draw() override {
+			if (fs.Empty()) return;
 			auto& shader = EngineBase1::Instance().ShaderBegin(EngineBase1::Instance().shaderQuadInstance);
 			auto basePos = worldMinXY;
 			for (auto& f : fs) {

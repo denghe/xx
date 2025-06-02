@@ -97,7 +97,6 @@ namespace xx {
 		XX_INLINE Shared<T>& AddChildren(Shared<T> c) {
 			assert(c);
 			assert(!c->parent);
-			assert(c->indexAtParentChildren == -1);
 			c->parent = WeakFromThis(this);
 			c->indexAtParentChildren = children.len;
 			c->scissor = scissor;
