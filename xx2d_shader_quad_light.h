@@ -27,8 +27,8 @@ in vec4 aColor;
 in vec4 aTexRect;
 
 out vec2 vTexCoord;
-out float vColorplus;
-out vec4 vColor;
+flat out float vColorplus;
+flat out vec4 vColor;
 
 void main() {
     vec2 pos = aPosAnchor.xy;
@@ -56,8 +56,8 @@ uniform sampler2D uTex0;
 uniform sampler2D uTex1;
 
 in vec2 vTexCoord;
-in float vColorplus;
-in vec4 vColor;
+flat in float vColorplus;
+flat in vec4 vColor;
 
 out vec4 oColor;
 

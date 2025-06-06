@@ -44,10 +44,10 @@ in vec4 aOutlineColor;
 in vec2 aOutlineThickness;
 
 out vec2 vTexCoord;
-out float vColorplus;
-out vec4 vColor;
-out vec4 vOutlineColor;
-out vec2 vOutlineThickness;
+flat out float vColorplus;
+flat out vec4 vColor;
+flat out vec4 vOutlineColor;
+flat out vec2 vOutlineThickness;
 
 void main() {
     vec2 pos = aPosAnchor.xy;
@@ -76,10 +76,10 @@ precision highp float;          // mediump draw border has issue
 uniform sampler2D uTex0;
 
 in vec2 vTexCoord;
-in float vColorplus;
-in vec4 vColor;
-in vec4 vOutlineColor;
-in vec2 vOutlineThickness;
+flat in float vColorplus;
+flat in vec4 vColor;
+flat in vec4 vOutlineColor;
+flat in vec2 vOutlineThickness;
 
 out vec4 oColor;
 
