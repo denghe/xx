@@ -389,8 +389,9 @@ namespace xx {
 
         EM_BOOL OnMouseDown_(EmscriptenMouseEvent const& e) {
             touchMode = false;
+            if (mouse.btnStates[e.button]) return EM_TRUE;  // for duplicate message bug
+            if (mouseEventHandler) return EM_TRUE;
             mouse.btnStates[e.button] = true;	// mouse left btn == 0, right btn == 2( js )
-            assert(!mouseEventHandler);
             mouseEventHandlers.ForeachPoint(mouseEventHandlers.max_2 + mouse.pos, [&](auto o) {
                 tmpZNodes.Emplace(o->z, o);
                 });
