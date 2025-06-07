@@ -41,7 +41,7 @@
 	<Type Name="xx::Shared_&lt;*,*&gt;">
 		<SmartPointer Usage="Minimal">pointer</SmartPointer>
 		<DisplayString Condition="pointer == 0">null</DisplayString>
-		<DisplayString Condition="pointer != 0">{((HeaderType*)((char*)pointer - ((::size_t)&amp;(char&amp;)((((HeaderType*)0)->data)))))}</DisplayString>
+		<DisplayString Condition="pointer != 0">{pointer}</DisplayString>
 		<Expand HideRawView="true">
 			<Item Condition="pointer != 0" Name="[sharedCount]">((HeaderType*)((char*)pointer - ((::size_t)&amp;(char&amp;)((((HeaderType*)0)->data)))))->sharedCount</Item>
 			<Item Condition="pointer != 0" Name="[weakCount]">((HeaderType*)((char*)pointer - ((::size_t)&amp;(char&amp;)((((HeaderType*)0)->data)))))->weakCount</Item>
@@ -50,8 +50,9 @@
 	</Type>
 	
 	<Type Name="xx::Weak&lt;*&gt;">
+		<SmartPointer Usage="Minimal">&amp;h->data</SmartPointer>
 		<DisplayString Condition="h == 0 || (*h).sharedCount == 0">null</DisplayString>
-		<DisplayString Condition="h != 0 &amp;&amp; (*h).sharedCount != 0">{h}</DisplayString>
+		<DisplayString Condition="h != 0 &amp;&amp; (*h).sharedCount != 0">{h->data}</DisplayString>
 		<Expand HideRawView="true">
 			<Item Condition="h != 0" Name="[sharedCount]">h->sharedCount</Item>
 			<Item Condition="h != 0" Name="[weakCount]">h->weakCount</Item>
