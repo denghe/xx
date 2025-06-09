@@ -301,6 +301,12 @@ namespace xx {
     /************************************************************************************/
     // mem utils
 
+    template<typename T, typename ...Args>
+    XX_INLINE T& ReNew(T& o, Args&& ...args) {
+        std::destroy_at(&o);
+        return *std::construct_at(&o, std::forward<Args>(args)...);
+    }
+
     template<typename T>
     XX_INLINE T BSwap(T i) {
         T r;
