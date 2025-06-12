@@ -7,13 +7,13 @@ namespace xx {
 
     struct RingInstanceData {
         XY pos{};
-        float radius{};
+        float radius{}, colorPlus{};
         RGBA8 color{ 255, 255, 255, 255 };
     };
 
     struct Shader_RingInstance : Shader {
         using Shader::Shader;
-        GLint uSwh2FlipY{ -1 }, aVert{ -1 }, aPosRadius{ -1 }, aColor{ -1 };
+        GLint uSwh2FlipY{ -1 }, aVert{ -1 }, aPosRadiusColorPlus{ -1 }, aColor{ -1 };
         GLVertexArrays va;
         GLBuffer vb, ib;
 
@@ -28,35 +28,36 @@ uniform vec4 uSwh2FlipY;	// screen width & height / 2, flipY
 
 in vec2 aVert;	// fans index { -1, -1 }, { -1, 1.f }, { 1.f, -1 }, { 1.f, 1.f }
 
-in vec3 aPosRadius;
+in vec4 aPosRadiusColorPlus;
 in vec4 aColor;
 
-flat out vec3 vPosRadius;
+flat out vec4 vPosRadiusColorPlus;
 flat out vec4 vColor;
 
 void main() {
-    vec2 p = aPosRadius.xy;
-    float r = aPosRadius.z;
+    vec2 p = aPosRadiusColorPlus.xy;
+    float r = aPosRadiusColorPlus.z;
     vec2 v = p + aVert * r;
 
     gl_Position = vec4(v / (uSwh2FlipY.xy * uSwh2FlipY.zw), 0, 1);  // -1 ~ 1
 
-    vPosRadius.xy = p * uSwh2FlipY.zw + uSwh2FlipY.xy;              // frag coord
-    vPosRadius.z = r;
+    vPosRadiusColorPlus.xy = p * uSwh2FlipY.zw + uSwh2FlipY.xy;              // frag coord
+    vPosRadiusColorPlus.z = r;
+    vPosRadiusColorPlus.w = aPosRadiusColorPlus.w;
     vColor = aColor;
 })"sv });
 
             f = LoadGLFragmentShader({ R"(#version 300 es
 precision mediump float;
 
-flat in vec3 vPosRadius;
+flat in vec4 vPosRadiusColorPlus;
 flat in vec4 vColor;
 
 out vec4 oColor;
 
 void main() {
-    vec2 p = vPosRadius.xy;
-    float r = vPosRadius.z;
+    vec2 p = vPosRadiusColorPlus.xy;
+    float r = vPosRadiusColorPlus.z;
     float d = distance(p, gl_FragCoord.xy);
     if (d > r) discard;
 
@@ -65,7 +66,7 @@ void main() {
     //oColor.a = a;
 
     float a = 1.f - d / r;
-    oColor.xyz = vColor.xyz * a;
+    oColor.xyz = vColor.xyz * a * vPosRadiusColorPlus.w;
     oColor.a = 1.f;
 })"sv });
 
@@ -74,7 +75,7 @@ void main() {
             uSwh2FlipY = glGetUniformLocation(p, "uSwh2FlipY");
 
             aVert = glGetAttribLocation(p, "aVert");
-            aPosRadius = glGetAttribLocation(p, "aPosRadius");
+            aPosRadiusColorPlus = glGetAttribLocation(p, "aPosRadiusColorPlus");
             aColor = glGetAttribLocation(p, "aColor");
             CheckGLError();
 
@@ -92,9 +93,9 @@ void main() {
 
             glBindBuffer(GL_ARRAY_BUFFER, vb);
 
-            glVertexAttribPointer(aPosRadius, 3, GL_FLOAT, GL_FALSE, sizeof(RingInstanceData), 0);
-            glVertexAttribDivisor(aPosRadius, 1);
-            glEnableVertexAttribArray(aPosRadius);
+            glVertexAttribPointer(aPosRadiusColorPlus, 4, GL_FLOAT, GL_FALSE, sizeof(RingInstanceData), 0);
+            glVertexAttribDivisor(aPosRadiusColorPlus, 1);
+            glEnableVertexAttribArray(aPosRadiusColorPlus);
 
             glVertexAttribPointer(aColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(RingInstanceData), (GLvoid*)offsetof(RingInstanceData, color));
             glVertexAttribDivisor(aColor, 1);
