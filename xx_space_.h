@@ -26,7 +26,7 @@ namespace xx {
 			idxs.Emplace();
 			std::unordered_set<uint64_t> set;
 			set.insert(0);
-			for (float radius = 0; radius < cellSize_ * gridNumRows; radius += cellSize_) {
+			for (float radius = (float)cellSize_; radius < cellSize_ * gridNumRows; radius += cellSize_) {
 				auto lenBak = idxs.len;
 				auto radians = std::asin(0.5f / radius) * 2;
 				auto step = (int32_t)(M_PI * 2 / radians);
