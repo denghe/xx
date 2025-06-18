@@ -39,9 +39,10 @@ namespace xx {
 		}
 
 		template<typename F>
-		void Init(int z_, XY const& position_, XY const& anchor_, Scale9SpriteConfig const& cfg_, std::u32string_view const& txt_, F&& callback) {
+		Button& Init(int z_, XY const& position_, XY const& anchor_, Scale9SpriteConfig const& cfg_, std::u32string_view const& txt_, F&& callback) {
 			Init(z_, position_, anchor_, cfg_, txt_);
 			onClicked = std::forward<F>(callback);
+			return *this;
 		}
 
 		TaskGuard bgChangeColorplus;
