@@ -95,6 +95,11 @@ namespace xx {
             return { R(x), R(-y) };
         }
 
+        template<typename R = T>
+        constexpr auto Floor() const -> X_Y<R> requires std::is_same_v<float, T> {
+            return { std::floorf(x), std::floorf(y) };
+        }
+
         //template<typename R = T, typename U = float>
         //constexpr auto Mag2() const -> R {
         //    return R(x) * R(x) + R(y) * R(y);

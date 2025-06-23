@@ -582,8 +582,8 @@ namespace xx {
 
         // https://github.com/CharlesFeng207/Unity-Math-Utils/blob/main/Unity-Math-Utils/Assets/MathUtils.cs
 
-
-        XX_INLINE bool IsAABBIntersect(XYi aPos, XYi aSize, XYi bPos, XYi bSize) {
+        template<typename T = XYi>
+        XX_INLINE bool IsAABBIntersect(T aPos, T aSize, T bPos, T bSize) {
             if (bPos.x >= aPos.x) {
                 if (bPos.y >= aPos.y) {
                     if (bPos.x < aPos.x + aSize.x) return bPos.y < aPos.y + aSize.y;
