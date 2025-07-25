@@ -18,7 +18,7 @@ namespace xx {
 		int z{};													// global z for event priority or batch combine
 		bool inParentArea{ true };									// panel true ? combo box pop false ?
 		int32_t indexAtParentChildren{-1};
-
+		uint64_t ud{};
 
 		// for init
 		XX_INLINE void FillTrans() {
@@ -114,7 +114,9 @@ namespace xx {
 			assert(parent->children[indexAtParentChildren].pointer == this);
 			auto i = parent->children.Back()->indexAtParentChildren = indexAtParentChildren;
 			indexAtParentChildren = -1;
-			parent->children.SwapRemoveAt(i);
+			auto p = parent.GetPointer();
+			parent.Reset();
+			p->children.SwapRemoveAt(i);
 		}
 
 		XX_INLINE void Clear() {

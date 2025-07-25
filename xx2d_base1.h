@@ -390,18 +390,26 @@ namespace xx {
         EM_BOOL OnMouseDown_(EmscriptenMouseEvent const& e) {
             touchMode = false;
             if (mouse.btnStates[e.button]) return EM_TRUE;  // for duplicate message bug
-            if (mouseEventHandler) return EM_TRUE;
-            mouse.btnStates[e.button] = true;	// mouse left btn == 0, right btn == 2( js )
-            mouseEventHandlers.ForeachPoint(mouseEventHandlers.max_2 + mouse.pos, [&](auto o) {
-                tmpZNodes.Emplace(o->z, o);
-                });
-            std::sort(tmpZNodes.buf, tmpZNodes.buf + tmpZNodes.len, ZNode::GreaterThanComparer);	// event big z first
-            for (auto& zn : tmpZNodes) {
-                if (!((MouseEventHandlerNode*)zn.n)->PosInScissor(mouse.pos)) continue;
-                ((MouseEventHandlerNode*)zn.n)->OnMouseDown();
-                if (mouseEventHandler) break;
+            bool handled{};
+            if (mouseEventHandler) {
+                mouseEventHandler->OnMouseDown();
+                handled = true;
+            } else {
+                mouseEventHandlers.ForeachPoint(mouseEventHandlers.max_2 + mouse.pos, [&](auto o) {
+                    tmpZNodes.Emplace(o->z, o);
+                    });
+                std::sort(tmpZNodes.buf, tmpZNodes.buf + tmpZNodes.len, ZNode::GreaterThanComparer);	// event big z first
+                for (auto& zn : tmpZNodes) {
+                    if (!((MouseEventHandlerNode*)zn.n)->PosInScissor(mouse.pos)) continue;
+                    ((MouseEventHandlerNode*)zn.n)->OnMouseDown();
+                    handled = true;
+                    if (mouseEventHandler) break;
+                }
+                tmpZNodes.Clear();
             }
-            tmpZNodes.Clear();
+            if (!handled) {
+                mouse.btnStates[e.button] = true;	// mouse left btn == 0, right btn == 2( js )
+            }
             return EM_TRUE;
         }
 
@@ -428,7 +436,7 @@ namespace xx {
             mouse.btnStates[e.button] = false;
             if (mouseEventHandler) {
                 mouseEventHandler->OnMouseUp();
-                mouseEventHandler = {};
+                //mouseEventHandler = {};
             }
             return EM_TRUE;
         }

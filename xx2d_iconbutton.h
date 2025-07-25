@@ -40,6 +40,7 @@ namespace xx {
 		}
 
 		void Draw() override {
+			if (!frame.tex) return;
 			auto q = EngineBase1::Instance().ShaderBegin(EngineBase1::Instance().shaderQuadInstance).Draw(frame.tex->GetValue(), 1);
 			q->pos = worldMinXY + anchorSize;
 			q->anchor = 0.5f;

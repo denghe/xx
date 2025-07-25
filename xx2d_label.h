@@ -8,17 +8,31 @@ namespace xx {
 		RGBA8 color;
 
 		Label& Init(int z_, XY const& position_, XY const& scale_, XY const& anchor_, RGBA8 color_, std::u32string_view const& txt_) {
+			Init(z_, position_, scale_, anchor_, color_);
+			SetText(txt_);
+			return *this;
+		}
+
+		Label& Init(int z_, XY const& position_, XY const& scale_, XY const& anchor_, RGBA8 color_, std::string_view const& txt_) {
+			Init(z_, position_, scale_, anchor_, color_);
+			SetText(txt_);
+			return *this;
+		}
+
+		Label& Init(int z_, XY const& position_, XY const& scale_, XY const& anchor_, RGBA8 color_) {
 			z = z_;
 			position = position_;
 			anchor = anchor_;
 			scale = scale_;
 			color = color_;
-			SetText(txt_);
 			return *this;
 		}
 
-
 		void SetText(std::u32string_view const& txt_) {
+			if (txt_.empty()) {
+				fs.Clear();
+				return;
+			}
 			auto len = (int)txt_.size();
 			fs.Resize(len);
 			auto& ctc = EngineBase2::Instance().ctcDefault;
@@ -30,12 +44,9 @@ namespace xx {
 			FillTrans();
 		}
 
-		Label& Init(int z_, XY const& position_, XY const& scale_, XY const& anchor_, RGBA8 color_, std::string_view const& txt_) {
-			return Init(z_, position_, scale_, anchor_, color_, StringU8ToU32(txt_));
-		}
-
 		void SetText(std::string_view const& txt_) {
-			SetText(StringU8ToU32(txt_));
+			if (txt_.empty()) fs.Clear();
+			else SetText(StringU8ToU32(txt_));
 		}
 
 		void SetText() {
