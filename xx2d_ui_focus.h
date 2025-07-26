@@ -123,6 +123,109 @@ namespace xx {
 		}
 	};
 
+	struct FocusImageButton : FocusBase {
+		xx::Ref<Scale9SpriteConfig> cfgNormal, cfgHighlight;
+		xx::Ref<xx::Frame> frame;
+		XY spacing{};
+		float fixedScale{};
+		RGBA8 color{};
+		float colorplus{};
+		float radians{};
+
+		std::function<void()> onClicked = [] { CoutN("FocusImageButton clicked."); };
+		std::function<void()> onFocus = [] {};	// play sound?
+
+		FocusImageButton& Init(int z_, XY position_, XY fixedSize_, XY spacing_, XY anchor_
+			, xx::Ref<Scale9SpriteConfig> cfgNormal_, xx::Ref<Scale9SpriteConfig> cfgHighlight_
+			, xx::Ref<xx::Frame> frame_, ImageRadians radians_ = ImageRadians::Zero, RGBA8 color_ = RGBA8_White, float colorplus_ = 1) {
+			z = z_;
+			position = position_;
+			size = fixedSize_ + spacing_ * 2;
+			spacing = spacing_;
+			anchor = anchor_;
+			cfgNormal = std::move(cfgNormal_);
+			cfgHighlight = std::move(cfgHighlight_);
+			frame = std::move(frame_);
+			radians = float(M_PI) * 0.5f * (int32_t)radians_;
+			color = color_;
+			colorplus = colorplus_;
+			fixedScale = fixedSize_.x / frame->spriteSize.x;
+			if (frame->spriteSize.y * fixedScale > fixedSize_.y) {
+				fixedScale = fixedSize_.y / frame->spriteSize.y;
+			}
+			FillTrans();
+			auto& cfg = isFocus ? *cfgHighlight : *cfgNormal;
+			MakeChildren<Scale9Sprite>()->Init(z + 1, 0, cfg.borderScale, {}, size / cfg.borderScale, cfg);
+			return *this;
+		}
+
+		void Draw() override {
+			if (!frame) return;
+			auto q = EngineBase1::Instance().ShaderBegin(EngineBase1::Instance().shaderQuadInstance).Draw(frame->tex, 1);
+			q->pos = worldMinXY + spacing * worldScale;
+			q->anchor = 0;
+			q->scale = worldScale * fixedScale;
+			q->radians = radians;
+			q->colorplus = colorplus;
+			q->color = { color.r, color.g, color.b, (uint8_t)(color.a * alpha) };
+			q->texRect.data = frame->textureRect.data;
+		}
+
+		void ApplyCfg() {
+			assert(children.len == 1);
+			auto& cfg = isFocus ? *cfgHighlight : *cfgNormal;
+			auto bg = (Scale9Sprite*)children[0].pointer;
+			bg->Init(z + 1, 0, cfg.borderScale, {}, size / cfg.borderScale, cfg);
+		}
+
+		Label& LabelLeft() {
+			assert(children.len == 2 || children.len == 3);
+			return *(Label*)children[0].pointer;
+		}
+
+		Label& LabelRight() {
+			assert(children.len == 3);
+			return *(Label*)children[1].pointer;
+		}
+
+		void SetFocus() override {
+			assert(!isFocus);
+			isFocus = true;
+			ApplyCfg();
+			gEngine->mouseEventHandler = xx::WeakFromThis(this);
+			onFocus();
+			//xx::CoutN("SetFocus");
+		}
+
+		void LostFocus() override {
+			assert(isFocus);
+			isFocus = false;
+			ApplyCfg();
+			gEngine->mouseEventHandler.Reset();
+			//xx::CoutN("LostFocus");
+		}
+
+		// todo: enable disable
+
+		virtual void OnMouseDown() override {
+			if (MousePosInArea()) {
+				onClicked();
+			}
+		}
+
+		virtual void OnMouseMove() override {
+			if (MousePosInArea()) {
+				if (isFocus) return;
+				SetFocus();
+			}
+			else {
+				if (!isFocus) return;
+				LostFocus();
+				gEngine->mouseEventHandler.Reset();
+			}
+		}
+
+	};
 
 	struct FocusSlider : FocusBase {
 		xx::Ref<Scale9SpriteConfig> cfgNormal, cfgHighlight, cfgBar, cfgBlock;
