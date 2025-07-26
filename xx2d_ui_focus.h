@@ -135,14 +135,14 @@ namespace xx {
 		std::function<void()> onClicked = [] { CoutN("FocusImageButton clicked."); };
 		std::function<void()> onFocus = [] {};	// play sound?
 
-		FocusImageButton& Init(int z_, XY position_, XY fixedSize_, XY spacing_, XY anchor_
+		FocusImageButton& Init(int z_, XY position_, XY anchor_, XY fixedSize_, XY spacing_
 			, xx::Ref<Scale9SpriteConfig> cfgNormal_, xx::Ref<Scale9SpriteConfig> cfgHighlight_
 			, xx::Ref<xx::Frame> frame_, ImageRadians radians_ = ImageRadians::Zero, RGBA8 color_ = RGBA8_White, float colorplus_ = 1) {
 			z = z_;
 			position = position_;
+			anchor = anchor_;
 			size = fixedSize_ + spacing_ * 2;
 			spacing = spacing_;
-			anchor = anchor_;
 			cfgNormal = std::move(cfgNormal_);
 			cfgHighlight = std::move(cfgHighlight_);
 			frame = std::move(frame_);
