@@ -103,7 +103,8 @@ namespace xx {
             }
         }
 
-        void Draw(XY const& position, XY const& anchor, RGBA8 color, std::u32string_view const& txt) {
+        template<typename S>
+        void Draw(XY const& position, XY const& anchor, RGBA8 color, S const& txt) {
 
             // make sure all char texture exists
             auto fs = (TinyFrame**)alloca(txt.size() * sizeof(TinyFrame*));
@@ -130,20 +131,18 @@ namespace xx {
             }
         }
 
-        void Draw(XY const& pos, std::string_view const& s, RGBA8 color = RGBA8_White, XY const& anchor = { 0, 0.5 }) {
-            Draw(pos, anchor, color, StringU8ToU32(s));
+        template<typename S>
+        void Draw(XY const& pos, S const& s, RGBA8 color = RGBA8_White, XY const& anchor = { 0, 0.5 }) {
+            Draw(pos, anchor, color, s);
         }
 
-        float Measure(std::u32string_view const& s) {
+        template<typename S>
+        float Measure(S const& s) {
             float w{};
             for (size_t i = 0; i < s.size(); ++i) {
                 w += Find(s[i]).texRect.w;
             }
             return w;
-        }
-
-        float Measure(std::string_view const& s) {
-            return Measure(StringU8ToU32(s));
         }
 
     };

@@ -7,13 +7,8 @@ namespace xx {
 		Listi32<TinyFrame const*> fs;
 		RGBA8 color;
 
-		Label& Init(int z_, XY const& position_, XY const& scale_, XY const& anchor_, RGBA8 color_, std::u32string_view const& txt_) {
-			Init(z_, position_, scale_, anchor_, color_);
-			SetText(txt_);
-			return *this;
-		}
-
-		Label& Init(int z_, XY const& position_, XY const& scale_, XY const& anchor_, RGBA8 color_, std::string_view const& txt_) {
+		template<typename S>
+		Label& Init(int z_, XY const& position_, XY const& scale_, XY const& anchor_, RGBA8 color_, S const& txt_) {
 			Init(z_, position_, scale_, anchor_, color_);
 			SetText(txt_);
 			return *this;
@@ -28,12 +23,14 @@ namespace xx {
 			return *this;
 		}
 
-		void SetText(std::u32string_view const& txt_) {
-			if (txt_.empty()) {
+		// S : literal string u8string [view]
+		template<typename S>
+		void SetText(S const& txt_) {
+			auto len = (int32_t)StrLen(txt_);
+			if (!len) {
 				fs.Clear();
 				return;
 			}
-			auto len = (int)txt_.size();
 			fs.Resize(len);
 			auto& ctc = EngineBase2::Instance().ctcDefault;
 			size = { 0, (float)ctc.canvasHeight * scale.y };
@@ -42,11 +39,6 @@ namespace xx {
 				size.x += fs[i]->texRect.w * scale.x;
 			}
 			FillTrans();
-		}
-
-		void SetText(std::string_view const& txt_) {
-			if (txt_.empty()) fs.Clear();
-			else SetText(StringU8ToU32(txt_));
 		}
 
 		void SetText() {

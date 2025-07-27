@@ -17,7 +17,8 @@ namespace xx {
 		Shared<Label> lbl;
 		Shared<Scale9Sprite> bg;
 
-		void MakeContent(Scale9SpriteConfig const& cfg, std::u32string_view const& txt) {
+		template<typename S>
+		void MakeContent(Scale9SpriteConfig const& cfg, S const& txt) {
 			lbl = MakeChildren<Label>();
 			lbl->Init(z + 1, { cfg.txtPadding.x, cfg.txtPaddingRightBottom.y }, cfg.txtScale, {}, cfg.txtColor, txt);
 			size = lbl->size + cfg.txtPadding + cfg.txtPaddingRightBottom;
@@ -26,7 +27,8 @@ namespace xx {
 			bg->Init(z, {}, cfg.borderScale, {}, size / cfg.borderScale, cfg);
 		}
 
-		Button& Init(int z_, XY const& position_, XY const& anchor_, Scale9SpriteConfig const& cfg_, std::u32string_view const& txt_) {
+		template<typename S>
+		Button& Init(int z_, XY const& position_, XY const& anchor_, Scale9SpriteConfig const& cfg_, S const& txt_) {
 			z = z_;
 			position = position_;
 			anchor = anchor_;
@@ -34,12 +36,9 @@ namespace xx {
 			FillTransRecursive();
 			return *this;
 		}
-		Button& Init(int z_, XY const& position_, XY const& anchor_, Scale9SpriteConfig const& cfg_, std::string_view const& txt_) {
-			return Init(z_, position_, anchor_, cfg_, StringU8ToU32(txt_));
-		}
 
-		template<typename F>
-		Button& Init(int z_, XY const& position_, XY const& anchor_, Scale9SpriteConfig const& cfg_, std::u32string_view const& txt_, F&& callback) {
+		template<typename S, typename F>
+		Button& Init(int z_, XY const& position_, XY const& anchor_, Scale9SpriteConfig const& cfg_, S const& txt_, F&& callback) {
 			Init(z_, position_, anchor_, cfg_, txt_);
 			onClicked = std::forward<F>(callback);
 			return *this;

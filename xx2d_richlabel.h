@@ -187,7 +187,8 @@ namespace xx {
 
 	public:
 
-		RichLabel& AddText(std::u32string_view const& text, XY const& scale_ = { 1, 1 }, RGBA8 color = RGBA8_White, VAligns align = VAligns::Center) {
+		template<typename S>
+		RichLabel& AddText(S const& text, XY const& scale_ = { 1, 1 }, RGBA8 color = RGBA8_White, VAligns align = VAligns::Center) {
 			auto& ctc = EngineBase2::Instance().ctcDefault;
 			Text* t{};
 			TinyFrame* charFrame{};
@@ -212,13 +213,11 @@ namespace xx {
 			}
 			return *this;
 		}
-		RichLabel& AddText(std::string_view const& text, XY const& scale_ = { 1, 1 }, RGBA8 color = RGBA8_White, VAligns align = VAligns::Center) {
-			return AddText(StringU8ToU32(text), scale_, color, align);
-		}
 
 		// SetOffset( width - txtWidth ) + AddText( txt )
 		// txt can't include /r/n
-		RichLabel& AddRightText(std::u32string_view const& text, XY const& scale_ = { 1, 1 }, RGBA8 color = RGBA8_White, VAligns align = VAligns::Center) {
+		template<typename S>
+		RichLabel& AddRightText(S const& text, XY const& scale_ = { 1, 1 }, RGBA8 color = RGBA8_White, VAligns align = VAligns::Center) {
 			auto& ctc = EngineBase2::Instance().ctcDefault;
 			float txtWidth{};
 			for (auto& c : text) {
@@ -230,13 +229,11 @@ namespace xx {
 			lineX = width;
 			return *this;
 		}
-		RichLabel& AddRightText(std::string_view const& text, XY const& scale_ = { 1, 1 }, RGBA8 color = RGBA8_White, VAligns align = VAligns::Center) {
-			return AddRightText(StringU8ToU32(text), scale_, color, align);
-		}
 
 		// AddText( txt, auto scale x )
 		// txt can't include /r/n
-		RichLabel& AddLimitedWidthText(std::u32string_view const& text, float txtWidth, XY const& scale_ = { 1, 1 }, RGBA8 color = RGBA8_White, VAligns align = VAligns::Center) {
+		template<typename S>
+		RichLabel& AddLimitedWidthText(S const& text, float txtWidth, XY const& scale_ = { 1, 1 }, RGBA8 color = RGBA8_White, VAligns align = VAligns::Center) {
 			auto& ctc = EngineBase2::Instance().ctcDefault;
 			float tw{};
 			for (auto& c : text) {
@@ -249,9 +246,6 @@ namespace xx {
 				AddText(text, { scale_.x / tw * txtWidth, scale_.y }, color, align);
 			}
 			return *this;
-		}
-		RichLabel& AddLimitedWidthText(std::string_view const& text, float txtWidth, XY const& scale_ = { 1, 1 }, RGBA8 color = RGBA8_White, VAligns align = VAligns::Center) {
-			return AddLimitedWidthText(StringU8ToU32(text), txtWidth, scale_, color, align);
 		}
 
 

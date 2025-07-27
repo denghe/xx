@@ -55,7 +55,8 @@ namespace xx {
 	struct IconButton : Button {
 		Shared<Image> icon;
 
-		IconButton& Init(int z_, XY const& pos_, XY const& anchor_, Scale9SpriteConfig const& cfg_, TinyFrame const& icon_, std::u32string_view const& txt_, ImageRadians iconRadians_ = ImageRadians::Zero, RGBA8 iconColor_ = RGBA8_White, float iconColorplus_ = 1) {
+		template<typename S>
+		IconButton& Init(int z_, XY const& pos_, XY const& anchor_, Scale9SpriteConfig const& cfg_, TinyFrame const& icon_, S const& txt_, ImageRadians iconRadians_ = ImageRadians::Zero, RGBA8 iconColor_ = RGBA8_White, float iconColorplus_ = 1) {
 			z = z_;
 			position = pos_;
 			anchor = anchor_;
@@ -68,7 +69,9 @@ namespace xx {
 			FillTransRecursive();
 			return *this;
 		}
-		IconButton& Init(int z_, XY const& pos_, XY const& anchor_, Scale9SpriteConfig const& cfg_, Ref<Frame> const& icon_, std::u32string_view const& txt_, ImageRadians iconRadians_ = ImageRadians::Zero, RGBA8 iconColor_ = RGBA8_White, float iconColorplus_ = 1) {
+
+		template<typename S>
+		IconButton& Init(int z_, XY const& pos_, XY const& anchor_, Scale9SpriteConfig const& cfg_, Ref<Frame> const& icon_, S const& txt_, ImageRadians iconRadians_ = ImageRadians::Zero, RGBA8 iconColor_ = RGBA8_White, float iconColorplus_ = 1) {
 			return Init(z_, pos_, anchor_, cfg_, TinyFrame{ icon_->tex, icon_->textureRect }, txt_, iconRadians_, iconColor_, iconColorplus_);
 		}
 	};

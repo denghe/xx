@@ -607,6 +607,21 @@ namespace xx {
     // utils
     /************************************************************************************/
 
+    template<typename S>
+    inline size_t StrLen(S const& s) {
+        if constexpr (std::is_pointer_v<S>) {
+            if (!s) return 0;
+            using C = std::remove_cvref_t<std::remove_pointer_t<S>>;
+            return std::basic_string_view<C>(s).size();
+        }
+        else  if constexpr (IsLiteral_v<S>) {
+            return LiteralLen<S> - 1;
+        }
+        else {
+            return s.size();
+        }
+    }
+
     constexpr std::string_view base64chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"sv;
 
     inline std::string Base64Encode(std::string_view const& in) {

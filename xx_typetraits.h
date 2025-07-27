@@ -69,15 +69,55 @@ namespace xx {
     template<typename T, typename = void> struct IsLiteral : std::false_type {};
     template<size_t L> struct IsLiteral<char[L], void> : std::true_type {
         static const size_t len = L;
+        static const size_t wide = sizeof(char);
     };
     template<size_t L> struct IsLiteral<char const [L], void> : std::true_type {
         static const size_t len = L;
+        static const size_t wide = sizeof(char);
     };
     template<size_t L> struct IsLiteral<char const (&)[L], void> : std::true_type {
         static const size_t len = L;
+        static const size_t wide = sizeof(char);
+    };
+    template<size_t L> struct IsLiteral<char16_t[L], void> : std::true_type {
+        static const size_t len = L;
+        static const size_t wide = sizeof(char16_t);
+    };
+    template<size_t L> struct IsLiteral<char16_t const [L], void> : std::true_type {
+        static const size_t len = L;
+        static const size_t wide = sizeof(char16_t);
+    };
+    template<size_t L> struct IsLiteral<char16_t const (&)[L], void> : std::true_type {
+        static const size_t len = L;
+        static const size_t wide = sizeof(char16_t);
+    };
+    template<size_t L> struct IsLiteral<char32_t[L], void> : std::true_type {
+        static const size_t len = L;
+        static const size_t wide = sizeof(char32_t);
+    };
+    template<size_t L> struct IsLiteral<char32_t const [L], void> : std::true_type {
+        static const size_t len = L;
+        static const size_t wide = sizeof(char32_t);
+    };
+    template<size_t L> struct IsLiteral<char32_t const (&)[L], void> : std::true_type {
+        static const size_t len = L;
+        static const size_t wide = sizeof(char32_t);
+    };
+    template<size_t L> struct IsLiteral<wchar_t[L], void> : std::true_type {
+        static const size_t len = L;
+        static const size_t wide = sizeof(wchar_t);
+    };
+    template<size_t L> struct IsLiteral<wchar_t const [L], void> : std::true_type {
+        static const size_t len = L;
+        static const size_t wide = sizeof(wchar_t);
+    };
+    template<size_t L> struct IsLiteral<wchar_t const (&)[L], void> : std::true_type {
+        static const size_t len = L;
+        static const size_t wide = sizeof(wchar_t);
     };
     template<typename T> constexpr bool IsLiteral_v = IsLiteral<T>::value;
     template<typename T> constexpr size_t LiteralLen = IsLiteral<T>::len;
+    template<typename T> constexpr size_t LiteralWide = IsLiteral<T>::wide;
 
     /************************************************************************************/
     // check T has member funcs: data() size()

@@ -22,9 +22,10 @@ namespace xx {
 		std::function<void()> onClicked = [] { CoutN("FocusButton clicked."); };
 		std::function<void()> onFocus = [] {};	// play sound?
 
+		template<typename S1, typename S2 = char const*>
 		FocusButton& Init(int z_, XY position_, XY anchor_
 			, xx::Ref<Scale9SpriteConfig> cfgNormal_, xx::Ref<Scale9SpriteConfig> cfgHighlight_
-			, std::u32string_view txtLeft_ = U"", std::u32string_view txtRight_ = U"", XY fixedSize_ = {}) {
+			, S1 const& txtLeft_ = {}, S2 const& txtRight_ = {}, XY fixedSize_ = {}) {
 			assert(children.Empty());
 			ud = cFocusBaseTypeId;
 			isFocus = false;
@@ -44,7 +45,7 @@ namespace xx {
 			else {
 				size = lblLeft->size + cfg.txtPadding + cfg.txtPaddingRightBottom;
 			}
-			if (txtRight_.size()) {
+			if (StrLen(txtRight_)) {
 				MakeChildren<Label>()->Init(z + 1, { size.x - cfg.txtPadding.x, cfg.txtPaddingRightBottom.y }, cfg.txtScale, { 1, 0 }, cfg.txtColor, txtRight_);
 			}
 			MakeChildren<Scale9Sprite>()->Init(z, {}, cfg.borderScale, {}, size / cfg.borderScale, cfg);
@@ -234,17 +235,18 @@ namespace xx {
 		bool blockMoving{};
 
 		std::function<void(double)> onChanged = [](double v) { CoutN("FocusSlider changed. v = ", v); };
-		std::function<std::u32string(double)> valueToString = [](double v)->std::u32string {
-			return xx::StringU8ToU32(xx::ToString((int32_t)(v * 100)));
+		std::function<std::string(double)> valueToString = [](double v)->std::string {
+			return xx::ToString(int32_t(v * 100));
 		};
 		std::function<void()> onFocus = [] {};	// play sound?
 
 		// InitBegin + set value/ToSting + InitEnd
+		template<typename S>
 		FocusSlider& InitBegin(int z_, XY position_, XY anchor_
 			, xx::Ref<Scale9SpriteConfig> cfgNormal_, xx::Ref<Scale9SpriteConfig> cfgHighlight_
 			, xx::Ref<Scale9SpriteConfig> cfgBar_, xx::Ref<Scale9SpriteConfig> cfgBlock_
 			, float height_, float widthTxtLeft_, float widthBar_, float widthTxtRight_
-			, std::u32string_view txtLeft_)
+			, S const& txtLeft_)
 		{
 			assert(children.Empty());
 			ud = cFocusBaseTypeId;
@@ -289,11 +291,12 @@ namespace xx {
 			return *this;
 		}
 
+		template<typename S>
 		FocusSlider& Init(int z_, XY position_, XY anchor_
 			, xx::Ref<Scale9SpriteConfig> cfgNormal_, xx::Ref<Scale9SpriteConfig> cfgHighlight_
 			, xx::Ref<Scale9SpriteConfig> cfgBar_, xx::Ref<Scale9SpriteConfig> cfgBlock_
 			, float height_, float widthTxtLeft_, float widthBar_, float widthTxtRight_
-			, std::u32string_view txtLeft_, double value_) {
+			, S const& txtLeft_, double value_) {
 			InitBegin(z_, position_, anchor_
 				, std::move(cfgNormal_), std::move(cfgHighlight_), std::move(cfgBar_), std::move(cfgBlock_)
 				, height_, widthTxtLeft_, widthBar_, widthTxtRight_, txtLeft_);
