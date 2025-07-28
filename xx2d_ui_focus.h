@@ -6,24 +6,129 @@
 
 namespace xx {
 
+	struct Image2 : Node {
+		xx::Ref<xx::Frame> frame;
+		XY fixedScale{};
+		RGBA8 color{};
+		float colorplus{};
+		float radians{};
+
+		Image2& Init(int z_, XY position_, XY anchor_, XY fixedSize_, bool keepAspect_
+			, xx::Ref<xx::Frame> frame_, ImageRadians radians_ = ImageRadians::Zero, RGBA8 color_ = RGBA8_White, float colorplus_ = 1) {
+			z = z_;
+			position = position_;
+			anchor = anchor_;
+			size = fixedSize_;
+			frame = std::move(frame_);
+			radians = float(M_PI) * 0.5f * (int32_t)radians_;
+			color = color_;
+			colorplus = colorplus_;
+			if (keepAspect_) {
+				auto s = fixedSize_.x / frame->spriteSize.x;
+				if (frame->spriteSize.y * s > fixedSize_.y) {
+					s = fixedSize_.y / frame->spriteSize.y;
+				}
+				fixedScale = s;
+			}
+			else {
+				fixedScale.x = fixedSize_.x / frame->spriteSize.x;
+				fixedScale.y = fixedSize_.y / frame->spriteSize.y;
+			}
+			FillTrans();
+			return *this;
+		}
+
+		void Draw() override {
+			if (!frame) return;
+			auto q = EngineBase1::Instance().ShaderBegin(EngineBase1::Instance().shaderQuadInstance).Draw(frame->tex, 1);
+			q->pos = worldMinXY;
+			q->anchor = 0;
+			q->scale = worldScale * fixedScale;
+			q->radians = radians;
+			q->colorplus = colorplus;
+			q->color = { color.r, color.g, color.b, (uint8_t)(color.a * alpha) };
+			q->texRect.data = frame->textureRect.data;
+		}
+	};
+
 	struct FocusBase : MouseEventHandlerNode {
 		static constexpr uint64_t cFocusBaseTypeId{ 0xFBFBFBFBFBFBFBFB };	// unique. need store into ud
+		std::function<void()> onFocus = [] {};	// play sound?
+		xx::Ref<Scale9SpriteConfig> cfgNormal, cfgHighlight;
 		bool isFocus{};
 		virtual void SetFocus() { assert(!isFocus); isFocus = true; };
 		virtual void LostFocus() { assert(isFocus); isFocus = false; };
 		// todo: focus navigate? prev next?
 	};
 
-
 	struct FocusButton : FocusBase {
-		xx::Ref<Scale9SpriteConfig> cfgNormal, cfgHighlight;
+		std::function<void()> onClicked = [] { CoutN("FocusButton clicked."); };
+
+		FocusButton& Init(int z_, XY position_, XY anchor_, XY size_
+			, xx::Ref<Scale9SpriteConfig> cfgNormal_, xx::Ref<Scale9SpriteConfig> cfgHighlight_) {
+			z = z_;
+			position = position_;
+			anchor = anchor_;
+			size = size_;
+			cfgNormal = std::move(cfgNormal_);
+			cfgHighlight = std::move(cfgHighlight_);
+			FillTrans();
+			auto& cfg = isFocus ? *cfgHighlight : *cfgNormal;
+			MakeChildren<Scale9Sprite>()->Init(z + 1, 0, cfg.borderScale, {}, size / cfg.borderScale, cfg);
+			return *this;
+		}
+
+		virtual void ApplyCfg() {
+			assert(children.len);
+			auto& cfg = isFocus ? *cfgHighlight : *cfgNormal;
+			auto bg = (Scale9Sprite*)children[0].pointer;
+			bg->Init(z + 1, 0, cfg.borderScale, {}, size / cfg.borderScale, cfg);
+		}
+
+		void SetFocus() override {
+			assert(!isFocus);
+			isFocus = true;
+			ApplyCfg();
+			gEngine->mouseEventHandler = xx::WeakFromThis(this);
+			onFocus();
+			//xx::CoutN("SetFocus");
+		}
+
+		void LostFocus() override {
+			assert(isFocus);
+			isFocus = false;
+			ApplyCfg();
+			gEngine->mouseEventHandler.Reset();
+			//xx::CoutN("LostFocus");
+		}
+
+		// todo: enable disable
+
+		virtual void OnMouseDown() override {
+			if (MousePosInArea()) {
+				onClicked();
+			}
+		}
+
+		virtual void OnMouseMove() override {
+			if (MousePosInArea()) {
+				if (isFocus) return;
+				SetFocus();
+			}
+			else {
+				if (!isFocus) return;
+				LostFocus();
+				gEngine->mouseEventHandler.Reset();
+			}
+		}
+
+	};
+
+	struct FocusLabelButton : FocusButton {
 		XY fixedSize{};
 
-		std::function<void()> onClicked = [] { CoutN("FocusButton clicked."); };
-		std::function<void()> onFocus = [] {};	// play sound?
-
 		template<typename S1, typename S2 = char const*>
-		FocusButton& Init(int z_, XY position_, XY anchor_
+		FocusLabelButton& Init(int z_, XY position_, XY anchor_
 			, xx::Ref<Scale9SpriteConfig> cfgNormal_, xx::Ref<Scale9SpriteConfig> cfgHighlight_
 			, S1 const& txtLeft_ = {}, S2 const& txtRight_ = {}, XY fixedSize_ = {}) {
 			assert(children.Empty());
@@ -53,7 +158,7 @@ namespace xx {
 			return *this;
 		}
 
-		void ApplyCfg() {
+		void ApplyCfg() override {
 			assert(children.len == 2 || children.len == 3);		// lblLeft [, lblRight], bg
 			auto& cfg = isFocus ? *cfgHighlight : *cfgNormal;
 			auto lblLeft = (Label*)children[0].pointer;
@@ -66,7 +171,7 @@ namespace xx {
 			}
 			Scale9Sprite* bg;
 			if (children.len == 3) {
-				((Label*)children[1].pointer)->Init(z + 1, {size.x - cfg.txtPadding.x, cfg.txtPaddingRightBottom.y}, cfg.txtScale, {1, 0}, cfg.txtColor);
+				((Label*)children[1].pointer)->Init(z + 1, { size.x - cfg.txtPadding.x, cfg.txtPaddingRightBottom.y }, cfg.txtScale, { 1, 0 }, cfg.txtColor);
 				bg = (Scale9Sprite*)children[2].pointer;
 			}
 			else {
@@ -85,151 +190,35 @@ namespace xx {
 			assert(children.len == 3);
 			return *(Label*)children[1].pointer;
 		}
-
-		void SetFocus() override {
-			assert(!isFocus);
-			isFocus = true;
-			ApplyCfg();
-			gEngine->mouseEventHandler = xx::WeakFromThis(this);
-			onFocus();
-			//xx::CoutN("SetFocus");
-		}
-
-		void LostFocus() override {
-			assert(isFocus);
-			isFocus = false;
-			ApplyCfg();
-			gEngine->mouseEventHandler.Reset();
-			//xx::CoutN("LostFocus");
-		}
-
-		// todo: enable disable
-
-		virtual void OnMouseDown() override {
-			if (MousePosInArea()) {
-				onClicked();
-			}
-		}
-
-		virtual void OnMouseMove() override {
-			if (MousePosInArea()) {
-				if (isFocus) return;
-				SetFocus();
-			}
-			else {
-				if (!isFocus) return;
-				LostFocus();
-				gEngine->mouseEventHandler.Reset();
-			}
-		}
 	};
 
-	struct FocusImageButton : FocusBase {
-		xx::Ref<Scale9SpriteConfig> cfgNormal, cfgHighlight;
-		xx::Ref<xx::Frame> frame;
-		XY spacing{};
-		float fixedScale{};
-		RGBA8 color{};
-		float colorplus{};
-		float radians{};
-
-		std::function<void()> onClicked = [] { CoutN("FocusImageButton clicked."); };
-		std::function<void()> onFocus = [] {};	// play sound?
-
-		FocusImageButton& Init(int z_, XY position_, XY anchor_, XY fixedSize_, XY spacing_
+	struct FocusImageButton : FocusButton {
+		FocusImageButton& Init(int z_, XY position_, XY anchor_, XY fixedSize_, bool keepAspect_, XY spacing_
 			, xx::Ref<Scale9SpriteConfig> cfgNormal_, xx::Ref<Scale9SpriteConfig> cfgHighlight_
 			, xx::Ref<xx::Frame> frame_, ImageRadians radians_ = ImageRadians::Zero, RGBA8 color_ = RGBA8_White, float colorplus_ = 1) {
 			z = z_;
 			position = position_;
 			anchor = anchor_;
 			size = fixedSize_ + spacing_ * 2;
-			spacing = spacing_;
 			cfgNormal = std::move(cfgNormal_);
 			cfgHighlight = std::move(cfgHighlight_);
-			frame = std::move(frame_);
-			radians = float(M_PI) * 0.5f * (int32_t)radians_;
-			color = color_;
-			colorplus = colorplus_;
-			fixedScale = fixedSize_.x / frame->spriteSize.x;
-			if (frame->spriteSize.y * fixedScale > fixedSize_.y) {
-				fixedScale = fixedSize_.y / frame->spriteSize.y;
-			}
 			FillTrans();
+			MakeChildren<Image2>()->Init(z, spacing_, {}, fixedSize_, keepAspect_, std::move(frame_), radians_, color_, colorplus_);
 			auto& cfg = isFocus ? *cfgHighlight : *cfgNormal;
 			MakeChildren<Scale9Sprite>()->Init(z + 1, 0, cfg.borderScale, {}, size / cfg.borderScale, cfg);
 			return *this;
 		}
 
-		void Draw() override {
-			if (!frame) return;
-			auto q = EngineBase1::Instance().ShaderBegin(EngineBase1::Instance().shaderQuadInstance).Draw(frame->tex, 1);
-			q->pos = worldMinXY + spacing * worldScale;
-			q->anchor = 0;
-			q->scale = worldScale * fixedScale;
-			q->radians = radians;
-			q->colorplus = colorplus;
-			q->color = { color.r, color.g, color.b, (uint8_t)(color.a * alpha) };
-			q->texRect.data = frame->textureRect.data;
-		}
-
-		void ApplyCfg() {
-			assert(children.len == 1);
+		void ApplyCfg() override {
+			assert(children.len == 2);
 			auto& cfg = isFocus ? *cfgHighlight : *cfgNormal;
-			auto bg = (Scale9Sprite*)children[0].pointer;
+			auto bg = (Scale9Sprite*)children[1].pointer;
 			bg->Init(z + 1, 0, cfg.borderScale, {}, size / cfg.borderScale, cfg);
 		}
-
-		Label& LabelLeft() {
-			assert(children.len == 2 || children.len == 3);
-			return *(Label*)children[0].pointer;
-		}
-
-		Label& LabelRight() {
-			assert(children.len == 3);
-			return *(Label*)children[1].pointer;
-		}
-
-		void SetFocus() override {
-			assert(!isFocus);
-			isFocus = true;
-			ApplyCfg();
-			gEngine->mouseEventHandler = xx::WeakFromThis(this);
-			onFocus();
-			//xx::CoutN("SetFocus");
-		}
-
-		void LostFocus() override {
-			assert(isFocus);
-			isFocus = false;
-			ApplyCfg();
-			gEngine->mouseEventHandler.Reset();
-			//xx::CoutN("LostFocus");
-		}
-
-		// todo: enable disable
-
-		virtual void OnMouseDown() override {
-			if (MousePosInArea()) {
-				onClicked();
-			}
-		}
-
-		virtual void OnMouseMove() override {
-			if (MousePosInArea()) {
-				if (isFocus) return;
-				SetFocus();
-			}
-			else {
-				if (!isFocus) return;
-				LostFocus();
-				gEngine->mouseEventHandler.Reset();
-			}
-		}
-
 	};
 
 	struct FocusSlider : FocusBase {
-		xx::Ref<Scale9SpriteConfig> cfgNormal, cfgHighlight, cfgBar, cfgBlock;
+		xx::Ref<Scale9SpriteConfig> cfgBar, cfgBlock;
 		float height{}, widthTxtLeft{}, widthBar{}, widthTxtRight{};
 		double value{}, valueBak{};	// 0 ~ 1
 		bool blockMoving{};
@@ -237,8 +226,7 @@ namespace xx {
 		std::function<void(double)> onChanged = [](double v) { CoutN("FocusSlider changed. v = ", v); };
 		std::function<std::string(double)> valueToString = [](double v)->std::string {
 			return xx::ToString(int32_t(v * 100));
-		};
-		std::function<void()> onFocus = [] {};	// play sound?
+			};
 
 		// InitBegin + set value/ToSting + InitEnd
 		template<typename S>
@@ -263,7 +251,7 @@ namespace xx {
 			widthBar = widthBar_;
 			widthTxtRight = widthTxtRight_;
 			blockMoving = false;
-			
+
 			auto& cfg = isFocus ? *cfgHighlight : *cfgNormal;
 			MakeChildren<Label>()->Init(z + 1, { cfg.txtPadding.x, cfg.txtPaddingRightBottom.y }, cfg.txtScale, {}, cfg.txtColor, txtLeft_);
 			return *this;

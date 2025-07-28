@@ -71,6 +71,7 @@ namespace xx {
     constexpr static RGBA8 RGBA8_Green{ 0,255,0,255 };
     constexpr static RGBA8 RGBA8_Blue{ 0,0,255,255 };
     constexpr static RGBA8 RGBA8_White{ 255,255,255,255 };
+    constexpr static RGBA8 RGBA8_Gray{ 127,127,127,255 };
     constexpr static RGBA8 RGBA8_Black{ 0,0,0,255 };
     constexpr static RGBA8 RGBA8_Yellow{ 255,255,0,255 };
 

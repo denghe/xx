@@ -78,7 +78,7 @@ namespace xx {
 			}
 		}
 
-
+		// for copy: Node::Init(z_, position_, scale_, anchor_, size_);
 		XX_INLINE void Init(int z_ = 0, XY const& position_ = {}, XY const& scale_ = { 1,1 }, XY const& anchor_ = {}, XY const& size_ = {}) {
 			z = z_;
 			position = position_;
