@@ -5,8 +5,8 @@ namespace xx {
 
 	struct alignas(8) Node {
 		Listi32<Shared<Node>> children;
-		Weak<Node> parent;										// fill by MakeChildren
-		Weak<Node> scissor;										// fill by scroll view MakeContent
+		Weak<Node> parent;											// fill by MakeChildren
+		Weak<Node> scissor;											// fill by scroll view MakeContent
 
         XX_INLINE SimpleAffineTransform& trans(){ return (SimpleAffineTransform&)worldScale; }
         XY worldScale, worldMinXY;
@@ -14,9 +14,9 @@ namespace xx {
 
 		XY position{}, scale{ 1, 1 }, anchor{ 0.5, 0.5 }, size{};
 		XY worldMaxXY{}, worldSize{};								// boundingBox. world coordinate. fill by FillTrans()
-		float alpha{ 1 };
 		int z{};													// global z for event priority or batch combine
 		bool inParentArea{ true };									// panel true ? combo box pop false ?
+		float alpha{ 1 };
 		int32_t indexAtParentChildren{-1};
 		uint64_t ud{};
 
@@ -79,13 +79,14 @@ namespace xx {
 		}
 
 		// for copy: Node::Init(z_, position_, scale_, anchor_, size_);
-		XX_INLINE void Init(int z_ = 0, XY const& position_ = {}, XY const& scale_ = { 1,1 }, XY const& anchor_ = {}, XY const& size_ = {}) {
+		XX_INLINE Node& Init(int z_ = 0, XY const& position_ = {}, XY const& scale_ = { 1,1 }, XY const& anchor_ = {}, XY const& size_ = {}) {
 			z = z_;
 			position = position_;
 			scale = scale_;
 			anchor = anchor_;
 			size = size_;
 			FillTrans();
+			return *this;
 		}
 
 		XX_INLINE void Init_Root() {

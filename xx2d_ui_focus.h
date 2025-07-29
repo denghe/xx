@@ -55,10 +55,13 @@ namespace xx {
 		static constexpr uint64_t cFocusBaseTypeId{ 0xFBFBFBFBFBFBFBFB };	// unique. need store into ud
 		std::function<void()> onFocus = [] {};	// play sound?
 		xx::Ref<Scale9SpriteConfig> cfgNormal, cfgHighlight;
-		bool isFocus{};
+		bool isFocus{}, alwaysHighlight{};
 		virtual void SetFocus() { assert(!isFocus); isFocus = true; };
 		virtual void LostFocus() { assert(isFocus); isFocus = false; };
 		// todo: focus navigate? prev next?
+		Scale9SpriteConfig& GetCfg() {
+			return alwaysHighlight ? *cfgHighlight : (isFocus ? *cfgHighlight : *cfgNormal);
+		}
 	};
 
 	struct FocusButton : FocusBase {
@@ -73,14 +76,14 @@ namespace xx {
 			cfgNormal = std::move(cfgNormal_);
 			cfgHighlight = std::move(cfgHighlight_);
 			FillTrans();
-			auto& cfg = isFocus ? *cfgHighlight : *cfgNormal;
+			auto& cfg = GetCfg();
 			MakeChildren<Scale9Sprite>()->Init(z + 1, 0, cfg.borderScale, {}, size / cfg.borderScale, cfg);
 			return *this;
 		}
 
 		virtual void ApplyCfg() {
 			assert(children.len);
-			auto& cfg = isFocus ? *cfgHighlight : *cfgNormal;
+			auto& cfg = GetCfg();
 			auto bg = (Scale9Sprite*)children[0].pointer;
 			bg->Init(z + 1, 0, cfg.borderScale, {}, size / cfg.borderScale, cfg);
 		}
@@ -141,7 +144,7 @@ namespace xx {
 			cfgHighlight = std::move(cfgHighlight_);
 			fixedSize = fixedSize_;
 
-			auto& cfg = isFocus ? *cfgHighlight : *cfgNormal;
+			auto& cfg = GetCfg();
 			auto lblLeft = MakeChildren<Label>();
 			lblLeft->Init(z + 1, { cfg.txtPadding.x, cfg.txtPaddingRightBottom.y }, cfg.txtScale, {}, cfg.txtColor, txtLeft_);
 			if (fixedSize.x > 0) {
@@ -160,7 +163,7 @@ namespace xx {
 
 		void ApplyCfg() override {
 			assert(children.len == 2 || children.len == 3);		// lblLeft [, lblRight], bg
-			auto& cfg = isFocus ? *cfgHighlight : *cfgNormal;
+			auto& cfg = GetCfg();
 			auto lblLeft = (Label*)children[0].pointer;
 			lblLeft->Init(z + 1, { cfg.txtPadding.x, cfg.txtPaddingRightBottom.y }, cfg.txtScale, {}, cfg.txtColor);
 			if (fixedSize.x > 0) {
@@ -204,14 +207,14 @@ namespace xx {
 			cfgHighlight = std::move(cfgHighlight_);
 			FillTrans();
 			MakeChildren<Image2>()->Init(z, spacing_, {}, fixedSize_, keepAspect_, std::move(frame_), radians_, color_, colorplus_);
-			auto& cfg = isFocus ? *cfgHighlight : *cfgNormal;
+			auto& cfg = GetCfg();
 			MakeChildren<Scale9Sprite>()->Init(z + 1, 0, cfg.borderScale, {}, size / cfg.borderScale, cfg);
 			return *this;
 		}
 
 		void ApplyCfg() override {
 			assert(children.len == 2);
-			auto& cfg = isFocus ? *cfgHighlight : *cfgNormal;
+			auto& cfg = GetCfg();
 			auto bg = (Scale9Sprite*)children[1].pointer;
 			bg->Init(z + 1, 0, cfg.borderScale, {}, size / cfg.borderScale, cfg);
 		}
