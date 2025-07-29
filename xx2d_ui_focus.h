@@ -151,7 +151,7 @@ namespace xx {
 				size = fixedSize;
 			}
 			else {
-				size = lblLeft->size + cfg.txtPadding + cfg.txtPaddingRightBottom;
+				size = lblLeft->GetScaledSize() + cfg.txtPadding + cfg.txtPaddingRightBottom;
 			}
 			if (StrLen(txtRight_)) {
 				MakeChildren<Label>()->Init(z + 1, { size.x - cfg.txtPadding.x, cfg.txtPaddingRightBottom.y }, cfg.txtScale, { 1, 0 }, cfg.txtColor, txtRight_);
@@ -170,7 +170,7 @@ namespace xx {
 				size = fixedSize;
 			}
 			else {
-				size = lblLeft->size + cfg.txtPadding + cfg.txtPaddingRightBottom;
+				size = lblLeft->GetScaledSize() + cfg.txtPadding + cfg.txtPaddingRightBottom;
 			}
 			Scale9Sprite* bg;
 			if (children.len == 3) {

@@ -31,13 +31,18 @@ namespace xx {
 		XY texScale;
 		float colorplus;
 
-		void Init(int z_, XY const& position_, XY const& scale_, XY const& anchor_, XY const& size_, Scale9SpriteConfig const& cfg_, float colorplus_ = 1) {
+		Scale9Sprite& Init(int z_, XY const& position_, XY const& scale_, XY const& anchor_, XY const& size_, Scale9SpriteConfig const& cfg_, float colorplus_ = 1) {
 			Node::Init(z_, position_, scale_, anchor_, size_);
 			texScale = cfg_.texScale;
 			frame = cfg_.frame;
 			center = cfg_.center;
 			color = cfg_.color;
 			colorplus = colorplus_;
+			return *this;
+		}
+
+		Scale9Sprite& Init(int z_, XY position_, XY anchor_, XY size_, Scale9SpriteConfig const& cfg_) {
+			return Init(z_, position_, cfg_.borderScale, anchor_, size_ / cfg_.borderScale, cfg_);
 		}
 
 		virtual void Draw() override {
@@ -61,12 +66,10 @@ namespace xx {
 			uint16_t th2 = center.h;
 			uint16_t th3 = r.h - (center.y + center.h);
 
-			// actual
-			XY siz{ size.x * trans().a, size.y * trans().d };
-			XY ts{ texScale.x * trans().a, texScale.y * trans().d };
+			XY ts{ texScale * worldScale };
 
-			float sx = float(siz.x - tw1 * ts.x - tw3 * ts.x) / tw2;
-			float sy = float(siz.y - th1 * ts.y - th3 * ts.y) / th2;
+			float sx = float(worldSize.x - tw1 * ts.x - tw3 * ts.x) / tw2;
+			float sy = float(worldSize.y - th1 * ts.y - th3 * ts.y) / th2;
 #ifndef NDEBUG
 			if (sx < 0 || sy < 0) {
 				CoutN(" sx = ", sx, " sy = ", sy, " ts = ", ts);
@@ -76,13 +79,13 @@ namespace xx {
 
 			float px1 = 0;
 			float px2 = tw1 * ts.x;
-			float px3 = siz.x - tw3 * ts.x;
+			float px3 = worldSize.x - tw3 * ts.x;
 
-			float py1 = siz.y;
-			float py2 = siz.y - (th1 * ts.y);
-			float py3 = siz.y - (siz.y - th3 * ts.y);
+			float py1 = worldSize.y;
+			float py2 = worldSize.y - (th1 * ts.y);
+			float py3 = worldSize.y - (worldSize.y - th3 * ts.y);
 
-			auto& basePos = trans().Offset();
+			auto& basePos = worldMinXY;
 
 			RGBA8 c = { color.r, color.g, color.b, (uint8_t)(color.a * alpha) };
 

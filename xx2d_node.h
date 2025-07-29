@@ -20,6 +20,10 @@ namespace xx {
 		int32_t indexAtParentChildren{-1};
 		uint64_t ud{};
 
+		XX_INLINE XY GetScaledSize() const {
+			return scale * size;
+		}
+
 		// for init
 		XX_INLINE void FillTrans() {
 			if (parent) {

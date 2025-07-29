@@ -33,10 +33,10 @@ namespace xx {
 			}
 			fs.Resize(len);
 			auto& ctc = EngineBase2::Instance().ctcDefault;
-			size = { 0, (float)ctc.canvasHeight * scale.y };
+			size = { 0, (float)ctc.canvasHeight };
 			for (int i = 0; i < len; ++i) {
 				fs[i] = &ctc.Find(txt_[i]);
-				size.x += fs[i]->texRect.w * scale.x;
+				size.x += fs[i]->texRect.w;
 			}
 			FillTrans();
 		}

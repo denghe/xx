@@ -21,7 +21,7 @@ namespace xx {
 		void MakeContent(Scale9SpriteConfig const& cfg, S const& txt) {
 			lbl = MakeChildren<Label>();
 			lbl->Init(z + 1, { cfg.txtPadding.x, cfg.txtPaddingRightBottom.y }, cfg.txtScale, {}, cfg.txtColor, txt);
-			size = lbl->size + cfg.txtPadding + cfg.txtPaddingRightBottom;
+			size = lbl->GetScaledSize() + cfg.txtPadding + cfg.txtPaddingRightBottom;
 
 			bg = MakeChildren<Scale9Sprite>();
 			bg->Init(z, {}, cfg.borderScale, {}, size / cfg.borderScale, cfg);
