@@ -259,6 +259,8 @@ namespace xx {
 	/**********************************************************************************************************************************/
 	/**********************************************************************************************************************************/
 
+	// todo: generate mipmap option
+
 	template<GLuint filter = GL_NEAREST /* GL_LINEAR */, GLuint wraper = GL_CLAMP_TO_EDGE /* GL_REPEAT */>
 	inline GLuint LoadGLTexture_core(int textureUnit = 0) {
 		GLuint t{};
