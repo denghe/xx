@@ -17,7 +17,7 @@ namespace xx {
         GLVertexArrays va;
         GLBuffer vb, ib;
 
-        static constexpr int32_t maxRingNums{ 20000 };
+        static constexpr int32_t maxRingNums{ 100000 };
         std::unique_ptr<RingInstanceData[]> ringInstanceDatas = std::make_unique<RingInstanceData[]>(maxRingNums);
         int32_t ringCount{};
 
